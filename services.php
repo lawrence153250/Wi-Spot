@@ -1,0 +1,123 @@
+<?php
+session_start();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="nav-container">
+        <a class="navbar-brand" href="index.php"><img src="logo.jpg" alt="Logo"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="index.php">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="aboutus.php">About Us</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="petlist.php">Pet Gallery</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="services.php">Services</a>
+                </li>
+                <?php if (isset($_SESSION['username'])): ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.php"><?php echo htmlspecialchars($_SESSION['username']); ?> <i class="bi bi-person-circle"></i></a>
+                    </li>
+                <?php else: ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="login.php">Log In</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="register.php">Sign Up</a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="header-image">
+    <img src="img/Service.png" alt="header photo">
+</div>
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Services Offered</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="service-container">
+                <h4>Adopt a Pet</h4>
+                <p>Explore our gallery and find a furry friend to adopt.</p>
+                <a href="adoption.php" class="btn btn-primary">Adopt Now</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="service-container">
+                <h4>Surrender a Pet for Adoption</h4>
+                <p>Have a pet that needs a new home? Surrender them to us.</p>
+                <a href="surrender.php" class="btn btn-primary">Surrender Now</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="service-container">
+                <h4>Request a Service</h4>
+                <p>Need pet-related services? Let us know how we can help.</p>
+                <a href="contactus.php" class="btn btn-primary">Request Service</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="foot-container" id="grad">
+    <div class="foot-icons">
+        <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target="_blank"></a>
+        <a href="https://web.facebook.com/" class="bi bi-facebook text-altlight" target="_blank"></a>
+        <a href="https://www.instagram.com/" class="bi bi-instagram text-altlight" target="_blank"></a>
+        <a href="https://www.tiktok.com/" class="bi bi-tiktok text-altlight" target="_blank"></a>
+    </div>
+    <div class="background">
+        <p style="background-image: url('img/Background.png');"></p>
+    </div>
+    <hr>
+    <div class="foot-policy">
+            <div class="row">
+                <div class="col-md-3">
+                    <a class="foot-policy text-altlight" href="termsofservice.php" target="_blank">Terms of Service</a>
+                </div>
+                <div class="col-md-3">
+                    <a class="foot-policy text-altlight" href="copyrightpolicy.php" target="_blank">Copyright Policy</a>
+                </div>
+                <div class="col-md-3">
+                    <a class="foot-policy text-altlight" href="privacypolicy.php" target="_blank">Privacy Policy</a>
+                </div>
+                <div class="col-md-3">
+                    <a class="foot-policy text-altlight" href="contactus.php" target=”_blank”>Contact Us</a>
+                </div>
+            </div>
+        </div>
+    <hr>
+    <div class="foot_text text-altlight">
+        <p>Purrfecthome is available in English, French, German, Italian, Spanish, and more.</p><br>
+        <p>
+            &copy;2024 Purrfecthome. All rights reserved. Purrfecthome and related trademarks and logos are the property of Purrfecthome. All other trademarks are the property of their respective owners. Please adopt responsibly.
+        </p><br>
+        <p>
+            This webpage is for educational purposes only and no copyright infringement is intended.
+        </p>
+    </div>
+</div>
+</body>
+</html>
