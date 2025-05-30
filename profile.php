@@ -306,7 +306,7 @@ $conn->close();
         padding: 10px;
         margin-bottom: 20px;
         border-radius: 5px;
-    background-color: #f5f6fa;   
+        background-color: #f5f6fa;   
  }
     .popup {
         display: none;
@@ -332,6 +332,18 @@ $conn->close();
     .popup button {
         margin-top: 10px;
     }
+
+
+
+.form-group {
+    text-align: center; 
+}
+
+.custom-button {
+   
+    width: 200px; 
+    box-sizing: border-box; /
+}
 
 </style>
 <body>
@@ -421,13 +433,13 @@ $conn->close();
                                     
                                     <hr>
                                     
-                                    <div class="form-group">    
-                                        <a href="logout.php">Logout</a><br>
-                                        <a href="viewtransactions.php">View Transactions</a><br>
-                                        <a href="#" data-bs-toggle="modal" data-bs-target="#resetPass">Reset Password</a><br>
-                                        <a href="#" data-bs-toggle="modal" data-bs-target="#resetProfile">Edit Profile Information</a>
+                                    <div class="form-group">
+                                        <a href="logout.php" class="btn btn-primary mt-2 custom-button">Logout</a><br>
+                                        <a href="viewtransactions.php" class="btn btn-primary mt-2 custom-button">View Transactions</a><br>
+                                        <a href="#" class="btn btn-primary mt-2 custom-button" data-bs-toggle="modal" data-bs-target="#resetPass">Reset Password</a><br>
+                                        <a href="#" class="btn btn-primary mt-2 custom-button" data-bs-toggle="modal" data-bs-target="#resetProfile">Edit Profile Information</a>
                                     </div>
-                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
