@@ -13,6 +13,21 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Get current admin ID
+$username = $_SESSION['username'];
+$adminQuery = $conn->prepare("SELECT adminId FROM admin WHERE username = ?");
+$adminQuery->bind_param("s", $username);
+$adminQuery->execute();
+$adminResult = $adminQuery->get_result();
+
+if ($adminResult->num_rows === 0) {
+    die("Error: Admin account not found for username: " . htmlspecialchars($username));
+}
+
+$adminData = $adminResult->fetch_assoc();
+$adminId = $adminData['adminId'];
+$adminQuery->close();
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['create'])) {
@@ -23,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isPriority = isset($_POST['isPriority']) ? 1 : 0;
         $startDate = $_POST['startDate'];
         $endDate = $_POST['endDate'];
-        $adminId = $_SESSION['userid']; // Assuming userid is stored in session
 
         $stmt = $conn->prepare("INSERT INTO announcement (adminId, title, category, description, isPriority, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("isssiss", $adminId, $title, $category, $description, $isPriority, $startDate, $endDate);
@@ -283,7 +297,6 @@ $conn->close();
             <table class="bookings-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Package Name</th>
                         <th>Description</th>
                         <th>Price</th>
@@ -300,7 +313,6 @@ $conn->close();
                     <?php if (!empty($packages)): ?>
                         <?php foreach ($packages as $package): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($package['packageId']); ?></td>
                                 <td><?php echo htmlspecialchars($package['packageName']); ?></td>
                                 <td><?php echo htmlspecialchars($package['description']); ?></td>
                                 <td>₱<?php echo number_format($package['price'], 2); ?></td>

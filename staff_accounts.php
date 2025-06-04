@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_verification'])
 // Fetch all customers with verification status
 $customers = [];
 $sql = "SELECT customerId, email, firstName, lastName, contactNumber, address, birthday, 
-               registerDate, userName, facebookProfile, validId, proofOfBilling, 
+               userName, facebookProfile, validId, proofOfBilling, 
                CASE WHEN validId IS NOT NULL AND proofOfBilling IS NOT NULL THEN 'Verified' ELSE 'Not yet Verified' END as accountVerified
         FROM customer";
 $result = $conn->query($sql);
@@ -207,7 +207,6 @@ $conn->close();
                 <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
-                            <th>Customer ID</th>
                             <th>Username</th>
                             <th>Email</th>
                             <th>Full Name</th>
@@ -216,14 +215,12 @@ $conn->close();
                             <th>Birthday</th>
                             <th>Facebook Profile</th>
                             <th>Account Verified</th>
-                            <th>Registration Date</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (!empty($customers)): ?>
                             <?php foreach ($customers as $customer): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($customer['customerId']); ?></td>
                                     <td><?php echo htmlspecialchars($customer['userName']); ?></td>
                                     <td><?php echo htmlspecialchars($customer['email']); ?></td>
                                     <td><?php echo htmlspecialchars($customer['firstName'] . ' ' . $customer['lastName']); ?></td>
@@ -255,7 +252,6 @@ $conn->close();
                                             </button>
                                         </form>
                                     </td>
-                                    <td><?php echo htmlspecialchars($customer['registerDate']); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>

@@ -13,11 +13,25 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Get current admin ID
+$username = $_SESSION['username'];
+$adminQuery = $conn->prepare("SELECT adminId FROM admin WHERE username = ?");
+$adminQuery->bind_param("s", $username);
+$adminQuery->execute();
+$adminResult = $adminQuery->get_result();
+
+if ($adminResult->num_rows === 0) {
+    die("Error: Admin account not found for username: " . htmlspecialchars($username));
+}
+
+$adminData = $adminResult->fetch_assoc();
+$adminId = $adminData['adminId'];
+$adminQuery->close();
+
 // Handle status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $itemId = $_POST['item_id'];
     $newStatus = $_POST['new_status'];
-    $adminId = $_SESSION['adminId'] ?? null;
     
     $stmt = $conn->prepare("UPDATE inventory SET status = ?, adminId = ?, dateApproved = NOW() WHERE itemId = ?");
     $stmt->bind_param("sii", $newStatus, $adminId, $itemId);
@@ -250,7 +264,6 @@ $conn->close();
             <table class="bookings-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Item Name</th>
                         <th>Type</th>
                         <th>Quantity</th>
@@ -265,7 +278,6 @@ $conn->close();
                     <?php if (!empty($inventoryItems)): ?>
                         <?php foreach ($inventoryItems as $item): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($item['itemId']); ?></td>
                                 <td><?php echo htmlspecialchars($item['itemName']); ?></td>
                                 <td><?php echo htmlspecialchars($item['itemType']); ?></td>
                                 <td><?php echo htmlspecialchars($item['quantity']); ?></td>
