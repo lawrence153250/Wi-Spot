@@ -124,7 +124,7 @@ session_start();
     <div class="ownercontainer">
             <img src="img\imgAbout\482326580_1152594703234968_8879343790075071330_n.jpg" alt="Owner Portrait" style="width:150px; height:150px; border-radius: 50%; object-fit: cover; margin-bottom: 15px;">
     
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloribus rerum ipsam, dolorem distinctio cum natus dicta corrupti odio ducimus molestiae nobis id quibusdam minima tenetur sapiente neque numquam non tempore!</p>
+            <p>Wi-Spot was founded with the vision of addressing local connectivity challenges, beginning with a single piso net hotspot. Under the leadership of our founder, the service quickly gained recognition for its reliability and affordability. Over time, it has grown into a trusted provider of satellite internet rentals and network solutions, committed to delivering accessible and dependable connectivity across the region.</p>
             <p><strong>Joshua Ed Napila</strong></p>
             <p><i>Founder / owner of Wi-Spot Services</i></p>
         </div>
