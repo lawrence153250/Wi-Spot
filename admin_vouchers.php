@@ -303,7 +303,6 @@ $query->close();
             <table class="bookings-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Voucher Name</th>
                         <th>Type</th>
                         <th>Discount</th>
@@ -319,7 +318,6 @@ $query->close();
                     <?php if (!empty($voucherBatches)): ?>
                         <?php foreach ($voucherBatches as $batch): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($batch['batchId']); ?></td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($batch['voucherName']); ?></strong>
                                     <?php if ($batch['description']): ?>
