@@ -224,3 +224,7 @@ body {
     max-width: 200px; /* Set a max width for each column */
     margin: 0.5rem; /* Space between columns */
   }
+
+  .btn btn-primary mt-2 custom-button {
+    width: 250px;
+  }
