@@ -34,6 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_package'])) {
     $packageName = $conn->real_escape_string($_POST['package_name']);
     $description = $conn->real_escape_string($_POST['description']);
     $price = (float)$_POST['price'];
+    $numberOfUsers = (int)$_POST['number_of_users'];
+    $eventType = $conn->real_escape_string($_POST['event_type']);
+    $eventAreaSize = (float)$_POST['event_area_size'];
+    $expectedBandwidth = (float)$_POST['expected_bandwidth'];
     $selectedItems = $_POST['equipment_items'] ?? [];
     
     // Validate at least one item is selected
@@ -43,10 +47,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_package'])) {
         // Convert selected items array to comma-separated string
         $equipmentsIncluded = implode(',', $selectedItems);
         
-        // Insert new package with dateCreated (automatically set to current timestamp)
-        $stmt = $conn->prepare("INSERT INTO package (staffId, packageName, description, price, equipmentsIncluded, status) 
-                               VALUES (?, ?, ?, ?, ?, 'pending')");
-        $stmt->bind_param("issds", $staffId, $packageName, $description, $price, $equipmentsIncluded);
+        // Insert new package with all fields
+        $stmt = $conn->prepare("INSERT INTO package (
+            staffId, packageName, description, price, equipmentsIncluded, 
+            status, numberOfUsers, eventType, eventAreaSize, expectedBandwidth
+        ) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)");
+        
+        $stmt->bind_param(
+            "issdsisdd", 
+            $staffId, 
+            $packageName, 
+            $description, 
+            $price, 
+            $equipmentsIncluded,
+            $numberOfUsers,
+            $eventType,
+            $eventAreaSize,
+            $expectedBandwidth
+        );
         
         if ($stmt->execute()) {
             $success_message = "Package created successfully! Waiting for admin approval.";
@@ -71,6 +89,7 @@ $packages = [];
 $packageQuery = $conn->prepare("SELECT 
                                 p.packageId, p.packageName, p.description, p.price, 
                                 p.equipmentsIncluded, p.status, p.dateCreated, p.approvalDate,
+                                p.numberOfUsers, p.eventType, p.eventAreaSize, p.expectedBandwidth,
                                 GROUP_CONCAT(i.itemName SEPARATOR ', ') AS equipmentNames
                                 FROM package p
                                 LEFT JOIN inventory i ON FIND_IN_SET(i.itemId, p.equipmentsIncluded)
@@ -321,6 +340,33 @@ $conn->close();
                     </div>
                 </div>
                 
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="number_of_users" class="form-label">Number of Users</label>
+                        <input type="number" class="form-control" id="number_of_users" name="number_of_users" min="1" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="event_type" class="form-label">Event Type</label>
+                        <select class="form-select" id="event_type" name="event_type" required>
+                            <option value="">Select type</option>
+                            <option value="indoor">Indoor</option>
+                            <option value="outdoor">Outdoor</option>
+                            <option value="concert">Concert</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="event_area_size" class="form-label">Event Area Size (sqm)</label>
+                        <input type="number" class="form-control" id="event_area_size" name="event_area_size" step="0.01" min="1" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="expected_bandwidth" class="form-label">Expected Bandwidth (Mbps)</label>
+                        <input type="number" class="form-control" id="expected_bandwidth" name="expected_bandwidth" step="0.01" min="1" required>
+                    </div>
+                </div>
+                
                 <div class="mb-3">
                     <label for="description" class="form-label">Description</label>
                     <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
@@ -358,10 +404,13 @@ $conn->close();
             <table class="packages-table">
                 <thead>
                     <tr>
-                        <th>Package ID</th>
                         <th>Name</th>
                         <th>Description</th>
                         <th>Price</th>
+                        <th>Users</th>
+                        <th>Type</th>
+                        <th>Area (sqm)</th>
+                        <th>Bandwidth</th>
                         <th>Equipment Included</th>
                         <th>Status</th>
                         <th>Date Created</th>
@@ -372,10 +421,13 @@ $conn->close();
                     <?php if (!empty($packages)): ?>
                         <?php foreach ($packages as $package): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($package['packageId']); ?></td>
                                 <td><?php echo htmlspecialchars($package['packageName']); ?></td>
                                 <td><?php echo htmlspecialchars($package['description']); ?></td>
                                 <td>₱<?php echo number_format($package['price'], 2); ?></td>
+                                <td><?php echo htmlspecialchars($package['numberOfUsers']); ?></td>
+                                <td><?php echo ucfirst(htmlspecialchars($package['eventType'])); ?></td>
+                                <td><?php echo number_format($package['eventAreaSize'], 2); ?></td>
+                                <td><?php echo number_format($package['expectedBandwidth'], 2); ?> Mbps</td>
                                 <td>
                                     <?php 
                                     if (!empty($package['equipmentNames'])) {
@@ -401,7 +453,7 @@ $conn->close();
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="8" class="text-center">No packages created yet.</td>
+                            <td colspan="12" class="text-center">No packages created yet.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>

@@ -231,6 +231,7 @@ $conn->close();
             <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
             <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>
+            <li><a class="nav-link" href="admin_resetpass.php">RESET PASSWORD</a></li>
             <li><span><a class="nav-link" href="logout.php">LOGOUT</a></span></li>
         </ul>
     </div>
