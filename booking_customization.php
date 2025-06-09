@@ -1,5 +1,5 @@
 <?php
-// Define bandwidth requirements for different websites/services (in Mbps)
+// Define bandwidth requirements for different websites/services (in Mbps) asdfasddfadsfasdfADSF
 $bandwidthRequirements = [
     // Social Media
     'facebook' => 1,
