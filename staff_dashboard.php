@@ -7,6 +7,47 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     exit();
 }
 
+$conn = new mysqli('localhost', 'root', '', 'capstonesample');
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Function to get counts from database
+function getCount($conn, $table, $column = null, $values = null) {
+    if ($column && $values) {
+        if (is_array($values)) {
+            $placeholders = implode(',', array_fill(0, count($values), '?'));
+            $sql = "SELECT COUNT(*) as count FROM $table WHERE $column IN ($placeholders)";
+            $stmt = $conn->prepare($sql);
+            $types = str_repeat('s', count($values));
+            $stmt->bind_param($types, ...$values);
+        } else {
+            $sql = "SELECT COUNT(*) as count FROM $table WHERE $column = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param('s', $values);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        // For tables where we just count all entries (feedback and announcements)
+        $sql = "SELECT COUNT(*) as count FROM $table";
+        $result = $conn->query($sql);
+    }
+    
+    $row = $result->fetch_assoc();
+    return $row['count'];
+}
+
+// Get counts for each section
+$bookingCount = getCount($conn, 'booking', 'bookingStatus', 'Pending');
+$packageCount = getCount($conn, 'package', 'status', ['available', 'rejected']);
+$voucherCount = getCount($conn, 'voucher_batch', 'approvalStatus', ['approved', 'declined']);
+$inventoryCount = getCount($conn, 'inventory', 'status', ['available', 'rejected']);
+$feedbackCount = getCount($conn, 'feedback');
+$announcementCount = getCount($conn, 'announcement');
+
+$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -75,40 +116,59 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
             font-size: 24px;
         }
         
-        /* Table Styles */
-        .bookings-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
-            overflow: hidden;
+        /* Dashboard Cards */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
         
-        .bookings-table th, 
-        .bookings-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+        .dashboard-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            border-left: 5px solid #3498db;
         }
         
-        .bookings-table th {
-            background-color: #3498db;
-            color: white;
-            font-weight: 600;
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
         
-        .bookings-table tr:hover {
-            background-color: #f9f9f9;
+        .card-content {
+            display: flex;
+            align-items: center;
         }
         
-        .status-pending {
-            color: #f39c12;
-            font-weight: 600;
+        .card-icon {
+            font-size: 2.5rem;
+            margin-right: 20px;
+            color: #3498db;
         }
         
-        .account-section {
-            margin-bottom: 40px;
+        .card-text h3 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.2rem;
+        }
+        
+        .card-text p {
+            margin: 5px 0 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .card-count {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
         }
         
         /* Responsive adjustments */
@@ -128,9 +188,8 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
                 width: calc(100% - 70px);
             }
             
-            .bookings-table {
-                display: block;
-                overflow-x: auto;
+            .dashboard-cards {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -139,9 +198,10 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     <!-- Sidebar Navigation -->
     <div class="sidebar">
         <div class="sidebar-header">
-        <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
+            <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
+            <li class="active"><a class="nav-link" href="staff_dashboard.php">DASHBOARD</a></li>
             <li><a class="nav-link" href="staff_booking.php">BOOKINGS</a></li>
             <li><a class="nav-link" href="staff_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="staff_packages.php">PACKAGES</a></li>
@@ -158,13 +218,92 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     <!-- Main Content Area -->
     <div class="main-content">
         <div class="page-header">
-            <h2>ACCOUNT MANAGEMENT</h2>
+            <h2>STAFF DASHBOARD</h2>
             <div class="user-info">
                 Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> <i class="bi bi-person-circle"></i>
             </div>
         </div>
         
-    
+        <!-- Dashboard Cards -->
+        <div class="dashboard-cards">
+            <a href="staff_booking.php" class="dashboard-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div class="card-text">
+                        <h3>Bookings</h3>
+                        <p>Pending approvals</p>
+                    </div>
+                </div>
+                <div class="card-count"><?php echo $bookingCount; ?></div>
+            </a>
+            
+            <a href="staff_packages.php" class="dashboard-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div class="card-text">
+                        <h3>Packages</h3>
+                        <p>Available/Rejected items</p>
+                    </div>
+                </div>
+                <div class="card-count"><?php echo $packageCount; ?></div>
+            </a>
+            
+            <a href="staff_vouchers.php" class="dashboard-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="bi bi-ticket-perforated"></i>
+                    </div>
+                    <div class="card-text">
+                        <h3>Vouchers</h3>
+                        <p>Approved/Declined batches</p>
+                    </div>
+                </div>
+                <div class="card-count"><?php echo $voucherCount; ?></div>
+            </a>
+            
+            <a href="staff_inventory.php" class="dashboard-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="bi bi-clipboard2-pulse"></i>
+                    </div>
+                    <div class="card-text">
+                        <h3>Inventory</h3>
+                        <p>Available/Rejected items</p>
+                    </div>
+                </div>
+                <div class="card-count"><?php echo $inventoryCount; ?></div>
+            </a>
+            
+            <a href="staff_feedbacks.php" class="dashboard-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="bi bi-chat-square-text"></i>
+                    </div>
+                    <div class="card-text">
+                        <h3>Feedback</h3>
+                        <p>Total feedback entries</p>
+                    </div>
+                </div>
+                <div class="card-count"><?php echo $feedbackCount; ?></div>
+            </a>
+            
+            <a href="staff_announcements.php" class="dashboard-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="bi bi-megaphone"></i>
+                    </div>
+                    <div class="card-text">
+                        <h3>Announcements</h3>
+                        <p>Total announcements</p>
+                    </div>
+                </div>
+                <div class="card-count"><?php echo $announcementCount; ?></div>
+            </a>
+        </div>
     </div>
 </body>
 </html>
