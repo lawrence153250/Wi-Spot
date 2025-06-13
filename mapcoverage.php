@@ -272,6 +272,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
+        /* If your navbar is fixed, you might need this */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1030; /* Bootstrap default z-index for fixed navbars */
+        }
+
         #map-container {
             height: 600px;
             width: 100%;
@@ -329,8 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+<body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
     <div class="nav-container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -367,9 +374,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </nav>
 
-<div class="container py-5">
-    <h1 class="mb-4">Network Coverage Visualization</h1>
-    <p class="lead mb-4">See the network coverage of all available routers and plan your perfect setup</p>
+<div class="container" style="padding-top: 80px;"> <div class="text-center">
+        <h1 class="mb-4">Network Coverage Visualization</h1>
+        <p class="lead mb-4">See the network coverage of all available routers and plan your perfect setup</p>
+    </div>
     
     <div class="row">
         <div class="col-md-4">
@@ -467,6 +475,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
   </div>
 </div>
+</body>
+</html>
 
 <!-- Google Maps API -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFx7Z_5qK__AetA_wIPEFEpuAhIxIsouI&libraries=drawing,geometry&callback=initMap" async defer></script>
