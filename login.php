@@ -91,6 +91,7 @@ require 'login_code.php'; // Includes the login logic
         </div>
     </div>
 </div>
+<!-- footer -->
 <div class="foot-container" id="grad">
     <div class="foot-icons">
         <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target="_blank"></a>
