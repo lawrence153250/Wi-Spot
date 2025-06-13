@@ -1,5 +1,25 @@
 <?php
+// Start the session
 session_start();
+
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 
 // Check if user is logged in and is staff
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
@@ -15,27 +35,56 @@ if ($conn->connect_error) {
 }
 
 // Handle verification status update
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_verification'])) {
-    $customerId = $conn->real_escape_string($_POST['customer_id']);
-    $verified = $conn->real_escape_string($_POST['verified_status']);
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_verification_status'])) {
+    $customerId = $_POST['customer_id'];
+    $newStatus = $_POST['verification_status'];
     
-    $sql = "UPDATE customer SET accountVerified = ? WHERE customerId = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("si", $verified, $customerId);
-    $stmt->execute();
+    $updateSql = "UPDATE customer SET accountVerification = ? WHERE customerId = ?";
+    $stmt = $conn->prepare($updateSql);
+    $stmt->bind_param("si", $newStatus, $customerId);
+    
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Verification status updated successfully!";
+    } else {
+        $_SESSION['error'] = "Error updating verification status: " . $stmt->error;
+    }
+    
     $stmt->close();
-    
-    // Redirect to prevent form resubmission
     header("Location: staff_accounts.php");
     exit();
 }
 
+// Handle search and sorting
+$search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'userName';
+$order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
+
+// Build the base query
+$sql = "SELECT customerId, email, firstName, lastName, contactNumber, address, birthday, 
+               userName, facebookProfile, validId, proofOfBilling, idNumber, accountVerification,
+               CASE WHEN validId IS NOT NULL AND proofOfBilling IS NOT NULL THEN 'ID Uploaded' ELSE 'ID not yet uploaded' END as idUploaded
+        FROM customer";
+
+// Add search condition if search term exists
+if (!empty($search)) {
+    $sql .= " WHERE userName LIKE '%$search%' OR email LIKE '%$search%' OR firstName LIKE '%$search%' OR lastName LIKE '%$search%'";
+}
+
+// Add sorting
+switch ($sort) {
+    case 'username':
+        $sql .= " ORDER BY userName $order";
+        break;
+    case 'verification':
+        $sql .= " ORDER BY accountVerification $order";
+        break;
+    default:
+        $sql .= " ORDER BY userName $order";
+        break;
+}
+
 // Fetch all customers with verification status
 $customers = [];
-$sql = "SELECT customerId, email, firstName, lastName, contactNumber, address, birthday, 
-               userName, facebookProfile, validId, proofOfBilling, 
-               CASE WHEN validId IS NOT NULL AND proofOfBilling IS NOT NULL THEN 'Verified' ELSE 'Not yet Verified' END as accountVerified
-        FROM customer";
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -147,6 +196,94 @@ $conn->close();
         .account-section {
             margin-bottom: 40px;
         }
+
+        /* Add new styles for the verification status box */
+        .verification-status-box {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+            min-width: 120px;
+            border: 1px solid transparent;
+            cursor: default; /* Remove pointer cursor since it's not clickable anymore */
+        }
+
+        /* Keep the existing color classes but apply them to the new box */
+        .id-uploaded {
+            background-color: #2ecc71;
+            color: white;
+            border-color: #27ae60;
+        }
+
+        .id-not-yet-uploaded {
+            background-color: #e74c3c;
+            color: white;
+            border-color: #c0392b;
+        }
+
+        /* If you want to add a subtle hover effect (optional) */
+        .verification-status-box:hover {
+            opacity: 0.9;
+        }
+        
+        /* View ID button styles */
+        .view-id-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .view-id-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        /* Status badge styles */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .bg-success {
+            background-color: #2ecc71 !important;
+            color: white;
+        }
+        
+        .bg-warning {
+            background-color: #f39c12 !important;
+            color: white;
+        }
+        
+        .bg-secondary {
+            background-color: #e74c3c !important;
+            color: white;
+        }
+        
+        .form-select-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            border-radius: 0.2rem;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            border-radius: 0.2rem;
+        }
+        
+        /* Sort Dropdown */
+        .sort-dropdown {
+            margin-bottom: 20px;
+        }
+        
+        /* Search Form */
+        .search-form {
+            margin-bottom: 20px;
+        }
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -176,9 +313,10 @@ $conn->close();
     <!-- Sidebar Navigation -->
     <div class="sidebar">
         <div class="sidebar-header">
-        <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
+            <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
+            <li><a class="nav-link" href="staff_dashboard.php">DASHBOARD</a></li>
             <li><a class="nav-link" href="staff_booking.php">BOOKINGS</a></li>
             <li class="active"><a class="nav-link" href="staff_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="staff_packages.php">PACKAGES</a></li>
@@ -201,6 +339,50 @@ $conn->close();
             </div>
         </div>
 
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+
+        <!-- Search and Sort Section -->
+        <div class="d-flex justify-content-between mb-3">
+
+        <!-- Sort Dropdown -->
+            <div class="dropdown sort-dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-sort-alpha-down"></i> Sort By
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                    <li><h6 class="dropdown-header">Sort Options</h6></li>
+                    <li><a class="dropdown-item" href="?sort=username&order=asc<?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>">Username (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="?sort=username&order=desc<?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>">Username (Z-A)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?sort=verification&order=asc<?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>">Verification Status (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="?sort=verification&order=desc<?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>">Verification Status (Z-A)</a></li>
+                </ul>
+            </div>
+
+            <!-- Search Form -->
+            <form class="search-form" method="GET" action="">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search" placeholder="Search by username, email, or name" value="<?php echo htmlspecialchars($search); ?>">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                    <?php if (!empty($search)): ?>
+                        <a href="staff_accounts.php" class="btn btn-outline-secondary">Clear</a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+
          <!-- Customer Accounts Section -->
          <div class="account-section">
             <h3>Customer Accounts</h3>
@@ -215,7 +397,11 @@ $conn->close();
                             <th>Address</th>
                             <th>Birthday</th>
                             <th>Facebook Profile</th>
-                            <th>Account Verified</th>
+                            <th>ID Verification</th>
+                            <th>Valid ID</th>
+                            <th>Proof of Billing</th>
+                            <th>Verification Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -247,9 +433,85 @@ $conn->close();
                                     <td>
                                         <form method="POST" class="verification-form">
                                             <input type="hidden" name="customer_id" value="<?php echo $customer['customerId']; ?>">
-                                            <input type="hidden" name="verified_status" value="<?php echo $customer['accountVerified'] == 'Verified' ? 'Not yet Verified' : 'Verified'; ?>">
-                                            <button type="submit" name="update_verification" class="verification-badge <?php echo strtolower(str_replace(' ', '-', $customer['accountVerified'])); ?>">
-                                                <?php echo htmlspecialchars($customer['accountVerified']); ?>
+                                            <input type="hidden" name="uploaded_status" value="<?php echo $customer['idUploaded'] == 'ID Uploaded' ? 'ID not yet Uploaded' : 'ID Uploaded'; ?>">
+                                            <div class="verification-status-box <?php echo strtolower(str_replace(' ', '-', $customer['idUploaded'])); ?>">
+                                                <?php echo htmlspecialchars($customer['idUploaded']); ?>
+                                            </div>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($customer['validId'])): ?>
+                                            <button type="button" class="view-id-btn" data-bs-toggle="modal" data-bs-target="#viewIdModal<?php echo $customer['customerId']; ?>">
+                                                View Valid ID
+                                            </button>
+                                            
+                                            <!-- View Valid ID Modal -->
+                                            <div class="modal fade" id="viewIdModal<?php echo $customer['customerId']; ?>" tabindex="-1" aria-labelledby="viewIdModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="viewIdModalLabel">Valid ID</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body text-center">
+                                                            <img src="data:image/jpeg;base64,<?php echo base64_encode($customer['validId']); ?>" alt="Valid ID" class="img-fluid mb-3" style="max-width: 100%;">
+                                                            <?php if (!empty($customer['idNumber'])): ?>
+                                                                <p><strong>ID Number:</strong> <?php echo htmlspecialchars($customer['idNumber']); ?></p>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            No ID Uploaded
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($customer['proofOfBilling'])): ?>
+                                            <button type="button" class="view-id-btn" data-bs-toggle="modal" data-bs-target="#viewBillingModal<?php echo $customer['customerId']; ?>">
+                                                View Proof of Billing
+                                            </button>
+                                            
+                                            <!-- View Proof of Billing Modal -->
+                                            <div class="modal fade" id="viewBillingModal<?php echo $customer['customerId']; ?>" tabindex="-1" aria-labelledby="viewBillingModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="viewBillingModalLabel">Proof of Billing</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body text-center">
+                                                            <img src="data:image/jpeg;base64,<?php echo base64_encode($customer['proofOfBilling']); ?>" alt="Proof of Billing" class="img-fluid mb-3" style="max-width: 100%;">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            No Proof Uploaded
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php 
+                                        $status = $customer['accountVerification'] ?? 'not verified';
+                                        $badgeClass = '';
+                                        if ($status == 'verified') $badgeClass = 'bg-success';
+                                        elseif ($status == 'pending') $badgeClass = 'bg-warning text-dark';
+                                        else $badgeClass = 'bg-secondary';
+                                        ?>
+                                        <span class="badge <?php echo $badgeClass; ?>">
+                                            <?php echo htmlspecialchars(ucfirst($status)); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <form method="POST" class="d-flex">
+                                            <input type="hidden" name="customer_id" value="<?php echo $customer['customerId']; ?>">
+                                            <select name="verification_status" class="form-select form-select-sm me-2">
+                                                <option value="verified" <?php echo ($status == 'verified') ? 'selected' : ''; ?>>Verified</option>
+                                                <option value="pending" <?php echo ($status == 'pending') ? 'selected' : ''; ?>>Pending</option>
+                                                <option value="not verified" <?php echo ($status == 'not verified') ? 'selected' : ''; ?>>Not Verified</option>
+                                            </select>
+                                            <button type="submit" name="update_verification_status" class="btn btn-sm btn-primary">
+                                                Update
                                             </button>
                                         </form>
                                     </td>
@@ -257,7 +519,7 @@ $conn->close();
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="10" class="text-center">No customer accounts found.</td>
+                                <td colspan="12" class="text-center">No customer accounts found.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

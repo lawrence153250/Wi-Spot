@@ -1,6 +1,25 @@
 <?php
+// Start the session
 session_start();
 
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 // Check if user is logged in and is staff
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     header("Location: login.php");
@@ -42,6 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Handle sorting
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'timestamp';
+$order = isset($_GET['order']) ? $_GET['order'] : 'DESC';
+
 // Fetch all bookings with customer information
 $sql = "SELECT 
             b.bookingId,
@@ -59,8 +82,24 @@ $sql = "SELECT
             c.contactNumber AS customer_contact
         FROM booking b
         JOIN package p ON b.packageId = p.packageId
-        JOIN customer c ON b.customerId = c.customerId
-        ORDER BY b.timestamp DESC";
+        JOIN customer c ON b.customerId = c.customerId";
+
+// Add sorting
+switch ($sort) {
+    case 'event_date':
+        $sql .= " ORDER BY b.dateOfBooking $order";
+        break;
+    case 'package':
+        $sql .= " ORDER BY p.packageName $order";
+        break;
+    case 'status':
+        $sql .= " ORDER BY b.bookingStatus $order";
+        break;
+    default:
+        $sql .= " ORDER BY b.timestamp $order";
+        break;
+}
+
 $result = $conn->query($sql);
 
 $bookings = [];
@@ -214,6 +253,12 @@ $conn->close();
             font-size: 0.875rem;
         }
         
+        /* Sort Dropdown Styles */
+        .sort-dropdown .dropdown-toggle {
+            background-color: #3498db;
+            border: none;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
@@ -290,12 +335,13 @@ $conn->close();
     </style>
 </head>
 <body>
-    <!-- Sidebar Navigation -->
+<!-- Sidebar Navigation -->
     <div class="sidebar">
         <div class="sidebar-header">
             <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
+            <li><a class="nav-link" href="staff_dashboard.php">DASHBOARD</a></li>
             <li class="active"><a class="nav-link" href="staff_booking.php">BOOKINGS</a></li>
             <li><a class="nav-link" href="staff_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="staff_packages.php">PACKAGES</a></li>
@@ -316,6 +362,27 @@ $conn->close();
             <div class="user-info">
                 Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> <i class="bi bi-person-circle"></i>
             </div>
+        </div>
+        
+        <!-- Sort Dropdown -->
+        <div class="dropdown sort-dropdown mb-3">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-sort-alpha-down"></i> Sort By
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                <li><h6 class="dropdown-header">Sort Options</h6></li>
+                <li><a class="dropdown-item" href="?sort=timestamp&order=desc">Newest First</a></li>
+                <li><a class="dropdown-item" href="?sort=timestamp&order=asc">Oldest First</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=event_date&order=asc">Event Date (Oldest First)</a></li>
+                <li><a class="dropdown-item" href="?sort=event_date&order=desc">Event Date (Newest First)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=package&order=asc">Package (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=package&order=desc">Package (Z-A)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=status&order=asc">Status (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=status&order=desc">Status (Z-A)</a></li>
+            </ul>
         </div>
         
         <div class="table-responsive">

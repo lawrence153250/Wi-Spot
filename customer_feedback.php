@@ -1,5 +1,25 @@
 <?php
+// Start the session
 session_start();
+
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 
 // Database connection
 $conn = new mysqli('localhost', 'root', '', 'capstonesample');

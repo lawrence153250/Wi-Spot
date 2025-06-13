@@ -1,6 +1,25 @@
 <?php
+// Start the session
 session_start();
 
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 // Check if user is logged in and is admin
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'admin') {
     header("Location: login.php");
@@ -72,22 +91,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch all voucher batches with staff names
-$query = $conn->prepare("SELECT vb.*, s.username AS staff_username 
-                         FROM voucher_batch vb
-                         LEFT JOIN staff s ON vb.staffId = s.staffId
-                         ORDER BY 
-                           CASE vb.approvalStatus 
-                             WHEN 'pending' THEN 1
-                             WHEN 'approved' THEN 2
-                             WHEN 'declined' THEN 3
-                             ELSE 4
-                           END,
-                         vb.createdAt DESC");
-$query->execute();
-$result = $query->get_result();
+// Handle sorting and searching
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'createdAt';
+$order = isset($_GET['order']) ? $_GET['order'] : 'DESC';
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+
+// Build the base query
+$query = "SELECT vb.*, s.username AS staff_username 
+          FROM voucher_batch vb
+          LEFT JOIN staff s ON vb.staffId = s.staffId";
+
+// Add search condition if search term exists
+if (!empty($search)) {
+    $query .= " WHERE vb.voucherName LIKE '%" . $conn->real_escape_string($search) . "%'";
+}
+
+// Add sorting
+switch ($sort) {
+    case 'name':
+        $query .= " ORDER BY vb.voucherName $order";
+        break;
+    case 'type':
+        $query .= " ORDER BY vb.voucherType $order";
+        break;
+    case 'status':
+        $query .= " ORDER BY vb.approvalStatus $order";
+        break;
+    default:
+        $query .= " ORDER BY 
+                   CASE vb.approvalStatus 
+                     WHEN 'pending' THEN 1
+                     WHEN 'approved' THEN 2
+                     WHEN 'declined' THEN 3
+                     ELSE 4
+                   END,
+                   vb.createdAt $order";
+        break;
+}
+
+// Execute the query
+$result = $conn->query($query);
 $voucherBatches = $result->fetch_all(MYSQLI_ASSOC);
-$query->close();
+$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -226,6 +271,24 @@ $query->close();
             font-weight: 600;
         }
         
+        /* Search and Sort Styles */
+        .search-sort-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .sort-dropdown .dropdown-toggle {
+            background-color: #3498db;
+            border: none;
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 5px;
+            flex-grow: 1;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
@@ -251,6 +314,10 @@ $query->close();
             .action-buttons {
                 flex-direction: column;
             }
+            
+            .search-sort-container {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -261,6 +328,7 @@ $query->close();
             <a class="navbar-brand" href="adminhome.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
+            <li><a class="nav-link" href="adminhome.php">DASHBOARD</a></li>
             <li><a class="nav-link" href="admin_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="admin_packages.php">PACKAGES</a></li>
             <li class="active"><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
@@ -299,7 +367,42 @@ $query->close();
             <?php unset($_SESSION['error_message']); ?>
         <?php endif; ?>
         
-       <!-- Vouchers Table -->
+        <!-- Search and Sort Controls -->
+        <div class="search-sort-container">
+            <!-- Sort Dropdown -->
+            <div class="dropdown sort-dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-sort-alpha-down"></i> Sort By
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                    <li><h6 class="dropdown-header">Sort Options</h6></li>
+                    <li><a class="dropdown-item" href="?sort=name&order=asc">Name (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="?sort=name&order=desc">Name (Z-A)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?sort=type&order=asc">Type (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="?sort=type&order=desc">Type (Z-A)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?sort=status&order=asc">Status (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="?sort=status&order=desc">Status (Z-A)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?sort=createdAt&order=desc">Newest First</a></li>
+                    <li><a class="dropdown-item" href="?sort=createdAt&order=asc">Oldest First</a></li>
+                </ul>
+            </div>
+            
+            <!-- Search Form -->
+            <form class="search-form" method="GET" action="">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search" placeholder="Search by voucher name" value="<?php echo htmlspecialchars($search); ?>">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                    <?php if (!empty($search)): ?>
+                        <a href="admin_vouchers.php" class="btn btn-outline-secondary">Clear</a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Vouchers Table -->
         <div class="table-responsive">
             <table class="bookings-table">
                 <thead>

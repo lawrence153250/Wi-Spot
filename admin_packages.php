@@ -1,6 +1,25 @@
 <?php
+// Start the session
 session_start();
 
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 // Check if user is logged in and is admin
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'admin') {
     header("Location: login.php");
@@ -53,7 +72,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     }
 }
 
-// Fetch all packages with creator and approver information
+// Handle sorting and searching
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'dateCreated';
+$order = isset($_GET['order']) ? $_GET['order'] : 'DESC';
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+
+// Build the base query
 $packagesQuery = "
     SELECT 
         p.*,
@@ -64,18 +88,43 @@ $packagesQuery = "
     LEFT JOIN staff s ON p.staffId = s.staffId
     LEFT JOIN admin a ON p.adminId = a.adminId
     LEFT JOIN inventory i ON FIND_IN_SET(i.itemId, p.equipmentsIncluded)
-    GROUP BY p.packageId
-    ORDER BY 
-        CASE p.status 
-            WHEN 'pending' THEN 1
-            WHEN 'available' THEN 2
-            WHEN 'in_use' THEN 3
-            WHEN 'maintenance' THEN 4
-            WHEN 'rejected' THEN 5
-            ELSE 6
-        END,
-        p.dateCreated DESC
 ";
+
+// Add search condition if search term exists
+if (!empty($search)) {
+    $packagesQuery .= " WHERE p.packageName LIKE '%" . $conn->real_escape_string($search) . "%'";
+}
+
+$packagesQuery .= " GROUP BY p.packageId";
+
+// Add sorting
+switch ($sort) {
+    case 'name':
+        $packagesQuery .= " ORDER BY p.packageName $order";
+        break;
+    case 'price':
+        $packagesQuery .= " ORDER BY p.price $order";
+        break;
+    case 'bandwidth':
+        $packagesQuery .= " ORDER BY p.expectedBandwidth $order";
+        break;
+    case 'status':
+        $packagesQuery .= " ORDER BY p.status $order";
+        break;
+    default:
+        $packagesQuery .= " ORDER BY 
+            CASE p.status 
+                WHEN 'pending' THEN 1
+                WHEN 'available' THEN 2
+                WHEN 'in_use' THEN 3
+                WHEN 'maintenance' THEN 4
+                WHEN 'rejected' THEN 5
+                ELSE 6
+            END,
+            p.dateCreated $order";
+        break;
+}
+
 $packages = $conn->query($packagesQuery);
 $conn->close();
 ?>
@@ -216,6 +265,24 @@ $conn->close();
             white-space: nowrap;
         }
         
+        /* Search and Sort Styles */
+        .search-sort-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .sort-dropdown .dropdown-toggle {
+            background-color: #3498db;
+            border: none;
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 5px;
+            flex-grow: 1;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
@@ -237,6 +304,10 @@ $conn->close();
                 display: block;
                 overflow-x: auto;
             }
+            
+            .search-sort-container {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -247,6 +318,7 @@ $conn->close();
             <a class="navbar-brand" href="adminhome.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
+            <li><a class="nav-link" href="adminhome.php">DASHBOARD</a></li>
             <li><a class="nav-link" href="admin_accounts.php">ACCOUNTS</a></li>
             <li class="active"><a class="nav-link" href="admin_packages.php">PACKAGES</a></li>
             <li><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
@@ -280,6 +352,41 @@ $conn->close();
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
+        
+        <!-- Search and Sort Controls -->
+        <div class="search-sort-container">
+            <!-- Sort Dropdown -->
+            <div class="dropdown sort-dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-sort-alpha-down"></i> Sort By
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                    <li><h6 class="dropdown-header">Sort Options</h6></li>
+                    <li><a class="dropdown-item" href="?sort=name&order=asc">Name (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="?sort=name&order=desc">Name (Z-A)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?sort=price&order=asc">Price (Low to High)</a></li>
+                    <li><a class="dropdown-item" href="?sort=price&order=desc">Price (High to Low)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?sort=bandwidth&order=asc">Bandwidth (Low to High)</a></li>
+                    <li><a class="dropdown-item" href="?sort=bandwidth&order=desc">Bandwidth (High to Low)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?sort=status&order=asc">Status (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="?sort=status&order=desc">Status (Z-A)</a></li>
+                </ul>
+            </div>
+            
+            <!-- Search Form -->
+            <form class="search-form" method="GET" action="">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search" placeholder="Search by package name" value="<?php echo htmlspecialchars($search); ?>">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                    <?php if (!empty($search)): ?>
+                        <a href="admin_packages.php" class="btn btn-outline-secondary">Clear</a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
         
         <!-- Packages Table -->
         <div class="table-responsive">

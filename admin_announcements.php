@@ -1,5 +1,25 @@
 <?php
+// Start the session
 session_start();
+
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 
 // Check if user is logged in and is admin
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'admin') {
@@ -12,6 +32,18 @@ $conn = new mysqli('localhost', 'root', '', 'capstonesample');
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
+// Function to delete expired announcements
+function deleteExpiredAnnouncements($conn) {
+    $currentDateTime = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare("DELETE FROM announcement WHERE endDate < ?");
+    $stmt->bind_param("s", $currentDateTime);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Delete expired announcements on page load
+deleteExpiredAnnouncements($conn);
 
 // Get admin ID from session username
 $username = $_SESSION['username'];
@@ -39,6 +71,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $startDate = $conn->real_escape_string($_POST['startDate']);
         $endDate = $conn->real_escape_string($_POST['endDate']);
 
+        // Validate end date is in the future
+        if (strtotime($endDate) < time()) {
+            header("Location: admin_announcements.php?error=" . urlencode("End date must be in the future"));
+            exit();
+        }
+
         $stmt = $conn->prepare("INSERT INTO announcement (adminId, title, category, description, isPriority, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("isssiss", $adminId, $title, $category, $description, $isPriority, $startDate, $endDate);
         
@@ -58,6 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isPriority = isset($_POST['isPriority']) ? 1 : 0;
         $startDate = $conn->real_escape_string($_POST['startDate']);
         $endDate = $conn->real_escape_string($_POST['endDate']);
+
+        // Validate end date is in the future
+        if (strtotime($endDate) < time()) {
+            header("Location: admin_announcements.php?error=" . urlencode("End date must be in the future"));
+            exit();
+        }
 
         $stmt = $conn->prepare("UPDATE announcement SET title=?, category=?, description=?, isPriority=?, startDate=?, endDate=? WHERE announcementId=?");
         $stmt->bind_param("sssissi", $title, $category, $description, $isPriority, $startDate, $endDate, $id);
@@ -85,12 +129,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 
-// Fetch all announcements with admin details
+// Fetch all active announcements (those not yet expired) with admin details
+$currentDateTime = date('Y-m-d H:i:s');
 $query = "SELECT a.*, ad.username AS admin_username 
           FROM announcement a 
           JOIN admin ad ON a.adminId = ad.adminId 
-          ORDER BY a.date DESC";
-$announcements = $conn->query($query);
+          WHERE a.endDate >= ?
+          ORDER BY a.isPriority DESC, a.date DESC";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("s", $currentDateTime);
+$stmt->execute();
+$announcements = $stmt->get_result();
+$stmt->close();
 $conn->close();
 ?>
 
@@ -258,6 +308,15 @@ $conn->close();
                 overflow-x: auto;
             }
         }
+        
+        /* Expiring soon warning */
+        .expiring-soon {
+            background-color: #fff3cd;
+        }
+        
+        .expired {
+            display: none; /* Expired announcements are now automatically deleted */
+        }
     </style>
 </head>
 <body>
@@ -267,6 +326,7 @@ $conn->close();
             <a class="navbar-brand" href="adminhome.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
+            <li><a class="nav-link" href="adminhome.php">DASHBOARD</a></li>
             <li><a class="nav-link" href="admin_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="admin_packages.php">PACKAGES</a></li>
             <li><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
@@ -300,13 +360,17 @@ $conn->close();
                     <th>Title</th>
                     <th>Category</th>
                     <th>Date</th>
+                    <th>End Date</th>
                     <th>Priority</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <?php while ($announcement = $announcements->fetch_assoc()): ?>
-                <tr>
+                <?php while ($announcement = $announcements->fetch_assoc()): 
+                    $endDate = strtotime($announcement['endDate']);
+                    $isExpiringSoon = ($endDate - time()) < (24 * 60 * 60); // Less than 24 hours remaining
+                ?>
+                <tr class="<?php echo $isExpiringSoon ? 'expiring-soon' : ''; ?>">
                     <td><?php echo htmlspecialchars($announcement['title']); ?></td>
                     <td>
                         <span class="category-badge category-<?php echo strtolower($announcement['category']); ?>">
@@ -314,6 +378,7 @@ $conn->close();
                         </span>
                     </td>
                     <td><?php echo date('M d, Y h:i A', strtotime($announcement['date'])); ?></td>
+                    <td><?php echo date('M d, Y h:i A', $endDate); ?></td>
                     <td>
                         <?php if ($announcement['isPriority']): ?>
                             <span class="priority-high"><i class="bi bi-exclamation-triangle-fill"></i> High</span>
@@ -437,11 +502,11 @@ $conn->close();
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="startDate" class="form-label">Start Date</label>
-                                    <input type="datetime-local" class="form-control" id="startDate" name="startDate">
+                                    <input type="datetime-local" class="form-control" id="startDate" name="startDate" min="<?php echo date('Y-m-d\TH:i'); ?>">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="endDate" class="form-label">End Date</label>
-                                    <input type="datetime-local" class="form-control" id="endDate" name="endDate">
+                                    <input type="datetime-local" class="form-control" id="endDate" name="endDate" min="<?php echo date('Y-m-d\TH:i', strtotime('+1 hour')); ?>">
                                 </div>
                             </div>
                         </div>
@@ -454,5 +519,43 @@ $conn->close();
             </div>
         </div>
     </div>
+    
+    <script>
+        // Client-side validation for end date
+        document.addEventListener('DOMContentLoaded', function() {
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            
+            if (startDateInput && endDateInput) {
+                startDateInput.addEventListener('change', function() {
+                    endDateInput.min = this.value;
+                });
+                
+                endDateInput.addEventListener('change', function() {
+                    if (new Date(this.value) < new Date(startDateInput.value)) {
+                        alert('End date must be after start date');
+                        this.value = '';
+                    }
+                });
+            }
+            
+            // Set default start date to now if not set
+            if (startDateInput && !startDateInput.value) {
+                const now = new Date();
+                const timezoneOffset = now.getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+                startDateInput.value = localISOTime;
+            }
+            
+            // Set default end date to 1 day from now if not set
+            if (endDateInput && !endDateInput.value) {
+                const now = new Date();
+                now.setDate(now.getDate() + 1);
+                const timezoneOffset = now.getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+                endDateInput.value = localISOTime;
+            }
+        });
+    </script>
 </body>
 </html>

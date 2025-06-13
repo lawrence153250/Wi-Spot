@@ -1,6 +1,25 @@
 <?php
+// Start the session
 session_start();
 
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 // Check if user is logged in and is admin
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'admin') {
     header("Location: login.php");
@@ -138,11 +157,12 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'admin') {
             <a class="navbar-brand" href="adminhome.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
+            <li><a class="nav-link" href="adminhome.php">DASHBOARD</a></li>
             <li><a class="nav-link" href="admin_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="admin_packages.php">PACKAGES</a></li>
             <li><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
             <li><a class="nav-link" href="admin_inventory.php">INVENTORY</a></li>
-            <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
+            <li class="active"><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
             <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>
             <li><a class="nav-link" href="admin_resetpass.php">RESET PASSWORD</a></li>

@@ -1,6 +1,25 @@
 <?php
+// Start the session
 session_start();
 
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 // Check if user is logged in and is staff
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     header("Location: login.php");
@@ -13,6 +32,10 @@ $conn = new mysqli('localhost', 'root', '', 'capstonesample');
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
+// Handle sorting
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'timestamp';
+$order = isset($_GET['order']) ? $_GET['order'] : 'DESC';
 
 // Process response submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
@@ -32,12 +55,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_response'])) {
 
 // Get all feedback with customer information
 $feedbackQuery = "
-    SELECT f.*, c.username, c.email, b.packageId 
+    SELECT f.*, c.username, c.email, b.packageId, p.packageName
     FROM feedback f
     JOIN customer c ON f.customerId = c.customerId
     JOIN booking b ON f.bookingId = b.bookingId
-    ORDER BY f.timestamp DESC
+    JOIN package p ON b.packageId = p.packageId
 ";
+
+// Add sorting
+switch ($sort) {
+    case 'package':
+        $feedbackQuery .= " ORDER BY p.packageName $order";
+        break;
+    case 'sentiment':
+        $feedbackQuery .= " ORDER BY f.sentiment $order";
+        break;
+    case 'status':
+        $feedbackQuery .= " ORDER BY f.responseStatus $order";
+        break;
+    default:
+        $feedbackQuery .= " ORDER BY f.timestamp $order";
+        break;
+}
+
 $feedbackResult = $conn->query($feedbackQuery);
 
 // Calculate average ratings
@@ -227,22 +267,28 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
             padding: 10px;
             margin-top: 10px;
         }
+        
+        /* Sort Dropdown */
+        .sort-dropdown {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <!-- Sidebar Navigation (Same as before) -->
-     <div class="sidebar">
+<!-- Sidebar Navigation -->
+    <div class="sidebar">
         <div class="sidebar-header">
             <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
-            <li class="active"><a class="nav-link" href="staff_booking.php">BOOKINGS</a></li>
+            <li><a class="nav-link" href="staff_dashboard.php">DASHBOARD</a></li>
+            <li><a class="nav-link" href="staff_booking.php">BOOKINGS</a></li>
             <li><a class="nav-link" href="staff_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="staff_packages.php">PACKAGES</a></li>
             <li><a class="nav-link" href="staff_vouchers.php">VOUCHERS</a></li>
             <li><a class="nav-link" href="staff_inventory.php">INVENTORY</a></li>
             <li><a class="nav-link" href="staff_reports.php">REPORTS</a></li>
-            <li><a class="nav-link" href="staff_feedbacks.php">FEEDBACKS</a></li>
+            <li class="active"><a class="nav-link" href="staff_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="staff_announcements.php">ANNOUNCEMENTS</a></li>
             <li><a class="nav-link" href="staff_resetpass.php">RESET PASSWORD</a></li>
             <li><span><a class="nav-link" href="logout.php">LOGOUT</a></span></li>
@@ -281,7 +327,9 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
             
             <div class="stats-card">
                 <h5>Feedback Sentiment</h5>
-                <?php while($sentiment = $sentimentCounts->fetch_assoc()): ?>
+                <?php 
+                $sentimentCounts->data_seek(0); // Reset pointer to beginning
+                while($sentiment = $sentimentCounts->fetch_assoc()): ?>
                     <div>
                         <?= htmlspecialchars($sentiment['sentiment']) ?>: 
                         <span class="sentiment-<?= strtolower($sentiment['sentiment']) ?>">
@@ -305,6 +353,27 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
             </div>
         </div>
         
+        <!-- Sort Dropdown -->
+        <div class="dropdown sort-dropdown mb-3">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-sort-alpha-down"></i> Sort By
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                <li><h6 class="dropdown-header">Sort Options</h6></li>
+                <li><a class="dropdown-item" href="?sort=timestamp&order=desc">Newest First</a></li>
+                <li><a class="dropdown-item" href="?sort=timestamp&order=asc">Oldest First</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=package&order=asc">Package (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=package&order=desc">Package (Z-A)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=sentiment&order=asc">Sentiment (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=sentiment&order=desc">Sentiment (Z-A)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=status&order=asc">Status (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=status&order=desc">Status (Z-A)</a></li>
+            </ul>
+        </div>
+
         <!-- Feedback Table -->
         <div class="table-responsive">
             <table class="feedback-table">
@@ -327,7 +396,7 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
                             <strong><?= htmlspecialchars($feedback['username']) ?></strong><br>
                             <small><?= htmlspecialchars($feedback['email']) ?></small>
                         </td>
-                        <td>Package #<?= $feedback['packageId'] ?></td>
+                        <td><?= htmlspecialchars($feedback['packageName']) ?></td>
                         <td>
                             <div>Speed: <span class="rating-<?= $feedback['internet_speed'] ?>"><?= $feedback['internet_speed'] ?></span></div>
                             <div>Reliability: <span class="rating-<?= $feedback['reliability'] ?>"><?= $feedback['reliability'] ?></span></div>

@@ -1,6 +1,25 @@
 <?php
+// Start the session
 session_start();
 
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 // Check if user is logged in and is admin
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'admin') {
     header("Location: login.php");
@@ -23,11 +42,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $updateStmt->bind_param("si", $displayStatus, $feedbackId);
     
     if ($updateStmt->execute()) {
-        $successMessage = "Display status updated successfully!";
+        $_SESSION['success_message'] = "Display status updated successfully!";
+        header("Location: admin_feedbacks.php");
+        exit();
     } else {
-        $error = "Failed to update status. Please try again.";
+        $_SESSION['error_message'] = "Failed to update status. Please try again.";
     }
 }
+
+// Handle sorting
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'timestamp';
+$order = isset($_GET['order']) ? $_GET['order'] : 'DESC';
 
 // Get all feedback with customer information
 $feedbackQuery = "
@@ -35,8 +60,24 @@ $feedbackQuery = "
     FROM feedback f
     JOIN customer c ON f.customerId = c.customerId
     JOIN booking b ON f.bookingId = b.bookingId
-    ORDER BY f.timestamp DESC
 ";
+
+// Add sorting
+switch ($sort) {
+    case 'package':
+        $feedbackQuery .= " ORDER BY b.packageId $order";
+        break;
+    case 'sentiment':
+        $feedbackQuery .= " ORDER BY f.sentiment $order";
+        break;
+    case 'status':
+        $feedbackQuery .= " ORDER BY f.displayStatus $order";
+        break;
+    default:
+        $feedbackQuery .= " ORDER BY f.timestamp $order";
+        break;
+}
+
 $feedbackResult = $conn->query($feedbackQuery);
 
 // Calculate average ratings
@@ -199,6 +240,12 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
         .status-hide { background-color: #e74c3c; color: white; }
         .status-pending { background-color: #f39c12; color: white; }
         
+        /* Sort Dropdown Styles */
+        .sort-dropdown .dropdown-toggle {
+            background-color: #3498db;
+            border: none;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
@@ -230,6 +277,7 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
             <a class="navbar-brand" href="adminhome.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
+            <li><a class="nav-link" href="adminhome.php">DASHBOARD</a></li>
             <li><a class="nav-link" href="admin_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="admin_packages.php">PACKAGES</a></li>
             <li><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
@@ -251,15 +299,23 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
             </div>
         </div>
         
-        <?php if(isset($successMessage)): ?>
-            <div class="alert alert-success"><?php echo $successMessage; ?></div>
+        <?php if(isset($_SESSION['success_message'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['success_message']; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <?php unset($_SESSION['success_message']); ?>
         <?php endif; ?>
         
-        <?php if(isset($error)): ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
+        <?php if(isset($_SESSION['error_message'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['error_message']; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <?php unset($_SESSION['error_message']); ?>
         <?php endif; ?>
         
-<!-- Feedback Statistics -->
+        <!-- Feedback Statistics -->
         <div class="stats-grid">
             <div class="stats-card">
                 <h5>Average Ratings</h5>
@@ -296,6 +352,27 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
                     <div><?= ucfirst($status['responseStatus']) ?>: <?= $status['count'] ?></div>
                 <?php endwhile; ?>
             </div>
+        </div>
+        
+                <!-- Sort Dropdown -->
+        <div class="dropdown sort-dropdown mb-3">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-sort-alpha-down"></i> Sort By
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                <li><h6 class="dropdown-header">Sort Options</h6></li>
+                <li><a class="dropdown-item" href="?sort=timestamp&order=desc">Newest First</a></li>
+                <li><a class="dropdown-item" href="?sort=timestamp&order=asc">Oldest First</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=package&order=asc">Package (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=package&order=desc">Package (Z-A)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=sentiment&order=asc">Sentiment (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=sentiment&order=desc">Sentiment (Z-A)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=status&order=asc">Display Status (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=status&order=desc">Display Status (Z-A)</a></li>
+            </ul>
         </div>
         
         <!-- Feedback Table -->

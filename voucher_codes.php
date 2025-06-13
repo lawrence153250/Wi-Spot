@@ -1,5 +1,25 @@
 <?php
+// Start the session
 session_start();
+
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900; 
+
+// Check if timeout variable is set
+if (isset($_SESSION['timeout'])) {
+    // Calculate the session's lifetime
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        // Logout and redirect to login page
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+// Update timeout with current time
+$_SESSION['timeout'] = time();
 
 // Database connection
 $conn = new mysqli('localhost', 'root', '', 'capstonesample');
@@ -230,6 +250,7 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
         <ul class="sidebar-menu">
             <?php if ($isAdmin): ?>
                 <!-- Admin Sidebar -->
+                <li><a class="nav-link" href="adminhome.php">DASHBOARD</a></li>
                 <li><a class="nav-link" href="admin_accounts.php">ACCOUNTS</a></li>
                 <li><a class="nav-link" href="admin_packages.php">PACKAGES</a></li>
                 <li class="active"><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
@@ -237,8 +258,10 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
                 <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
                 <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
                 <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>
+                <li><a class="nav-link" href="admin_resetpass.php">RESET PASSWORD</a></li>
             <?php else: ?>
                 <!-- Staff Sidebar -->
+                <li><a class="nav-link" href="staff_dashboard.php">DASHBOARD</a></li>
                 <li><a class="nav-link" href="staff_booking.php">BOOKINGS</a></li>
                 <li><a class="nav-link" href="staff_accounts.php">ACCOUNTS</a></li>
                 <li><a class="nav-link" href="staff_packages.php">PACKAGES</a></li>
@@ -247,6 +270,7 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
                 <li><a class="nav-link" href="staff_reports.php">REPORTS</a></li>
                 <li><a class="nav-link" href="staff_feedbacks.php">FEEDBACKS</a></li>
                 <li><a class="nav-link" href="staff_announcements.php">ANNOUNCEMENTS</a></li>
+                <li><a class="nav-link" href="staff_resetpass.php">RESET PASSWORD</a></li>
             <?php endif; ?>
             <li><span><a class="nav-link" href="logout.php">LOGOUT</a></span></li>
         </ul>
