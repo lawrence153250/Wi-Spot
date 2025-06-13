@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="registerstyle.css">
 </head>
-<body>
+<body style="background-color: #f0f3fa;">
 <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
     <div class="nav-container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
