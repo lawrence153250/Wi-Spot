@@ -345,7 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a class="nav-link" href="booking.php">BOOKING</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="mapcoverage.php">MAP COVERAGE</a>
+                    <a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="aboutus.php">ABOUT US</a>
