@@ -107,7 +107,7 @@ $conn->close();
         }
         
         .sidebar-menu li.active {
-            background-color: #3498db;
+            background-color:rgb(255, 255, 255);
         }
         
         /* Main Content Styles */
