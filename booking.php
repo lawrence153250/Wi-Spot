@@ -168,7 +168,7 @@ $conn->close();
         </div>
 
         <h4>To help you choose a package, please visit <a href="mapcoverage.php">Map Coverage</a> to visualize the signal strength of each package in your event's location</h4>
-        <h4>Or if you want to choose devices or make a package yourself, please try our <a href="">Booking Cutomization</a></h4>
+        <h4>Or if you want to choose devices or make a package yourself, please try our <a href="booking_customization.php">Booking Cutomization</a></h4>
         <div class="form-group">
             <label>Choose a Package:</label>
             <div class="package-selection">

@@ -1,0 +1,439 @@
+<?php
+// Define bandwidth requirements for different websites/services (in Mbps) asdfasddfadsfasdfADSF
+$bandwidthRequirements = [
+    // Social Media
+    'facebook' => 1,
+    'twitter' => 1,
+    'instagram' => 2,
+    'linkedin' => 1,
+    
+    // Video Platforms
+    'netflix' => [
+        'sd' => 3,
+        'hd' => 5,
+        'uhd' => 25
+    ],
+    'youtube' => [
+        'sd' => 1.5,
+        'hd' => 2.5,
+        'full_hd' => 5,
+        'ultra_hd' => 20
+    ],
+    'tiktok' => 2.5,
+    
+    // Live Streaming (Watching)
+    'twitch_watching' => [
+        'low' => 3,
+        'medium' => 4.5,
+        'high' => 6,
+        'source' => 8
+    ],
+    'youtube_live_watching' => [
+        'sd' => 1.5,
+        'hd' => 2.5,
+        'full_hd' => 5,
+        'ultra_hd' => 20
+    ],
+    'facebook_live_watching' => [
+        'sd' => 1.5,
+        'hd' => 3,
+        'full_hd' => 6
+    ],
+    
+    // Live Streaming (Broadcasting)
+    'twitch_broadcasting' => [
+        '720p' => 4.5,
+        '1080p' => 6,
+        '1440p' => 8,
+        '4k' => 15
+    ],
+    'youtube_live_broadcasting' => [
+        '720p' => 4.5,
+        '1080p' => 6,
+        '1440p' => 8,
+        '4k' => 15
+    ],
+    'facebook_live_broadcasting' => [
+        '720p' => 4,
+        '1080p' => 6,
+        '4k' => 12
+    ],
+    'tiktok_live_broadcasting' => [
+        'standard' => 3,
+        'hd' => 5
+    ],
+    
+    // Video Conferencing
+    'zoom' => [
+        'hd' => 2.5,
+        'full_hd' => 3.5,
+        'group' => 5
+    ],
+    'teams' => [
+        'hd' => 2,
+        'full_hd' => 3,
+        'group' => 4
+    ],
+    'google_meet' => [
+        'hd' => 2.5,
+        'full_hd' => 3.5
+    ],
+    
+    // Other Services
+    'spotify' => 0.5,
+    'gaming' => [
+        'casual' => 3,
+        'competitive' => 5,
+        'streaming' => 8
+    ],
+    'downloads' => [
+        'small' => 5,
+        'medium' => 10,
+        'large' => 20,
+        'frequent' => 30
+    ],
+    'cloud_storage' => 5,
+    'vpn' => 2
+];
+
+// Initialize variables
+$selectedServices = [];
+$requiredBandwidth = 0;
+$qualityLevels = [];
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $selectedServices = $_POST['services'] ?? [];
+    $qualityLevels = $_POST['quality'] ?? [];
+    
+    // Calculate required bandwidth
+    foreach ($selectedServices as $service) {
+        if (isset($bandwidthRequirements[$service])) {
+            if (is_array($bandwidthRequirements[$service])) {
+                // Service has quality levels
+                $quality = $qualityLevels[$service] ?? array_key_first($bandwidthRequirements[$service]);
+                $requiredBandwidth += $bandwidthRequirements[$service][$quality];
+            } else {
+                // Single bandwidth value
+                $requiredBandwidth += $bandwidthRequirements[$service];
+            }
+        }
+    }
+    
+    // Add buffer (25%) for multiple simultaneous usage
+    $requiredBandwidth *= 1.25;
+    
+    // Round up to nearest 5 Mbps for recommendation
+    $recommendedBandwidth = ceil($requiredBandwidth / 5) * 5;
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Internet Bandwidth Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        .calculator {
+            background: #f5f7fa;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .service-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .service-group h3 {
+            color: #3498db;
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .service-option {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .quality-select {
+            margin-left: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+        }
+        .result h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: block;
+            margin: 25px auto 0;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .bandwidth-value {
+            font-size: 24px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .recommendation {
+            background: #eaf7ea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 5px solid #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>Advanced Internet Bandwidth Calculator</h1>
+        <p>Select the websites/services you plan to use to estimate the required bandwidth, including live streaming options.</p>
+        
+        <form method="post">
+            <!-- Social Media -->
+            <div class="service-group">
+                <h3>Social Media</h3>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="facebook" <?= in_array('facebook', $selectedServices) ? 'checked' : '' ?>> Facebook</label>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="twitter" <?= in_array('twitter', $selectedServices) ? 'checked' : '' ?>> Twitter</label>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="instagram" <?= in_array('instagram', $selectedServices) ? 'checked' : '' ?>> Instagram</label>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="linkedin" <?= in_array('linkedin', $selectedServices) ? 'checked' : '' ?>> LinkedIn</label>
+                </div>
+            </div>
+            
+            <!-- Video Streaming -->
+            <div class="service-group">
+                <h3>Video Streaming</h3>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="netflix" <?= in_array('netflix', $selectedServices) ? 'checked' : '' ?>> Netflix</label>
+                    <select name="quality[netflix]" class="quality-select">
+                        <option value="sd" <?= ($qualityLevels['netflix'] ?? '') === 'sd' ? 'selected' : '' ?>>SD (3 Mbps)</option>
+                        <option value="hd" <?= ($qualityLevels['netflix'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (5 Mbps)</option>
+                        <option value="uhd" <?= ($qualityLevels['netflix'] ?? '') === 'uhd' ? 'selected' : '' ?>>Ultra HD (25 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="youtube" <?= in_array('youtube', $selectedServices) ? 'checked' : '' ?>> YouTube</label>
+                    <select name="quality[youtube]" class="quality-select">
+                        <option value="sd" <?= ($qualityLevels['youtube'] ?? '') === 'sd' ? 'selected' : '' ?>>SD (1.5 Mbps)</option>
+                        <option value="hd" <?= ($qualityLevels['youtube'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2.5 Mbps)</option>
+                        <option value="full_hd" <?= ($qualityLevels['youtube'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (5 Mbps)</option>
+                        <option value="ultra_hd" <?= ($qualityLevels['youtube'] ?? '') === 'ultra_hd' ? 'selected' : '' ?>>Ultra HD (20 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="tiktok" <?= in_array('tiktok', $selectedServices) ? 'checked' : '' ?>> TikTok</label>
+                </div>
+            </div>
+            
+            <!-- Live Streaming (Watching) -->
+            <div class="service-group">
+                <h3>Watching Live Streams</h3>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="twitch_watching" <?= in_array('twitch_watching', $selectedServices) ? 'checked' : '' ?>> Twitch</label>
+                    <select name="quality[twitch_watching]" class="quality-select">
+                        <option value="low" <?= ($qualityLevels['twitch_watching'] ?? '') === 'low' ? 'selected' : '' ?>>Low (3 Mbps)</option>
+                        <option value="medium" <?= ($qualityLevels['twitch_watching'] ?? '') === 'medium' ? 'selected' : '' ?>>Medium (4.5 Mbps)</option>
+                        <option value="high" <?= ($qualityLevels['twitch_watching'] ?? '') === 'high' ? 'selected' : '' ?>>High (6 Mbps)</option>
+                        <option value="source" <?= ($qualityLevels['twitch_watching'] ?? '') === 'source' ? 'selected' : '' ?>>Source (8 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="youtube_live_watching" <?= in_array('youtube_live_watching', $selectedServices) ? 'checked' : '' ?>> YouTube Live</label>
+                    <select name="quality[youtube_live_watching]" class="quality-select">
+                        <option value="sd" <?= ($qualityLevels['youtube_live_watching'] ?? '') === 'sd' ? 'selected' : '' ?>>SD (1.5 Mbps)</option>
+                        <option value="hd" <?= ($qualityLevels['youtube_live_watching'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2.5 Mbps)</option>
+                        <option value="full_hd" <?= ($qualityLevels['youtube_live_watching'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (5 Mbps)</option>
+                        <option value="ultra_hd" <?= ($qualityLevels['youtube_live_watching'] ?? '') === 'ultra_hd' ? 'selected' : '' ?>>Ultra HD (20 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="facebook_live_watching" <?= in_array('facebook_live_watching', $selectedServices) ? 'checked' : '' ?>> Facebook Live</label>
+                    <select name="quality[facebook_live_watching]" class="quality-select">
+                        <option value="sd" <?= ($qualityLevels['facebook_live_watching'] ?? '') === 'sd' ? 'selected' : '' ?>>SD (1.5 Mbps)</option>
+                        <option value="hd" <?= ($qualityLevels['facebook_live_watching'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (3 Mbps)</option>
+                        <option value="full_hd" <?= ($qualityLevels['facebook_live_watching'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (6 Mbps)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Live Streaming (Broadcasting) -->
+            <div class="service-group">
+                <h3>Broadcasting Live Streams</h3>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="twitch_broadcasting" <?= in_array('twitch_broadcasting', $selectedServices) ? 'checked' : '' ?>> Twitch Streaming</label>
+                    <select name="quality[twitch_broadcasting]" class="quality-select">
+                        <option value="720p" <?= ($qualityLevels['twitch_broadcasting'] ?? '') === '720p' ? 'selected' : '' ?>>720p (4.5 Mbps)</option>
+                        <option value="1080p" <?= ($qualityLevels['twitch_broadcasting'] ?? '') === '1080p' ? 'selected' : '' ?>>1080p (6 Mbps)</option>
+                        <option value="1440p" <?= ($qualityLevels['twitch_broadcasting'] ?? '') === '1440p' ? 'selected' : '' ?>>1440p (8 Mbps)</option>
+                        <option value="4k" <?= ($qualityLevels['twitch_broadcasting'] ?? '') === '4k' ? 'selected' : '' ?>>4K (15 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="youtube_live_broadcasting" <?= in_array('youtube_live_broadcasting', $selectedServices) ? 'checked' : '' ?>> YouTube Live Streaming</label>
+                    <select name="quality[youtube_live_broadcasting]" class="quality-select">
+                        <option value="720p" <?= ($qualityLevels['youtube_live_broadcasting'] ?? '') === '720p' ? 'selected' : '' ?>>720p (4.5 Mbps)</option>
+                        <option value="1080p" <?= ($qualityLevels['youtube_live_broadcasting'] ?? '') === '1080p' ? 'selected' : '' ?>>1080p (6 Mbps)</option>
+                        <option value="1440p" <?= ($qualityLevels['youtube_live_broadcasting'] ?? '') === '1440p' ? 'selected' : '' ?>>1440p (8 Mbps)</option>
+                        <option value="4k" <?= ($qualityLevels['youtube_live_broadcasting'] ?? '') === '4k' ? 'selected' : '' ?>>4K (15 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="facebook_live_broadcasting" <?= in_array('facebook_live_broadcasting', $selectedServices) ? 'checked' : '' ?>> Facebook Live Streaming</label>
+                    <select name="quality[facebook_live_broadcasting]" class="quality-select">
+                        <option value="720p" <?= ($qualityLevels['facebook_live_broadcasting'] ?? '') === '720p' ? 'selected' : '' ?>>720p (4 Mbps)</option>
+                        <option value="1080p" <?= ($qualityLevels['facebook_live_broadcasting'] ?? '') === '1080p' ? 'selected' : '' ?>>1080p (6 Mbps)</option>
+                        <option value="4k" <?= ($qualityLevels['facebook_live_broadcasting'] ?? '') === '4k' ? 'selected' : '' ?>>4K (12 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="tiktok_live_broadcasting" <?= in_array('tiktok_live_broadcasting', $selectedServices) ? 'checked' : '' ?>> TikTok Live Streaming</label>
+                    <select name="quality[tiktok_live_broadcasting]" class="quality-select">
+                        <option value="standard" <?= ($qualityLevels['tiktok_live_broadcasting'] ?? '') === 'standard' ? 'selected' : '' ?>>Standard (3 Mbps)</option>
+                        <option value="hd" <?= ($qualityLevels['tiktok_live_broadcasting'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (5 Mbps)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Video Conferencing -->
+            <div class="service-group">
+                <h3>Video Conferencing</h3>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="zoom" <?= in_array('zoom', $selectedServices) ? 'checked' : '' ?>> Zoom</label>
+                    <select name="quality[zoom]" class="quality-select">
+                        <option value="hd" <?= ($qualityLevels['zoom'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2.5 Mbps)</option>
+                        <option value="full_hd" <?= ($qualityLevels['zoom'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (3.5 Mbps)</option>
+                        <option value="group" <?= ($qualityLevels['zoom'] ?? '') === 'group' ? 'selected' : '' ?>>Group Call (5 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="teams" <?= in_array('teams', $selectedServices) ? 'checked' : '' ?>> Microsoft Teams</label>
+                    <select name="quality[teams]" class="quality-select">
+                        <option value="hd" <?= ($qualityLevels['teams'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2 Mbps)</option>
+                        <option value="full_hd" <?= ($qualityLevels['teams'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (3 Mbps)</option>
+                        <option value="group" <?= ($qualityLevels['teams'] ?? '') === 'group' ? 'selected' : '' ?>>Group Call (4 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="google_meet" <?= in_array('google_meet', $selectedServices) ? 'checked' : '' ?>> Google Meet</label>
+                    <select name="quality[google_meet]" class="quality-select">
+                        <option value="hd" <?= ($qualityLevels['google_meet'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2.5 Mbps)</option>
+                        <option value="full_hd" <?= ($qualityLevels['google_meet'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (3.5 Mbps)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Other Services -->
+            <div class="service-group">
+                <h3>Other Services</h3>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="spotify" <?= in_array('spotify', $selectedServices) ? 'checked' : '' ?>> Spotify/Music Streaming</label>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="gaming" <?= in_array('gaming', $selectedServices) ? 'checked' : '' ?>> Online Gaming</label>
+                    <select name="quality[gaming]" class="quality-select">
+                        <option value="casual" <?= ($qualityLevels['gaming'] ?? '') === 'casual' ? 'selected' : '' ?>>Casual (3 Mbps)</option>
+                        <option value="competitive" <?= ($qualityLevels['gaming'] ?? '') === 'competitive' ? 'selected' : '' ?>>Competitive (5 Mbps)</option>
+                        <option value="streaming" <?= ($qualityLevels['gaming'] ?? '') === 'streaming' ? 'selected' : '' ?>>Streaming (8 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="downloads" <?= in_array('downloads', $selectedServices) ? 'checked' : '' ?>> Large File Downloads</label>
+                    <select name="quality[downloads]" class="quality-select">
+                        <option value="small" <?= ($qualityLevels['downloads'] ?? '') === 'small' ? 'selected' : '' ?>>Occasional (5 Mbps)</option>
+                        <option value="medium" <?= ($qualityLevels['downloads'] ?? '') === 'medium' ? 'selected' : '' ?>>Regular (10 Mbps)</option>
+                        <option value="large" <?= ($qualityLevels['downloads'] ?? '') === 'large' ? 'selected' : '' ?>>Frequent (20 Mbps)</option>
+                        <option value="frequent" <?= ($qualityLevels['downloads'] ?? '') === 'frequent' ? 'selected' : '' ?>>Heavy (30 Mbps)</option>
+                    </select>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="cloud_storage" <?= in_array('cloud_storage', $selectedServices) ? 'checked' : '' ?>> Cloud Storage (Google Drive, Dropbox)</label>
+                </div>
+                <div class="service-option">
+                    <label><input type="checkbox" name="services[]" value="vpn" <?= in_array('vpn', $selectedServices) ? 'checked' : '' ?>> VPN Usage</label>
+                </div>
+            </div>
+            
+            <button type="submit">Calculate Required Bandwidth</button>
+        </form>
+        
+        <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+            <div class="result">
+                <h3>Bandwidth Calculation Results</h3>
+                <p>Based on your selected services and quality preferences:</p>
+                <p>Estimated bandwidth needed: <span class="bandwidth-value"><?= round($requiredBandwidth, 1) ?> Mbps</span></p>
+                
+                <div class="recommendation">
+                    <p>Recommended internet plan: <strong><?= getRecommendedPlan($recommendedBandwidth) ?></strong></p>
+                    <p>For optimal performance, especially when using multiple services simultaneously, 
+                    we recommend a plan with at least <strong><?= $recommendedBandwidth ?> Mbps</strong> download speed.</p>
+                    
+                    <?php if ($requiredBandwidth > 50): ?>
+                        <p><strong>Note:</strong> For heavy usage like 4K streaming and live broadcasting, 
+                        consider a business-grade connection for more consistent speeds.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
+
+<?php
+// Helper function to recommend an internet plan
+function getRecommendedPlan($bandwidth) {
+    if ($bandwidth <= 15) {
+        return "Basic Plan (15 Mbps) - Suitable for light browsing and SD video";
+    } elseif ($bandwidth <= 30) {
+        return "Standard Plan (30 Mbps) - Good for HD video and moderate use";
+    } elseif ($bandwidth <= 100) {
+        return "Premium Plan (100 Mbps) - Excellent for 4K streaming and multiple devices";
+    } elseif ($bandwidth <= 300) {
+        return "Ultra Plan (300 Mbps) - Ideal for heavy streaming, gaming, and live broadcasting";
+    } else {
+        return "Gigabit Plan (1000 Mbps) - Best for professional streaming and large households";
+    }
+}
+?>

@@ -1,12 +1,52 @@
 <?php
 session_start();
 
-// Check if user is logged in and is admin
+// Check if user is logged in and is staff
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     header("Location: login.php");
     exit();
 }
 
+// Database connection
+$conn = new mysqli('localhost', 'root', '', 'capstonesample');
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Reset password function
+$message = '';
+$messageType = '';
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
+    $current_password = htmlspecialchars($_POST['current_password']);
+    $new_password = htmlspecialchars($_POST['new_password']);
+    $confirm_new_password = htmlspecialchars($_POST['confirm_new_password']);
+    $username = $_SESSION['username'];
+
+    $sql = "SELECT * FROM staff WHERE username = '$username'";
+    $result = $conn->query($sql);
+    $user = $result->fetch_assoc();
+
+    if (password_verify($current_password, $user['password'])) {
+        if ($new_password === $confirm_new_password) {
+            $hashed_new_password = password_hash($new_password, PASSWORD_DEFAULT);
+
+            $sql = "UPDATE staff SET password = '$hashed_new_password' WHERE username = '$username'";
+            if ($conn->query($sql) === TRUE) {
+                $message = "Password has been reset successfully!";
+                $messageType = "success";
+            } else {
+                $message = "Error updating password: " . $conn->error;
+                $messageType = "error";
+            }
+        } else {
+            $message = "New password and Confirm new password do not match!";
+            $messageType = "error";
+        }
+    } else {
+        $message = "Current password is incorrect!";
+        $messageType = "error";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -139,7 +179,7 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     <!-- Sidebar Navigation -->
     <div class="sidebar">
         <div class="sidebar-header">
-        <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
+            <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
             <li><a class="nav-link" href="staff_booking.php">BOOKINGS</a></li>
@@ -155,7 +195,7 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
         </ul>
     </div>
     
-    <!-- Main Content Area -->
+      <!-- Main Content Area -->
     <div class="main-content">
         <div class="page-header">
             <h2>ACCOUNT MANAGEMENT</h2>
@@ -164,7 +204,37 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
             </div>
         </div>
         
-    
+        <!-- Password Reset Section -->
+        <div class="password-reset-section">
+            <h3>Reset Password</h3>
+            
+            <?php if ($message): ?>
+                <div class="alert alert-<?php echo $messageType === 'success' ? 'success' : 'danger'; ?>">
+                    <?php echo $message; ?>
+                </div>
+            <?php endif; ?>
+            
+            <form method="POST" action="">
+                <div class="form-group">
+                    <label for="current_password">Current Password:</label>
+                    <input type="password" id="current_password" name="current_password" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new_password">New Password:</label>
+                    <input type="password" id="new_password" name="new_password" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_new_password">Confirm New Password:</label>
+                    <input type="password" id="confirm_new_password" name="confirm_new_password" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" name="reset" class="btn btn-primary">Reset Password</button>
+                </div>
+            </form>
+        </div>
     </div>
 </body>
 </html>

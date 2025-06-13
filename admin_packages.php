@@ -28,61 +28,58 @@ $adminData = $adminResult->fetch_assoc();
 $adminId = $adminData['adminId'];
 $adminQuery->close();
 
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['create'])) {
-        // Create new announcement
-        $title = $_POST['title'];
-        $category = $_POST['category'];
-        $description = $_POST['description'];
-        $isPriority = isset($_POST['isPriority']) ? 1 : 0;
-        $startDate = $_POST['startDate'];
-        $endDate = $_POST['endDate'];
-
-        $stmt = $conn->prepare("INSERT INTO announcement (adminId, title, category, description, isPriority, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("isssiss", $adminId, $title, $category, $description, $isPriority, $startDate, $endDate);
-        $stmt->execute();
-        $stmt->close();
-        
-        // Refresh to show new announcement
-        header("Location: admin_announcements.php");
+// Handle package status updates
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
+    $packageId = (int)$_POST['package_id'];
+    $newStatus = $conn->real_escape_string($_POST['new_status']);
+    
+    // Validate status
+    $validStatuses = ['available', 'in_use', 'maintenance', 'rejected'];
+    if (!in_array($newStatus, $validStatuses)) {
+        die("Invalid status value");
+    }
+    
+    // Update package status
+    $updateQuery = "UPDATE package SET status = ?, approvalDate = NOW(), adminId = ? WHERE packageId = ?";
+    $stmt = $conn->prepare($updateQuery);
+    $stmt->bind_param("sii", $newStatus, $adminId, $packageId);
+    
+    if ($stmt->execute()) {
+        header("Location: admin_packages.php?success=updated");
         exit();
-    } elseif (isset($_POST['update'])) {
-        // Update existing announcement
-        $id = $_POST['id'];
-        $title = $_POST['title'];
-        $category = $_POST['category'];
-        $description = $_POST['description'];
-        $isPriority = isset($_POST['isPriority']) ? 1 : 0;
-        $startDate = $_POST['startDate'];
-        $endDate = $_POST['endDate'];
-
-        $stmt = $conn->prepare("UPDATE announcement SET title=?, category=?, description=?, isPriority=?, startDate=?, endDate=? WHERE announcementId=?");
-        $stmt->bind_param("sssissi", $title, $category, $description, $isPriority, $startDate, $endDate, $id);
-        $stmt->execute();
-        $stmt->close();
-        
-        // Refresh to show updated announcement
-        header("Location: admin_announcements.php");
+    } else {
+        header("Location: admin_packages.php?error=" . urlencode($conn->error));
         exit();
     }
-} elseif (isset($_GET['delete'])) {
-    // Delete announcement
-    $id = $_GET['delete'];
-    $stmt = $conn->prepare("DELETE FROM announcement WHERE announcementId=?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
-    
-    // Refresh after deletion
-    header("Location: admin_announcements.php");
-    exit();
 }
 
-// Fetch all announcements
-$announcements = $conn->query("SELECT * FROM announcement ORDER BY date DESC");
+// Fetch all packages with creator and approver information
+$packagesQuery = "
+    SELECT 
+        p.*,
+        s.username AS staff_username,
+        a.username AS admin_username,
+        GROUP_CONCAT(i.itemName SEPARATOR ', ') AS equipmentNames
+    FROM package p
+    LEFT JOIN staff s ON p.staffId = s.staffId
+    LEFT JOIN admin a ON p.adminId = a.adminId
+    LEFT JOIN inventory i ON FIND_IN_SET(i.itemId, p.equipmentsIncluded)
+    GROUP BY p.packageId
+    ORDER BY 
+        CASE p.status 
+            WHEN 'pending' THEN 1
+            WHEN 'available' THEN 2
+            WHEN 'in_use' THEN 3
+            WHEN 'maintenance' THEN 4
+            WHEN 'rejected' THEN 5
+            ELSE 6
+        END,
+        p.dateCreated DESC
+";
+$packages = $conn->query($packagesQuery);
 $conn->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -94,8 +91,8 @@ $conn->close();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-          /* Sidebar Styles */
-          .sidebar {
+        /* Sidebar Styles */
+        .sidebar {
             width: 250px;
             background-color: #2c3e50;
             color: white;
@@ -176,14 +173,6 @@ $conn->close();
             background-color: #f9f9f9;
         }
         
-        .status-pending {
-            color: #f39c12;
-            font-weight: 600;
-        }
-        
-        .account-section {
-            margin-bottom: 40px;
-        }
         .status-badge {
             padding: 5px 10px;
             border-radius: 20px;
@@ -196,7 +185,7 @@ $conn->close();
             color: #856404;
         }
         
-       .status-available {
+        .status-available {
             background-color: #D4EDDA;
             color: #155724;
         }
@@ -211,22 +200,22 @@ $conn->close();
             color: #383D41;
         }
         
-        .status-in_use{
-            background-color: #E2E3E5;
-            color:rgb(173, 65, 18);
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 5px;
+        .status-in_use {
+            background-color: #CCE5FF;
+            color: #004085;
         }
         
         .equipment-list {
-            max-width: 250px;
+            max-width: 200px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        
+        .action-buttons {
+            white-space: nowrap;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
@@ -249,7 +238,6 @@ $conn->close();
                 overflow-x: auto;
             }
         }
-        
     </style>
 </head>
 <body>
@@ -266,6 +254,7 @@ $conn->close();
             <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
             <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>
+            <li><a class="nav-link" href="admin_resetpass.php">RESET PASSWORD</a></li>
             <li><span><a class="nav-link" href="logout.php">LOGOUT</a></span></li>
         </ul>
     </div>
@@ -279,10 +268,10 @@ $conn->close();
             </div>
         </div>
         
-          <!-- Success/Error Messages -->
+        <!-- Success/Error Messages -->
         <?php if (isset($_GET['success'])): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                Announcement <?php echo htmlspecialchars($_GET['success']); ?> successfully!
+                Package <?php echo htmlspecialchars($_GET['success']); ?> successfully!
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php elseif (isset($_GET['error'])): ?>
@@ -292,7 +281,7 @@ $conn->close();
             </div>
         <?php endif; ?>
         
-         <!-- Packages Table -->
+        <!-- Packages Table -->
         <div class="table-responsive">
             <table class="bookings-table">
                 <thead>
@@ -300,6 +289,10 @@ $conn->close();
                         <th>Package Name</th>
                         <th>Description</th>
                         <th>Price</th>
+                        <th>Users</th>
+                        <th>Event Type</th>
+                        <th>Area (sqm)</th>
+                        <th>Bandwidth</th>
                         <th>Equipment Included</th>
                         <th>Status</th>
                         <th>Created By</th>
@@ -310,14 +303,18 @@ $conn->close();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (!empty($packages)): ?>
-                        <?php foreach ($packages as $package): ?>
+                    <?php if ($packages && $packages->num_rows > 0): ?>
+                        <?php while ($package = $packages->fetch_assoc()): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($package['packageName']); ?></td>
                                 <td><?php echo htmlspecialchars($package['description']); ?></td>
                                 <td>₱<?php echo number_format($package['price'], 2); ?></td>
-                                <td class="equipment-list" title="<?php echo htmlspecialchars($package['equipmentsIncluded']); ?>">
-                                    <?php echo htmlspecialchars($package['equipmentsIncluded']); ?>
+                                <td><?php echo htmlspecialchars($package['numberOfUsers']); ?></td>
+                                <td><?php echo ucfirst(htmlspecialchars($package['eventType'])); ?></td>
+                                <td><?php echo number_format($package['eventAreaSize'], 2); ?></td>
+                                <td><?php echo number_format($package['expectedBandwidth'], 2); ?> Mbps</td>
+                                <td class="equipment-list" title="<?php echo htmlspecialchars($package['equipmentNames'] ?? $package['equipmentsIncluded']); ?>">
+                                    <?php echo htmlspecialchars($package['equipmentNames'] ?? $package['equipmentsIncluded']); ?>
                                 </td>
                                 <td>
                                     <span class="status-badge status-<?php echo strtolower($package['status']); ?>">
@@ -330,17 +327,17 @@ $conn->close();
                                 <td>
                                     <?php echo $package['approvalDate'] ? date("M j, Y", strtotime($package['approvalDate'])) : 'N/A'; ?>
                                 </td>
-                                <td>
+                                <td class="action-buttons">
                                     <?php if ($package['status'] === 'pending'): ?>
                                         <form method="post" class="d-inline">
                                             <input type="hidden" name="package_id" value="<?php echo $package['packageId']; ?>">
-                                            <input type="hidden" name="new_status" value="approved">
+                                            <input type="hidden" name="new_status" value="available">
                                             <button type="submit" name="update_status" class="btn btn-success btn-sm">Approve</button>
                                         </form>
                                         <form method="post" class="d-inline">
                                             <input type="hidden" name="package_id" value="<?php echo $package['packageId']; ?>">
-                                            <input type="hidden" name="new_status" value="declined">
-                                            <button type="submit" name="update_status" class="btn btn-danger btn-sm">Decline</button>
+                                            <input type="hidden" name="new_status" value="rejected">
+                                            <button type="submit" name="update_status" class="btn btn-danger btn-sm">Reject</button>
                                         </form>
                                     <?php else: ?>
                                         <form method="post" class="d-inline">
@@ -356,16 +353,15 @@ $conn->close();
                                     <?php endif; ?>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
+                        <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="11" class="text-center">No packages found.</td>
+                            <td colspan="14" class="text-center">No packages found.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
-    </div>
     </div>
 </body>
 </html>
