@@ -115,33 +115,30 @@
 <!-- FOOTER -->
 <div class="foot-container">
     <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
-        <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
-    </div>
-    <div class="foot-icons">
-        <a href="https://www.youtube.com/" class="bi bi-youtube" target="_blank"></a>
-        <a href="https://web.facebook.com/" class="bi bi-facebook" target="_blank"></a>
-        <a href="https://www.instagram.com/" class="bi bi-instagram" target="_blank"></a>
-        <a href="https://www.tiktok.com/" class="bi bi-tiktok" target="_blank"></a>
-    </div>
+    <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
+  </div>
+  <div class="foot-icons">
+    <a href="https://www.facebook.com/WiSpotServices" class="bi bi-facebook" target="_blank"></a>
+  </div>
 
-    <hr>
+  <hr>
 
-    <div class="foot-policy">
-        <div class="policy-links">
-            <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
-            <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
-            <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
-            <a href="contactus.php" target="_blank">CONTACT US</a>
-        </div>
+  <div class="foot-policy">
+    <div class="policy-links">
+      <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
+      <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
+      <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
+      <a href="contactus.php" target="_blank">CONTACT US</a>
     </div>
+  </div>
 
-    <hr>
+  <hr>
 
-    <div class="foot_text">
-        <p>Wi-spot is available in English, French, German, Italian, Spanish, and more.</p><br>
-        <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
-        <p>This webpage is for educational purposes only and no copyright infringement is intended.</p>
-    </div>
+  <div class="foot_text">
+    <br>
+    <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
+  </div>
+</div>
 </div>
 </body>
 </html>
