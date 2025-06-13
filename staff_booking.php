@@ -20,12 +20,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bookingId = $_POST['booking_id'];
         $action = $_POST['action'];
         
-        // Update booking status
-        $stmt = $conn->prepare("UPDATE booking SET bookingStatus = ? WHERE bookingId = ?");
-        $status = ($action === 'accept') ? 'accepted' : 'declined';
-        $stmt->bind_param("si", $status, $bookingId);
-        $stmt->execute();
-        $stmt->close();
+        if ($action === 'update_status' && isset($_POST['new_status'])) {
+            // Update booking status to the selected value
+            $newStatus = $_POST['new_status'];
+            $stmt = $conn->prepare("UPDATE booking SET bookingStatus = ? WHERE bookingId = ?");
+            $stmt->bind_param("si", $newStatus, $bookingId);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            // Original accept/decline logic (for backward compatibility)
+            $stmt = $conn->prepare("UPDATE booking SET bookingStatus = ? WHERE bookingId = ?");
+            $status = ($action === 'accept') ? 'Confirmed' : 'Cancelled';
+            $stmt->bind_param("si", $status, $bookingId);
+            $stmt->execute();
+            $stmt->close();
+        }
         
         // Redirect to avoid form resubmission
         header("Location: staff_booking.php");
@@ -175,12 +184,22 @@ $conn->close();
             font-weight: 600;
         }
         
-        .status-accepted {
+        .status-confirmed {
             color: #2ecc71;
             font-weight: 600;
         }
         
-        .status-declined {
+        .status-in-progress {
+            color: #3498db;
+            font-weight: 600;
+        }
+        
+        .status-completed {
+            color: #9b59b6;
+            font-weight: 600;
+        }
+        
+        .status-cancelled {
             color: #e74c3c;
             font-weight: 600;
         }
@@ -227,6 +246,47 @@ $conn->close();
         .item-checkbox {
             margin-right: 10px;
         }
+        
+        .status-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .status-option {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .status-option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .status-option input[type="radio"] {
+            margin-right: 10px;
+        }
+        
+        .status-option.pending {
+            border-left: 4px solid #f39c12;
+        }
+        
+        .status-option.confirmed {
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .status-option.in-progress {
+            border-left: 4px solid #3498db;
+        }
+        
+        .status-option.completed {
+            border-left: 4px solid #9b59b6;
+        }
+        
+        .status-option.cancelled {
+            border-left: 4px solid #e74c3c;
+        }
     </style>
 </head>
 <body>
@@ -262,7 +322,6 @@ $conn->close();
             <table class="bookings-table">
                 <thead>
                     <tr>
-                        <th>Booking ID</th>
                         <th>Customer</th>
                         <th>Contact</th>
                         <th>Date Created</th>
@@ -279,7 +338,6 @@ $conn->close();
                     <?php if (!empty($bookings)): ?>
                         <?php foreach ($bookings as $booking): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($booking['bookingId']); ?></td>
                                 <td>
                                     <?php echo htmlspecialchars($booking['customer_firstname'] . ' ' . $booking['customer_lastname']); ?><br>
                                     <small><?php echo htmlspecialchars($booking['customer_username']); ?></small>
@@ -293,7 +351,7 @@ $conn->close();
                                 <td><?php echo htmlspecialchars($booking['event_location']); ?></td>
                                 <td><?php echo htmlspecialchars($booking['package_chosen']); ?></td>
                                 <td>₱<?php echo number_format($booking['total_price'], 2); ?></td>
-                                <td class="<?php echo 'status-' . strtolower($booking['booking_status']); ?>">
+                                <td class="<?php echo 'status-' . strtolower(str_replace(' ', '-', $booking['booking_status'])); ?>">
                                     <?php echo htmlspecialchars($booking['booking_status']); ?>
                                 </td>
                                 <td><?php echo htmlspecialchars($booking['payment_status']); ?></td>
@@ -310,12 +368,13 @@ $conn->close();
                                             </form>
                                         </div>
                                     <?php else: ?>
-                                        <span class="text-muted">No actions</span>
+                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#updateStatusModal<?php echo $booking['bookingId']; ?>">
+                                            Update Status
+                                        </button>
                                     <?php endif; ?>
                                 </td>
                             </tr>
 
-                            
                             <!-- Accept Booking Modal -->
                             <div class="modal fade" id="acceptModal<?php echo $booking['bookingId']; ?>" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-lg">
@@ -392,6 +451,66 @@ $conn->close();
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                                                 <button type="submit" class="btn btn-primary">Confirm Acceptance</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Update Status Modal -->
+                            <div class="modal fade" id="updateStatusModal<?php echo $booking['bookingId']; ?>" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="post">
+                                            <input type="hidden" name="booking_id" value="<?php echo $booking['bookingId']; ?>">
+                                            <input type="hidden" name="action" value="update_status">
+                                            
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="updateStatusModalLabel">Update Booking Status #<?php echo $booking['bookingId']; ?></h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>
+                                                    <strong>Customer:</strong> <?php echo htmlspecialchars($booking['customer_firstname'] . ' ' . $booking['customer_lastname']); ?><br>
+                                                    <strong>Current Status:</strong> <span class="<?php echo 'status-' . strtolower(str_replace(' ', '-', $booking['booking_status'])); ?>"><?php echo htmlspecialchars($booking['booking_status']); ?></span><br>
+                                                    <strong>Event Dates:</strong> <?php echo htmlspecialchars($booking['date_of_start']); ?> to <?php echo htmlspecialchars($booking['date_of_return']); ?>
+                                                </p>
+                                                
+                                                <hr>
+                                                
+                                                <h6>Select New Status:</h6>
+                                                <div class="status-selector">
+                                                    <label class="status-option pending">
+                                                        <input type="radio" name="new_status" value="Pending" <?php echo ($booking['booking_status'] == 'Pending') ? 'checked' : ''; ?>>
+                                                        Pending
+                                                    </label>
+                                                    <label class="status-option confirmed">
+                                                        <input type="radio" name="new_status" value="Confirmed" <?php echo ($booking['booking_status'] == 'Confirmed') ? 'checked' : ''; ?>>
+                                                        Confirmed
+                                                    </label>
+                                                    <label class="status-option in-progress">
+                                                        <input type="radio" name="new_status" value="In-progress" <?php echo ($booking['booking_status'] == 'In-progress') ? 'checked' : ''; ?>>
+                                                        In-progress
+                                                    </label>
+                                                    <label class="status-option completed">
+                                                        <input type="radio" name="new_status" value="Completed" <?php echo ($booking['booking_status'] == 'Completed') ? 'checked' : ''; ?>>
+                                                        Completed
+                                                    </label>
+                                                    <label class="status-option cancelled">
+                                                        <input type="radio" name="new_status" value="Cancelled" <?php echo ($booking['booking_status'] == 'Cancelled') ? 'checked' : ''; ?>>
+                                                        Cancelled
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="mt-3">
+                                                    <label for="statusNotes" class="form-label">Status Update Notes:</label>
+                                                    <textarea class="form-control" id="statusNotes" name="status_notes" rows="3" 
+                                                            placeholder="Add any notes about this status change"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Update Status</button>
                                             </div>
                                         </form>
                                     </div>

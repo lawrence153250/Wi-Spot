@@ -8,182 +8,149 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// // Check if user is logged in
-// if (!isset($_SESSION['customerId'])) {
-//     header("Location: login.php?redirect=feedback");
-//     exit();
-// }
-
-
-
-// // Validate CSRF token
-// if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-//     die("Invalid CSRF token");
-// }
-
-// Get the latest completed booking for this customer
-$stmt = $conn->prepare("SELECT bookingId FROM booking WHERE customerId = ? AND status = 'completed' ORDER BY bookingDate DESC LIMIT 1");
-$stmt->bind_param("i", $_SESSION['customerId']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
-    header("Location: booking.php?feedback=no_booking");
-    exit();
+// Check if bookingId is provided
+if (!isset($_GET['bookingId']) || !is_numeric($_GET['bookingId'])) {
+    die("Invalid booking ID");
 }
 
-$booking = $result->fetch_assoc();
-$bookingId = $booking['bookingId'];
-$stmt->close();
+$bookingId = intval($_GET['bookingId']);
 
-// Process form data
-$requiredFields = [
-    'internet_speed', 'reliability', 'signal_strength', 
-    'customer_service', 'installation_service', 'equipment_quality',
-    'overall_rating', 'comments'
-];
-
-foreach ($requiredFields as $field) {
-    if (empty($_POST[$field])) {
-        die("Missing required field: $field");
-    }
-}
-
-// Validate ratings
-$ratings = [
-    'internet_speed' => (int)$_POST['internet_speed'],
-    'reliability' => (int)$_POST['reliability'],
-    'signal_strength' => (int)$_POST['signal_strength'],
-    'customer_service' => (int)$_POST['customer_service'],
-    'installation_service' => (int)$_POST['installation_service'],
-    'equipment_quality' => (int)$_POST['equipment_quality'],
-    'overall_rating' => (int)$_POST['overall_rating']
-];
-
-foreach ($ratings as $key => $value) {
-    if ($value < 1 || ($key === 'overall_rating' ? $value > 5 : $value > 5)) {
-        die("Invalid rating value for $key");
-    }
-}
-
-// Process file upload
-$photoPath = null;
-if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    $maxSize = 2 * 1024 * 1024; // 2MB
+// Get customerId from database based on session username
+$customerId = null;
+if (isset($_SESSION['username'])) {
+    $username = $conn->real_escape_string($_SESSION['username']);
+    $customerQuery = $conn->query("SELECT customerId FROM customer WHERE username = '$username'");
     
-    if (!in_array($_FILES['photo']['type'], $allowedTypes)) {
-        die("Invalid file type. Only JPG, PNG, and GIF are allowed.");
+    if ($customerQuery && $customerQuery->num_rows > 0) {
+        $customerData = $customerQuery->fetch_assoc();
+        $customerId = $customerData['customerId'];
+    } else {
+        die("Customer not found");
     }
-    
-    if ($_FILES['photo']['size'] > $maxSize) {
-        die("File size exceeds 2MB limit.");
-    }
-    
-    $uploadDir = 'uploads/feedback/';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-    
-    $extension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-    $filename = uniqid('feedback_') . '.' . $extension;
-    $destination = $uploadDir . $filename;
-    
-    if (move_uploaded_file($_FILES['photo']['tmp_name'], $destination)) {
-        $photoPath = $destination;
-    }
-}
-
-// Basic sentiment analysis based on ratings and comments
-$averageRating = array_sum($ratings) / count($ratings);
-$comment = strtolower(trim($_POST['comments']));
-
-$positiveWords = ['good', 'great', 'excellent', 'happy', 'satisfied', 'awesome', 'perfect', 'love', 'liked'];
-$negativeWords = ['bad', 'poor', 'terrible', 'unhappy', 'dissatisfied', 'awful', 'hate', 'dislike', 'worst'];
-
-$sentiment = 'neutral';
-if ($averageRating >= 4) {
-    $sentiment = 'positive';
-} elseif ($averageRating <= 2) {
-    $sentiment = 'negative';
-}
-
-foreach ($positiveWords as $word) {
-    if (strpos($comment, $word) !== false) {
-        $sentiment = 'positive';
-        break;
-    }
-}
-
-foreach ($negativeWords as $word) {
-    if (strpos($comment, $word) !== false) {
-        $sentiment = 'negative';
-        break;
-    }
-}
-
-// Insert feedback into database
-$stmt = $conn->prepare("INSERT INTO feedback (
-    customerId, bookingId, internet_speed, reliability, signal_strength,
-    customer_service, installation_service, equipment_quality, overall_rating,
-    photo, comment, sentiment
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-$stmt->bind_param(
-    "iiiiiiiiisss",
-    $_SESSION['customerId'],
-    $bookingId,
-    $ratings['internet_speed'],
-    $ratings['reliability'],
-    $ratings['signal_strength'],
-    $ratings['customer_service'],
-    $ratings['installation_service'],
-    $ratings['equipment_quality'],
-    $ratings['overall_rating'],
-    $photoPath,
-    $_POST['comments'],
-    $sentiment
-);
-
-if ($stmt->execute()) {
-    // Success - redirect with success message
-    header("Location: feedback.php?success=1");
 } else {
-    // Error handling
-    error_log("Feedback submission failed: " . $stmt->error);
-    header("Location: feedback.php?error=1");
+    die("You must be logged in to submit feedback");
 }
 
+// Check if the booking exists and belongs to the customer
+$bookingCheck = $conn->prepare("SELECT * FROM booking WHERE bookingId = ? AND customerId = ?");
+$bookingCheck->bind_param("ii", $bookingId, $customerId);
+$bookingCheck->execute();
+$bookingResult = $bookingCheck->get_result();
 
-// Check if user is logged in and has an active booking
-if (!isset($_SESSION['username']) || !isset($_SESSION['customerId'])) {
-    header("Location: login.php?redirect=feedback");
-    exit();
+if ($bookingResult->num_rows === 0) {
+    die("Booking not found or doesn't belong to you");
 }
 
-// Connect to database to verify booking
-require_once 'db_connect.php';
-$bookingExists = false;
-if (isset($_SESSION['customerId'])) {
-    $stmt = $conn->prepare("SELECT bookingId FROM booking WHERE customerId = ? AND status = 'completed'");
-    $stmt->bind_param("i", $_SESSION['customerId']);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $bookingExists = $result->num_rows > 0;
-    $stmt->close();
+$booking = $bookingResult->fetch_assoc();
+
+// Check if feedback already exists for this booking
+$feedbackCheck = $conn->prepare("SELECT * FROM feedback WHERE bookingId = ?");
+$feedbackCheck->bind_param("i", $bookingId);
+$feedbackCheck->execute();
+$feedbackResult = $feedbackCheck->get_result();
+
+if ($feedbackResult->num_rows > 0) {
+    die("You have already submitted feedback for this booking");
 }
 
-if (!$bookingExists) {
-    header("Location: booking.php?feedback=no_booking");
-    exit();
-}
+$voucherCode = null;
+$successMessage = '';
+$error = '';
 
-$stmt->close();
-$conn->close();
-exit();
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate and sanitize input
+    $ratings = [
+        'internet_speed' => intval($_POST['internet_speed'] ?? 0),
+        'reliability' => intval($_POST['reliability'] ?? 0),
+        'signal_strength' => intval($_POST['signal_strength'] ?? 0),
+        'customer_service' => intval($_POST['customer_service'] ?? 0),
+        'installation_service' => intval($_POST['installation_service'] ?? 0),
+        'equipment_quality' => intval($_POST['equipment_quality'] ?? 0),
+        'overall_rating' => intval($_POST['overall_rating'] ?? 0)
+    ];
+    
+    // Validate all ratings are between 1-5 (except overall_rating which can be 0-5)
+    $valid = true;
+    foreach ($ratings as $key => $value) {
+        if ($key === 'overall_rating') {
+            if ($value < 0 || $value > 5) {
+                $valid = false;
+                $error = "Overall rating must be between 0 and 5";
+                break;
+            }
+        } else {
+            if ($value < 1 || $value > 5) {
+                $valid = false;
+                $error = "All ratings must be between 1 and 5";
+                break;
+            }
+        }
+    }
+    
+    if ($valid) {
+        $comment = $conn->real_escape_string(trim($_POST['comment'] ?? ''));
+        $sentiment = $conn->real_escape_string(trim($_POST['sentiment'] ?? ''));
+        
+        // Handle file upload
+        $photo = null;
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = 'uploads/feedback/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            
+            $fileExt = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
+            $fileName = uniqid('feedback_') . '.' . $fileExt;
+            $uploadPath = $uploadDir . $fileName;
+            
+            if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadPath)) {
+                $photo = $uploadPath;
+            }
+        }
+        
+        // Insert feedback into database
+        $stmt = $conn->prepare("INSERT INTO feedback (
+            customerId, bookingId, internet_speed, reliability, signal_strength, 
+            customer_service, installation_service, equipment_quality, 
+            overall_rating, photo, comment, sentiment
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        
+        $stmt->bind_param("iiiiiiiiisss", 
+            $customerId, $bookingId, 
+            $ratings['internet_speed'], $ratings['reliability'], $ratings['signal_strength'],
+            $ratings['customer_service'], $ratings['installation_service'], $ratings['equipment_quality'],
+            $ratings['overall_rating'], $photo, $comment, $sentiment
+        );
+        
+        if ($stmt->execute()) {
+            // Get a voucher code that hasn't been given yet
+            $voucherQuery = $conn->query("SELECT * FROM voucher_code WHERE isGiven = FALSE LIMIT 1");
+            if ($voucherQuery && $voucherQuery->num_rows > 0) {
+                $voucher = $voucherQuery->fetch_assoc();
+                $voucherCode = $voucher['code'];
+                
+                // Mark voucher as given and associate with customer and booking
+                $updateStmt = $conn->prepare("UPDATE voucher_code SET 
+                    isGiven = TRUE, 
+                    customerId = ?, 
+                    bookingId = ? 
+                    WHERE codeId = ?");
+                $updateStmt->bind_param("iii", $customerId, $bookingId, $voucher['codeId']);
+                $updateStmt->execute();
+                
+                $successMessage = "Thank you for your feedback! Here's your reward:";
+            } else {
+                $successMessage = "Thank you for your feedback!";
+            }
+        } else {
+            $error = "Failed to submit feedback. Please try again. Error: " . $conn->error;
+        }
+    }
+}
 ?>
 
-
+<!-- REST OF YOUR HTML CODE REMAINS THE SAME -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -196,25 +163,19 @@ exit();
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
-    .star-rating i {
-      color: #ccc;
-      font-size: 24px;
+    .rating-options {
+      display: flex;
+      gap: 15px;
+      margin-top: 0.5rem;
+    }
+    .rating-options label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       cursor: pointer;
-      transition: color 0.2s;
     }
-    .star-rating i.checked, .star-rating i:hover {
-      color: gold;
-    }
-    .star-rating i:hover ~ i:not(.checked) {
-      color: #ccc;
-    }
-    .rating-category {
-      margin-bottom: 1.5rem;
-    }
-    .rating-category label {
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-      display: block;
+    .rating-options input[type="radio"] {
+      margin-top: 5px;
     }
     #previewImage {
       max-width: 200px;
@@ -225,6 +186,16 @@ exit();
     .form-control:focus, .form-select:focus {
       border-color: #0d6efd;
       box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .voucher-code {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #0d6efd;
+      background-color: #f8f9fa;
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: 2px dashed #0d6efd;
+      margin: 20px 0;
     }
   </style>
 </head>
@@ -250,199 +221,228 @@ exit();
     </div>
   </nav>
 
-  <!-- Feedback Form -->
-  <div class="container mt-5 mb-5">
+  <div class="container my-5">
     <div class="row justify-content-center">
       <div class="col-lg-8">
-        <?php if (isset($_GET['success'])): ?>
-          <div class="alert alert-success alert-dismissible fade show" role="alert">
-            Thank you for your feedback! We appreciate your time.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
+        <?php if (isset($error)): ?>
+          <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
         <?php endif; ?>
         
-        <div class="card shadow-sm">
-          <div class="card-header bg-primary text-white">
-            <h2 class="mb-0 text-center">We value your feedback!</h2>
+        <?php if ($successMessage): ?>
+          <div class="alert alert-success text-center">
+            <h4><?php echo htmlspecialchars($successMessage); ?></h4>
+            <?php if ($voucherCode): ?>
+              <div class="voucher-code"><?php echo htmlspecialchars($voucherCode); ?></div>
+              <p>Use this code during your next booking for a special discount!</p>
+            <?php endif; ?>
+            <a href="profile.php" class="btn btn-primary">Back to Profile</a>
           </div>
-          <div class="card-body">
-            <form action="submit_feedback.php" method="POST" enctype="multipart/form-data" id="feedbackForm">
-              <div class="mb-4">
-                <label for="photo" class="form-label">Upload a photo (optional)</label>
-                <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
-                <small class="text-muted">Max file size: 2MB (JPEG, PNG only)</small>
-                <img id="previewImage" class="img-thumbnail" alt="Preview">
-              </div>
-
-              <div class="mb-4">
-                <h5 class="mb-3">Rate your experience with:</h5>
+        <?php else: ?>
+          <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+              <h3 class="mb-0">Feedback Form</h3>
+              <p class="mb-0">Please rate your experience with Wi-Spot</p>
+            </div>
+            <div class="card-body">
+              <form method="POST" enctype="multipart/form-data" id="feedbackForm">
+                <input type="hidden" name="bookingId" value="<?php echo htmlspecialchars($bookingId); ?>">
                 
-                <div class="rating-category">
-                  <label>Internet Speed</label>
-                  <select class="form-select" name="internet_speed" required>
-                    <option value="" disabled selected>Select rating</option>
-                    <option value="1">1 - Poor</option>
-                    <option value="2">2 - Below Average</option>
-                    <option value="3">3 - Average</option>
-                    <option value="4">4 - Good</option>
-                    <option value="5">5 - Excellent</option>
+                <h5 class="mb-4">Service Ratings</h5>
+                
+                <!-- Internet Speed -->
+                <div class="mb-4">
+                  <label class="form-label">Internet Speed</label>
+                  <div class="rating-options">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <label>
+                        <?php echo $i; ?>
+                        <input type="radio" name="internet_speed" value="<?php echo $i; ?>" required>
+                      </label>
+                    <?php endfor; ?>
+                  </div>
+                </div>
+                
+                <!-- Reliability -->
+                <div class="mb-4">
+                  <label class="form-label">Reliability</label>
+                  <div class="rating-options">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <label>
+                        <?php echo $i; ?>
+                        <input type="radio" name="reliability" value="<?php echo $i; ?>" required>
+                      </label>
+                    <?php endfor; ?>
+                  </div>
+                </div>
+                
+                <!-- Signal Strength -->
+                <div class="mb-4">
+                  <label class="form-label">Signal Strength</label>
+                  <div class="rating-options">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <label>
+                        <?php echo $i; ?>
+                        <input type="radio" name="signal_strength" value="<?php echo $i; ?>" required>
+                      </label>
+                    <?php endfor; ?>
+                  </div>
+                </div>
+                
+                <!-- Customer Service -->
+                <div class="mb-4">
+                  <label class="form-label">Customer Service</label>
+                  <div class="rating-options">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <label>
+                        <?php echo $i; ?>
+                        <input type="radio" name="customer_service" value="<?php echo $i; ?>" required>
+                      </label>
+                    <?php endfor; ?>
+                  </div>
+                </div>
+                
+                <!-- Installation Service -->
+                <div class="mb-4">
+                  <label class="form-label">Installation Service</label>
+                  <div class="rating-options">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <label>
+                        <?php echo $i; ?>
+                        <input type="radio" name="installation_service" value="<?php echo $i; ?>" required>
+                      </label>
+                    <?php endfor; ?>
+                  </div>
+                </div>
+                
+                <!-- Equipment Quality -->
+                <div class="mb-4">
+                  <label class="form-label">Equipment Quality</label>
+                  <div class="rating-options">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <label>
+                        <?php echo $i; ?>
+                        <input type="radio" name="equipment_quality" value="<?php echo $i; ?>" required>
+                      </label>
+                    <?php endfor; ?>
+                  </div>
+                </div>
+                
+                <!-- Overall Rating -->
+                <div class="mb-4">
+                  <label class="form-label">Overall Rating</label>
+                  <div class="rating-options">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <label>
+                        <?php echo $i; ?>
+                        <input type="radio" name="overall_rating" value="<?php echo $i; ?>" required>
+                      </label>
+                    <?php endfor; ?>
+                  </div>
+                </div>
+                
+                <!-- Comment -->
+                <div class="mb-4">
+                  <label for="comment" class="form-label">Your Comments</label>
+                  <textarea class="form-control" id="comment" name="comment" rows="4" required></textarea>
+                </div>
+                
+                <!-- Sentiment -->
+                <div class="mb-4">
+                  <label for="sentiment" class="form-label">How would you describe your experience?</label>
+                  <select class="form-select" id="sentiment" name="sentiment" required>
+                    <option value="" selected disabled>Select an option</option>
+                    <option value="Excellent">Excellent</option>
+                    <option value="Good">Good</option>
+                    <option value="Average">Average</option>
+                    <option value="Poor">Poor</option>
+                    <option value="Terrible">Terrible</option>
                   </select>
                 </div>
-
-                <div class="rating-category">
-                  <label>Service Reliability</label>
-                  <select class="form-select" name="reliability" required>
-                    <option value="" disabled selected>Select rating</option>
-                    <option value="1">1 - Unreliable</option>
-                    <option value="2">2 - Occasionally unreliable</option>
-                    <option value="3">3 - Somewhat reliable</option>
-                    <option value="4">4 - Reliable</option>
-                    <option value="5">5 - Very reliable</option>
-                  </select>
+                
+                <!-- Photo Upload -->
+                <div class="mb-4">
+                  <label for="photo" class="form-label">Upload Photo (Optional)</label>
+                  <input class="form-control" type="file" id="photo" name="photo" accept="image/*">
+                  <img id="previewImage" src="#" alt="Preview" class="img-thumbnail">
                 </div>
-
-                <div class="rating-category">
-                  <label>Signal Strength</label>
-                  <select class="form-select" name="signal_strength" required>
-                    <option value="" disabled selected>Select rating</option>
-                    <option value="1">1 - Weak</option>
-                    <option value="2">2 - Fair</option>
-                    <option value="3">3 - Moderate</option>
-                    <option value="4">4 - Strong</option>
-                    <option value="5">5 - Excellent</option>
-                  </select>
+                
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary btn-lg">Submit Feedback</button>
                 </div>
-
-                <div class="rating-category">
-                  <label>Customer Service</label>
-                  <select class="form-select" name="customer_service" required>
-                    <option value="" disabled selected>Select rating</option>
-                    <option value="1">1 - Poor</option>
-                    <option value="2">2 - Needs improvement</option>
-                    <option value="3">3 - Satisfactory</option>
-                    <option value="4">4 - Good</option>
-                    <option value="5">5 - Excellent</option>
-                  </select>
-                </div>
-
-                <div class="rating-category">
-                  <label>Installation Service</label>
-                  <select class="form-select" name="installation_service" required>
-                    <option value="" disabled selected>Select rating</option>
-                    <option value="1">1 - Poor</option>
-                    <option value="2">2 - Below expectations</option>
-                    <option value="3">3 - Met expectations</option>
-                    <option value="4">4 - Exceeded expectations</option>
-                    <option value="5">5 - Outstanding</option>
-                  </select>
-                </div>
-
-                <div class="rating-category">
-                  <label>Equipment Quality</label>
-                  <select class="form-select" name="equipment_quality" required>
-                    <option value="" disabled selected>Select rating</option>
-                    <option value="1">1 - Poor</option>
-                    <option value="2">2 - Adequate</option>
-                    <option value="3">3 - Good</option>
-                    <option value="4">4 - Very good</option>
-                    <option value="5">5 - Excellent</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="mb-4">
-                <label for="comments" class="form-label">Additional Comments / Suggestions</label>
-                <textarea class="form-control" id="comments" name="comments" rows="4" placeholder="Please share any additional thoughts about your experience..."></textarea>
-              </div>
-
-              <div class="mb-4">
-                <label class="form-label">Overall Experience:</label><br>
-                <div class="star-rating mb-2" id="starRating">
-                  <?php for ($i = 1; $i <= 5; $i++): ?>
-                    <i class="bi bi-star-fill" data-value="<?= $i ?>"></i>
-                  <?php endfor; ?>
-                </div>
-                <div class="d-flex justify-content-between">
-                  <small class="text-muted">Poor</small>
-                  <small class="text-muted">Excellent</small>
-                </div>
-                <input type="hidden" name="overall_rating" id="overall_rating" value="0" required>
-              </div>
-
-              <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary btn-lg">
-                  <i class="bi bi-send-fill me-2"></i> Submit Feedback
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>
 
   <!-- Footer -->
   <div class="foot-container">
-    <!-- ... (keep your existing footer code) ... -->
+    <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
+      <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
+    </div>
+    <div class="foot-icons">
+      <a href="https://www.facebook.com/WiSpotServices" class="bi bi-facebook" target="_blank"></a>
+    </div>
+
+    <hr>
+
+    <div class="foot-policy">
+      <div class="policy-links">
+        <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
+        <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
+        <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
+        <a href="contactus.php" target="_blank">CONTACT US</a>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="foot_text">
+      <br>
+      <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
+    </div>
   </div>
 
   <script>
-    // Enhanced star rating with hover effect
-    const stars = document.querySelectorAll('.star-rating i');
-    const ratingInput = document.getElementById('overall_rating');
-
-    stars.forEach(star => {
-      star.addEventListener('click', () => {
-        const value = parseInt(star.getAttribute('data-value'));
-        ratingInput.value = value;
-        stars.forEach(s => s.classList.remove('checked'));
-        for (let i = 0; i < value; i++) {
-          stars[i].classList.add('checked');
-        }
-      });
-      
-      star.addEventListener('mouseover', () => {
-        const value = parseInt(star.getAttribute('data-value'));
-        stars.forEach((s, index) => {
-          if (index < value) {
-            s.style.color = 'gold';
-          } else {
-            s.style.color = '#ccc';
-          }
-        });
-      });
-      
-      star.addEventListener('mouseout', () => {
-        const currentRating = parseInt(ratingInput.value);
-        stars.forEach((s, index) => {
-          if (index < currentRating) {
-            s.style.color = 'gold';
-          } else {
-            s.style.color = '#ccc';
-          }
-        });
-      });
-    });
-
-    // Image preview functionality
+    // Image preview
     document.getElementById('photo').addEventListener('change', function(e) {
+      const preview = document.getElementById('previewImage');
       const file = e.target.files[0];
+      
       if (file) {
         const reader = new FileReader();
-        reader.onload = function(event) {
-          const preview = document.getElementById('previewImage');
-          preview.src = event.target.result;
+        
+        reader.onload = function(e) {
+          preview.src = e.target.result;
           preview.style.display = 'block';
         }
+        
         reader.readAsDataURL(file);
+      } else {
+        preview.style.display = 'none';
       }
     });
-
+    
     // Form validation
     document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-      if (parseInt(ratingInput.value) === 0) {
+      let isValid = true;
+      
+      // Check all radio buttons are selected
+      document.querySelectorAll('input[type="radio"][required]').forEach(radioGroup => {
+        const groupName = radioGroup.name;
+        const checked = document.querySelector(`input[name="${groupName}"]:checked`);
+        if (!checked) {
+          isValid = false;
+          const label = document.querySelector(`label[for="${groupName}"]`) || 
+                       document.querySelector(`label:has(input[name="${groupName}"])`);
+          alert(`Please select a rating for ${label?.textContent?.trim() || groupName}`);
+        }
+      });
+      
+      if (!isValid) {
         e.preventDefault();
-        alert('Please provide an overall rating by clicking the stars');
       }
     });
   </script>

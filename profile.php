@@ -436,6 +436,7 @@ $conn->close();
                                     <div class="form-group">
                                         <a href="logout.php" class="btn btn-primary mt-2 custom-button">Logout</a><br>
                                         <a href="viewtransactions.php" class="btn btn-primary mt-2 custom-button">View Transactions</a><br>
+                                        <a href="customer_feedbackView.php" class="btn btn-primary mt-2 custom-button">View Feedback</a><br>
                                         <a href="#" class="btn btn-primary mt-2 custom-button" data-bs-toggle="modal" data-bs-target="#resetPass">Reset Password</a><br>
                                         <a href="#" class="btn btn-primary mt-2 custom-button" data-bs-toggle="modal" data-bs-target="#resetProfile">Edit Profile Information</a>
                                     </div>

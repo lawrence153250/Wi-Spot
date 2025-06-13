@@ -148,7 +148,7 @@ $conn->close();
                                 <td>₱<?php echo number_format($booking['total_price'], 2); ?></td>
                                 <td>
                                     <?php echo htmlspecialchars($booking['booking_status']); ?>
-                                    <?php if ($booking['booking_status'] === 'completed'): ?>
+                                    <?php if ($booking['booking_status'] === 'Completed'): ?>
                                         <br>
                                         <a href="customer_feedback.php?bookingId=<?php echo $booking['bookingId']; ?>" class="btn btn-primary btn-sm mt-1">Give Feedback</a>
                                     <?php endif; ?>

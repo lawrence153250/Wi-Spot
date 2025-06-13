@@ -287,8 +287,8 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
                         <th>Status</th>
                         <th>Created Date</th>
                         <th>Used Date</th>
-                        <th>Customer</th>
-                        <th>Rental</th>
+                        <th>Customer ID</th>
+                        <th>Booking ID</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -312,14 +312,14 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
                             </td>
                             <td>
                                 <?php if ($code['customerId']): ?>
-                                    <a href="customer_details.php?id=<?php echo $code['customerId']; ?>">View Customer</a>
+                                    <?php echo htmlspecialchars($code['customerId']); ?>
                                 <?php else: ?>
                                     -
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ($code['bookingId']): ?>
-                                    <a href="booking_details.php?id=<?php echo $code['bookingId']; ?>">View Booking</a>
+                                    <?php echo htmlspecialchars($code['bookingId']); ?>
                                 <?php else: ?>
                                     -
                                 <?php endif; ?>
