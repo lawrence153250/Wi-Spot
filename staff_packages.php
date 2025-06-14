@@ -179,30 +179,157 @@ $conn->close();
             background-color: #34495e;
         }
         
-.sidebar-menu li a.nav-link {
-        color: #FFFFFF;
+        .sidebar-menu li a.nav-link {
+            color: #FFFFFF;
         }
 
         .sidebar-menu li.active {
             background-color: #34485f;
         }
+        
         /* Main Content Styles */
         .main-content {
             margin-left: 250px;
             width: calc(100% - 250px);
             padding: 20px;
+            background-color: #f8f9fa;
+            min-height: 100vh;
         }
         
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         
         .page-header h2 {
             color: #2c3e50;
             font-size: 24px;
+            margin: 0;
+        }
+        
+        .user-info {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .user-info i {
+            margin-left: 8px;
+            font-size: 18px;
+        }
+        
+        /* Enhanced Form Container */
+        .package-form-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .package-form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 900px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .form-card-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-card-header h4 {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .form-card-header p {
+            color: #6c757d;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        /* Enhanced Form Styles */
+        .form-label {
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background-color: #fff;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+        
+        .form-control:hover, .form-select:hover {
+            border-color: #bdc3c7;
+        }
+        
+        .equipment-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        .form-check {
+            margin-bottom: 12px;
+            padding-left: 30px;
+        }
+        
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+            margin-left: -30px;
+            margin-top: 3px;
+        }
+        
+        .form-check-label {
+            color: #2c3e50;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .btn-create-package {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .btn-create-package:hover {
+            background: linear-gradient(135deg, #229954, #27ae60);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-create-package:active {
+            transform: translateY(0);
         }
         
         /* Table Styles */
@@ -211,8 +338,9 @@ $conn->close();
             border-collapse: collapse;
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
+            border-radius: 8px;
             overflow: hidden;
+            margin-top: 20px;
         }
         
         .packages-table th, 
@@ -264,21 +392,45 @@ $conn->close();
             color: #004085;
         }
         
-        .equipment-list {
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 5px;
+        .table-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border: 1px solid #e9ecef;
         }
         
-        /* Form Styles */
-        .form-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
+        .table-section h4 {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
         }
         
         /* Responsive adjustments */
@@ -296,11 +448,23 @@ $conn->close();
             .main-content {
                 margin-left: 70px;
                 width: calc(100% - 70px);
+                padding: 15px;
+            }
+            
+            .package-form-card {
+                padding: 30px 20px;
+                margin: 10px;
             }
             
             .packages-table {
                 display: block;
                 overflow-x: auto;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
         }
     </style>
@@ -338,151 +502,181 @@ $conn->close();
         <!-- Success/Error Messages -->
         <?php if (isset($success_message)): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <?php echo $success_message; ?>
+                <i class="bi bi-check-circle"></i> <?php echo $success_message; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
         
         <?php if (isset($error_message)): ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?php echo $error_message; ?>
+                <i class="bi bi-exclamation-triangle"></i> <?php echo $error_message; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
         
-        <!-- Create Package Form -->
-        <div class="form-container">
-            <h4>Create New Package</h4>
-            <form method="POST">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="package_name" class="form-label">Package Name</label>
-                        <input type="text" class="form-control" id="package_name" name="package_name" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="price" class="form-label">Price (₱)</label>
-                        <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
-                    </div>
+        <!-- Enhanced Create Package Form -->
+        <div class="package-form-container">
+            <div class="package-form-card">
+                <div class="form-card-header">
+                    <h4><i class="bi bi-box-seam"></i> Create New Package</h4>
+                    <p>Design a new package for events and services</p>
                 </div>
                 
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label for="number_of_users" class="form-label">Number of Users</label>
-                        <input type="number" class="form-control" id="number_of_users" name="number_of_users" min="1" required>
+                <form method="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="package_name" class="form-label">
+                                <i class="bi bi-tag"></i> Package Name
+                            </label>
+                            <input type="text" class="form-control" id="package_name" name="package_name" placeholder="Enter package name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="price" class="form-label">
+                                <i class="bi bi-currency-exchange"></i> Price (₱)
+                            </label>
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" placeholder="0.00" required>
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <label for="event_type" class="form-label">Event Type</label>
-                        <select class="form-select" id="event_type" name="event_type" required>
-                            <option value="">Select type</option>
-                            <option value="indoor">Indoor</option>
-                            <option value="outdoor">Outdoor</option>
-                            <option value="concert">Concert</option>
-                        </select>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="number_of_users" class="form-label">
+                                <i class="bi bi-people"></i> Number of Users
+                            </label>
+                            <input type="number" class="form-control" id="number_of_users" name="number_of_users" min="1" placeholder="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="event_type" class="form-label">
+                                <i class="bi bi-calendar-event"></i> Event Type
+                            </label>
+                            <select class="form-select" id="event_type" name="event_type" required>
+                                <option value="">Select type</option>
+                                <option value="indoor">Indoor</option>
+                                <option value="outdoor">Outdoor</option>
+                                <option value="concert">Concert</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="event_area_size" class="form-label">
+                                <i class="bi bi-aspect-ratio"></i> Event Area Size (sqm)
+                            </label>
+                            <input type="number" class="form-control" id="event_area_size" name="event_area_size" step="0.01" min="1" placeholder="0.00" required>
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <label for="event_area_size" class="form-label">Event Area Size (sqm)</label>
-                        <input type="number" class="form-control" id="event_area_size" name="event_area_size" step="0.01" min="1" required>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="expected_bandwidth" class="form-label">
+                                <i class="bi bi-speedometer2"></i> Expected Bandwidth (Mbps)
+                            </label>
+                            <input type="number" class="form-control" id="expected_bandwidth" name="expected_bandwidth" step="0.01" min="1" placeholder="0.00" required>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="expected_bandwidth" class="form-label">Expected Bandwidth (Mbps)</label>
-                        <input type="number" class="form-control" id="expected_bandwidth" name="expected_bandwidth" step="0.01" min="1" required>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="bi bi-card-text"></i> Description
+                        </label>
+                        <textarea class="form-control" id="description" name="description" rows="4" placeholder="Describe the package details and features..." required></textarea>
                     </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="description" class="form-label">Description</label>
-                    <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">Select Equipment Items</label>
-                    <div class="equipment-list">
-                        <?php if (!empty($inventoryItems)): ?>
-                            <?php foreach ($inventoryItems as $item): ?>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" 
-                                        name="equipment_items[]" 
-                                        value="<?php echo $item['itemId']; ?>" 
-                                        id="item<?php echo $item['itemId']; ?>">
-                                    <label class="form-check-label" for="item<?php echo $item['itemId']; ?>">
-                                        <?php echo htmlspecialchars($item['itemName']); ?> 
-                                        (<?php echo htmlspecialchars($item['itemType']); ?>)
-                                    </label>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-gear"></i> Select Equipment Items
+                        </label>
+                        <div class="equipment-list">
+                            <?php if (!empty($inventoryItems)): ?>
+                                <?php foreach ($inventoryItems as $item): ?>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                            name="equipment_items[]" 
+                                            value="<?php echo $item['itemId']; ?>" 
+                                            id="item<?php echo $item['itemId']; ?>">
+                                        <label class="form-check-label" for="item<?php echo $item['itemId']; ?>">
+                                            <strong><?php echo htmlspecialchars($item['itemName']); ?></strong>
+                                            <small class="text-muted">(<?php echo htmlspecialchars($item['itemType']); ?>)</small>
+                                        </label>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> No available equipment items found in inventory.
                                 </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div class="alert alert-warning">No available equipment items found in inventory.</div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
-                
-                <button type="submit" name="create_package" class="btn btn-primary">Submit for Approval</button>
-            </form>
+                    
+                    <button type="submit" name="create_package" class="btn-create-package">
+                        <i class="bi bi-check-circle"></i> Submit for Approval
+                    </button>
+                </form>
+            </div>
         </div>
         
-        <!-- Updated Packages Table -->
-        <h4>My Packages</h4>
-        <div class="table-responsive">
-            <table class="packages-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Price</th>
-                        <th>Users</th>
-                        <th>Type</th>
-                        <th>Area (sqm)</th>
-                        <th>Bandwidth</th>
-                        <th>Equipment Included</th>
-                        <th>Status</th>
-                        <th>Date Created</th>
-                        <th>Date Approved</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($packages)): ?>
-                        <?php foreach ($packages as $package): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($package['packageName']); ?></td>
-                                <td><?php echo htmlspecialchars($package['description']); ?></td>
-                                <td>₱<?php echo number_format($package['price'], 2); ?></td>
-                                <td><?php echo htmlspecialchars($package['numberOfUsers']); ?></td>
-                                <td><?php echo ucfirst(htmlspecialchars($package['eventType'])); ?></td>
-                                <td><?php echo number_format($package['eventAreaSize'], 2); ?></td>
-                                <td><?php echo number_format($package['expectedBandwidth'], 2); ?> Mbps</td>
-                                <td>
-                                    <?php 
-                                    if (!empty($package['equipmentNames'])) {
-                                        echo htmlspecialchars($package['equipmentNames']);
-                                    } else {
-                                        $ids = explode(',', $package['equipmentsIncluded']);
-                                        foreach ($ids as $id) {
-                                            echo "Item #" . htmlspecialchars($id) . "<br>";
+        <!-- Enhanced Packages Table -->
+        <div class="table-section">
+            <h4><i class="bi bi-list-check"></i> My Packages</h4>
+            <div class="table-responsive">
+                <table class="packages-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Users</th>
+                            <th>Type</th>
+                            <th>Area (sqm)</th>
+                            <th>Bandwidth</th>
+                            <th>Equipment Included</th>
+                            <th>Status</th>
+                            <th>Date Created</th>
+                            <th>Date Approved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($packages)): ?>
+                            <?php foreach ($packages as $package): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($package['packageName']); ?></td>
+                                    <td><?php echo htmlspecialchars($package['description']); ?></td>
+                                    <td>₱<?php echo number_format($package['price'], 2); ?></td>
+                                    <td><?php echo htmlspecialchars($package['numberOfUsers']); ?></td>
+                                    <td><?php echo ucfirst(htmlspecialchars($package['eventType'])); ?></td>
+                                    <td><?php echo number_format($package['eventAreaSize'], 2); ?></td>
+                                    <td><?php echo number_format($package['expectedBandwidth'], 2); ?> Mbps</td>
+                                    <td>
+                                        <?php 
+                                        if (!empty($package['equipmentNames'])) {
+                                            echo htmlspecialchars($package['equipmentNames']);
+                                        } else {
+                                            $ids = explode(',', $package['equipmentsIncluded']);
+                                            foreach ($ids as $id) {
+                                                echo "Item #" . htmlspecialchars($id) . "<br>";
+                                            }
                                         }
-                                    }
-                                    ?>
-                                </td>
-                                <td>
-                                    <span class="status-badge status-<?php echo strtolower($package['status']); ?>">
-                                        <?php echo ucfirst($package['status']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo date("M j, Y", strtotime($package['dateCreated'])); ?></td>
-                                <td>
-                                    <?php echo $package['approvalDate'] ? date("M j, Y", strtotime($package['approvalDate'])) : 'Pending'; ?>
+                                        ?>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-<?php echo strtolower($package['status']); ?>">
+                                            <?php echo ucfirst($package['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo date("M j, Y", strtotime($package['dateCreated'])); ?></td>
+                                    <td>
+                                        <?php echo $package['approvalDate'] ? date("M j, Y", strtotime($package['approvalDate'])) : 'Pending'; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="11" class="text-center">
+                                    <i class="bi bi-inbox"></i> No packages created yet.
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="12" class="text-center">No packages created yet.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </body>

@@ -117,7 +117,7 @@ $conn->close();
             padding: 20px 0;
             position: fixed;
         }
-        
+
         .sidebar-header {
             padding: 0 20px 20px;
             border-bottom: 1px solid #34495e;
@@ -140,81 +140,178 @@ $conn->close();
             background-color: #34495e;
         }
         
-.sidebar-menu li a.nav-link {
-        color: #FFFFFF;
+        .sidebar-menu li a.nav-link {
+            color: #FFFFFF;
         }
 
         .sidebar-menu li.active {
             background-color: #34485f;
         }
+        
         /* Main Content Styles */
         .main-content {
             margin-left: 250px;
             width: calc(100% - 250px);
             padding: 20px;
+            background-color: #f8f9fa;
+            min-height: 100vh;
         }
         
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         
         .page-header h2 {
             color: #2c3e50;
             font-size: 24px;
+            margin: 0;
         }
         
-        /* Table Styles */
-        .bookings-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
-            overflow: hidden;
+        .user-info {
+            color: #6c757d;
+            font-size: 14px;
         }
         
-        .bookings-table th, 
-        .bookings-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+        .user-info i {
+            margin-left: 8px;
+            font-size: 18px;
         }
         
-        .bookings-table th {
-            background-color: #3498db;
-            color: white;
-            font-weight: 600;
-        }
-        
-        .bookings-table tr:hover {
-            background-color: #f9f9f9;
-        }
-        
-        .status-pending {
-            color: #f39c12;
-            font-weight: 600;
-        }
-        
-        .account-section {
+        /* Enhanced Form Container */
+        .inventory-form-container {
+            display: flex;
+            justify-content: center;
             margin-bottom: 40px;
         }
         
-        .form-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        .inventory-form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 900px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .form-card-header {
+            text-align: center;
             margin-bottom: 30px;
         }
         
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+        .form-card-header h4 {
+            color: #2c3e50;
+            font-size: 24px;
             font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .form-card-header p {
+            color: #6c757d;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        /* Enhanced Form Styles */
+        .form-label {
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background-color: #fff;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+        
+        .form-control:hover, .form-select:hover {
+            border-color: #bdc3c7;
+        }
+        
+        .btn-add-equipment {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .btn-add-equipment:hover {
+            background: linear-gradient(135deg, #229954, #27ae60);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-add-equipment:active {
+            transform: translateY(0);
+        }
+        
+        /* Enhanced Card Styles for Equipment List */
+        .equipment-cards-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .equipment-cards-section h4 {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        
+        .equipment-card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .equipment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .equipment-card h5 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        
+        .equipment-status {
+            font-weight: 600;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
         }
         
         .status-pending {
@@ -232,12 +329,82 @@ $conn->close();
             color: #721C24;
         }
         
-        .equipment-image {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 5px;
+        .equipment-type-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 10px;
         }
+        
+        .quantity-badge {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .equipment-dates {
+            color: #6c757d;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        
+        .equipment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .submitted-date {
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .item-id-badge {
+            background-color: #f8f9fa;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            font-family: monospace;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+            text-align: center;
+            padding: 20px;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
@@ -253,11 +420,28 @@ $conn->close();
             .main-content {
                 margin-left: 70px;
                 width: calc(100% - 70px);
+                padding: 15px;
             }
             
-            .bookings-table {
-                display: block;
-                overflow-x: auto;
+            .inventory-form-card {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .equipment-card {
+                margin-bottom: 15px;
+            }
+            
+            .equipment-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
         }
     </style>
@@ -292,98 +476,120 @@ $conn->close();
             </div>
         </div>
         
-        <!-- Success/Error Messages -->
+        <!-- Display messages -->
         <?php if (isset($success_message)): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <?php echo $success_message; ?>
+                <i class="bi bi-check-circle"></i> <?php echo $success_message; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
         
         <?php if (isset($error_message)): ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?php echo $error_message; ?>
+                <i class="bi bi-exclamation-triangle"></i> <?php echo $error_message; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endif; ?>
         
-        <!-- Add Equipment Form -->
-        <div class="form-container">
-            <h4>Add New Equipment</h4>
-            <form method="POST" enctype="multipart/form-data">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="item_name" class="form-label">Equipment Name</label>
-                        <input type="text" class="form-control" id="item_name" name="item_name" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="item_type" class="form-label">Equipment Type</label>
-                        <select class="form-select" id="item_type" name="item_type" required>
-                            <option value="">Select Type</option>
-                            <option value="WiFi Router">WiFi Router</option>
-                            <option value="WiFi Extender">WiFi Extender</option>
-                            <option value="Ethernet Cable">Ethernet Cable</option>
-                            <option value="Network Switch">Network Switch</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
+        <!-- Enhanced Add Equipment Form -->
+        <div class="inventory-form-container">
+            <div class="inventory-form-card">
+                <div class="form-card-header">
+                    <h4><i class="bi bi-box-seam"></i> Add New Equipment</h4>
+                    <p>Submit equipment for approval and inventory management</p>
                 </div>
                 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="quantity" class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1" required>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="item_name" class="form-label">
+                                <i class="bi bi-tag"></i> Equipment Name
+                            </label>
+                            <input type="text" class="form-control" id="item_name" name="item_name" placeholder="Enter equipment name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="item_type" class="form-label">
+                                <i class="bi bi-gear"></i> Equipment Type
+                            </label>
+                            <select class="form-select" id="item_type" name="item_type" required>
+                                <option value="">Select Type</option>
+                                <option value="WiFi Router">WiFi Router</option>
+                                <option value="WiFi Extender">WiFi Extender</option>
+                                <option value="Ethernet Cable">Ethernet Cable</option>
+                                <option value="Network Switch">Network Switch</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="description" class="form-label">Description</label>
-                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                </div>
-                
-                <button type="submit" name="add_equipment" class="btn btn-primary">Submit for Approval</button>
-            </form>
+                    
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">
+                            <i class="bi bi-hash"></i> Quantity
+                        </label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1" placeholder="1" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="bi bi-file-text"></i> Description
+                        </label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Describe the equipment details..."></textarea>
+                    </div>
+                    
+                    <button type="submit" name="add_equipment" class="btn-add-equipment">
+                        <i class="bi bi-check-circle"></i> Submit for Approval
+                    </button>
+                </form>
+            </div>
         </div>
         
-        <!-- Inventory List -->
-        <h4>My Equipment Submissions</h4>
-        <div class="table-responsive">
-            <table class="bookings-table">
-                <thead>
-                    <tr>
-                        <th>Item ID</th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Quantity</th>
-                        <th>Status</th>
-                        <th>Date Submitted</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($inventoryItems)): ?>
-                        <?php foreach ($inventoryItems as $item): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($item['itemId']); ?></td>
-                                <td><?php echo htmlspecialchars($item['itemName']); ?></td>
-                                <td><?php echo htmlspecialchars($item['itemType']); ?></td>
-                                <td><?php echo htmlspecialchars($item['quantity']); ?></td>
-                                <td>
-                                    <span class="status-badge status-<?php echo strtolower($item['status']); ?>">
+        <!-- Enhanced Equipment Cards Section -->
+        <div class="equipment-cards-section">
+            <h4><i class="bi bi-collection"></i> My Equipment Submissions</h4>
+            <?php if (empty($inventoryItems)): ?>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No equipment submissions found. Submit your first equipment above.
+                </div>
+            <?php else: ?>
+                <div class="row">
+                    <?php foreach ($inventoryItems as $item): ?>
+                        <div class="col-md-6">
+                            <div class="equipment-card">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5><?php echo htmlspecialchars($item['itemName']); ?></h5>
+                                        <span class="equipment-type-badge"><?php echo htmlspecialchars($item['itemType']); ?></span>
+                                    </div>
+                                    <span class="equipment-status status-<?php echo strtolower($item['status']); ?>">
                                         <?php echo ucfirst($item['status']); ?>
                                     </span>
-                                </td>
-                                <td><?php echo date("M j, Y", strtotime($item['dateAdded'])); ?></td>
-                                <td><?php echo htmlspecialchars($item['description']); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="7" class="text-center">No equipment submissions found.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                                </div>
+                                
+                                <?php if (!empty($item['description'])): ?>
+                                    <p class="mt-2 mb-3"><?php echo htmlspecialchars($item['description']); ?></p>
+                                <?php endif; ?>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="quantity-badge">Qty: <?php echo $item['quantity']; ?></span>
+                                    <span class="item-id-badge">ID: <?php echo htmlspecialchars($item['itemId']); ?></span>
+                                </div>
+                                
+                                <div class="equipment-dates">
+                                    <i class="bi bi-calendar-plus"></i>
+                                    Submitted: <?php echo date('M d, Y', strtotime($item['dateAdded'])); ?>
+                                </div>
+                                
+                                <div class="equipment-meta">
+                                    <span class="submitted-date">
+                                        <i class="bi bi-clock"></i>
+                                        Added: <?php echo date('M d, Y H:i', strtotime($item['dateAdded'])); ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </body>
