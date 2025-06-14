@@ -147,8 +147,12 @@ $sentimentCounts = $conn->query($sentimentCountQuery);
             background-color: #34495e;
         }
         
+.sidebar-menu li a.nav-link {
+        color: #FFFFFF;
+        }
+
         .sidebar-menu li.active {
-            background-color: #3498db;
+            background-color: #34485f;
         }
         
         /* Main Content Styles */

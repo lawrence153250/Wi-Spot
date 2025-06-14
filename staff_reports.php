@@ -72,10 +72,13 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
             background-color: #34495e;
         }
         
-        .sidebar-menu li.active {
-            background-color: #3498db;
+.sidebar-menu li a.nav-link {
+        color: #FFFFFF;
         }
-        
+
+        .sidebar-menu li.active {
+            background-color: #34485f;
+        }
         /* Main Content Styles */
         .main-content {
             margin-left: 250px;

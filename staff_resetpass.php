@@ -112,8 +112,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
             background-color: #34495e;
         }
         
+        .sidebar-menu li a.nav-link {
+            color: #FFFFFF;
+        }
+
         .sidebar-menu li.active {
-            background-color: #3498db;
+            background-color: #34485f;
         }
         
         /* Main Content Styles */
@@ -121,55 +125,147 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
             margin-left: 250px;
             width: calc(100% - 250px);
             padding: 20px;
+            background-color: #f8f9fa;
+            min-height: 100vh;
         }
         
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         
         .page-header h2 {
             color: #2c3e50;
             font-size: 24px;
+            margin: 0;
         }
         
-        /* Table Styles */
-        .bookings-table {
+        .user-info {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .user-info i {
+            margin-left: 8px;
+            font-size: 18px;
+        }
+        
+        /* Password Reset Card Styles */
+        .password-reset-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 70vh;
+            padding-top: 40px;
+        }
+        
+        .password-reset-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
             width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
-            overflow: hidden;
+            max-width: 500px;
+            border: 1px solid #e9ecef;
         }
         
-        .bookings-table th, 
-        .bookings-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+        .card-header {
+            text-align: center;
+            margin-bottom: 30px;
         }
         
-        .bookings-table th {
-            background-color: #3498db;
+        .card-header h3 {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .card-header p {
+            color: #6c757d;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background-color: #fff;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+        
+        .form-control:hover {
+            border-color: #bdc3c7;
+        }
+        
+        .btn-reset {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
         }
         
-        .bookings-table tr:hover {
-            background-color: #f9f9f9;
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
         }
         
-        .status-pending {
-            color: #f39c12;
-            font-weight: 600;
+        .btn-reset:active {
+            transform: translateY(0);
         }
         
-        .account-section {
-            margin-bottom: 40px;
+        .alert {
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 25px;
+            border: none;
+            font-size: 14px;
         }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -186,11 +282,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
             .main-content {
                 margin-left: 70px;
                 width: calc(100% - 70px);
+                padding: 15px;
             }
             
-            .bookings-table {
-                display: block;
-                overflow-x: auto;
+            .password-reset-card {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
         }
     </style>
@@ -216,7 +319,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
         </ul>
     </div>
     
-      <!-- Main Content Area -->
+    <!-- Main Content Area -->
     <div class="main-content">
         <div class="page-header">
             <h2>ACCOUNT MANAGEMENT</h2>
@@ -225,36 +328,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
             </div>
         </div>
         
-        <!-- Password Reset Section -->
-        <div class="password-reset-section">
-            <h3>Reset Password</h3>
-            
-            <?php if ($message): ?>
-                <div class="alert alert-<?php echo $messageType === 'success' ? 'success' : 'danger'; ?>">
-                    <?php echo $message; ?>
-                </div>
-            <?php endif; ?>
-            
-            <form method="POST" action="">
-                <div class="form-group">
-                    <label for="current_password">Current Password:</label>
-                    <input type="password" id="current_password" name="current_password" class="form-control" required>
+        <!-- Password Reset Container -->
+        <div class="password-reset-container">
+            <div class="password-reset-card">
+                <div class="card-header">
+                    <h3><i class="bi bi-shield-lock"></i> Reset Password</h3>
+                    <p>Update your account password for security</p>
                 </div>
                 
-                <div class="form-group">
-                    <label for="new_password">New Password:</label>
-                    <input type="password" id="new_password" name="new_password" class="form-control" required>
-                </div>
+                <?php if ($message): ?>
+                    <div class="alert alert-<?php echo $messageType === 'success' ? 'success' : 'danger'; ?>">
+                        <i class="bi bi-<?php echo $messageType === 'success' ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
+                        <?php echo $message; ?>
+                    </div>
+                <?php endif; ?>
                 
-                <div class="form-group">
-                    <label for="confirm_new_password">Confirm New Password:</label>
-                    <input type="password" id="confirm_new_password" name="confirm_new_password" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <button type="submit" name="reset" class="btn btn-primary">Reset Password</button>
-                </div>
-            </form>
+                <form method="POST" action="">
+                    <div class="form-group">
+                        <label for="current_password">
+                            <i class="bi bi-lock"></i> Current Password
+                        </label>
+                        <input type="password" id="current_password" name="current_password" class="form-control" required placeholder="Enter your current password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new_password">
+                            <i class="bi bi-key"></i> New Password
+                        </label>
+                        <input type="password" id="new_password" name="new_password" class="form-control" required placeholder="Enter your new password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_new_password">s
+                            <i class="bi bi-key-fill"></i> Confirm New Password
+                        </label>
+                        <input type="password" id="confirm_new_password" name="confirm_new_password" class="form-control" required placeholder="Confirm your new password">
+                    </div>
+                    
+
+                    
+                    <div class="form-group">
+                        <button type="submit" name="reset" class="btn-reset">
+                            <i class="bi bi-shield-check"></i> Reset Password
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </body>
