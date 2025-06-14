@@ -138,13 +138,14 @@ $conn->close();
             background-color: #34495e;
         }
         
-.sidebar-menu li a.nav-link {
-        color: #FFFFFF;
+        .sidebar-menu li a.nav-link {
+            color: #FFFFFF;
         }
 
         .sidebar-menu li.active {
             background-color: #34485f;
         }
+        
         /* Main Content Styles */
         .main-content {
             margin-left: 250px;
@@ -164,7 +165,7 @@ $conn->close();
             font-size: 24px;
         }
         
-        /* Table Styles */
+        /* Table Styles - Updated to match booking table */
         .bookings-table {
             width: 100%;
             border-collapse: collapse;
@@ -209,7 +210,7 @@ $conn->close();
             display: inline-block;
             min-width: 120px;
             border: 1px solid transparent;
-            cursor: default; /* Remove pointer cursor since it's not clickable anymore */
+            cursor: default;
         }
 
         /* Keep the existing color classes but apply them to the new box */
@@ -267,20 +268,39 @@ $conn->close();
         }
         
         .form-select-sm {
-            padding: 0.25rem 0.5rem;
+            padding: 0.5rem 0.75rem; /* Increased from 0.25rem 0.5rem */
             font-size: 0.875rem;
-            border-radius: 0.2rem;
+            border-radius: 0.375rem; /* Slightly more rounded */
+            min-width: 120px; /* Ensure minimum width */
+            height: auto; /* Let it expand naturally */
         }
-        
+
+        /* Alternative: Remove the -sm class entirely and use regular form-select */
+        .verification-dropdown {
+            padding: 0.575rem 0.75rem;
+            font-size: 0.9rem;
+            border-radius: 0.375rem;
+            min-width: 130px;
+            margin-right: 0.5rem;
+        }
+
+        /* Keep the button styling consistent */
         .btn-sm {
-            padding: 0.25rem 0.5rem;
+            padding: 0.5rem 0.75rem; /* Match the dropdown padding */
             font-size: 0.875rem;
-            border-radius: 0.2rem;
+            border-radius: 0.375rem;
+            min-height: 38px; /* Ensure same height as dropdown */
         }
         
         /* Sort Dropdown */
         .sort-dropdown {
             margin-bottom: 20px;
+        }
+        
+        /* Sort Dropdown Styles - Match booking page */
+        .sort-dropdown .dropdown-toggle {
+            background-color: #3498db;
+            border: none;
         }
         
         /* Search Form */
@@ -390,7 +410,7 @@ $conn->close();
          <div class="account-section">
             <h3>Customer Accounts</h3>
             <div class="table-responsive">
-                <table class="table table-bordered table-striped">
+                <table class="bookings-table">
                     <thead>
                         <tr>
                             <th>Username</th>
