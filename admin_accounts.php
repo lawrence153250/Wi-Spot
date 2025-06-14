@@ -160,6 +160,10 @@ $conn->close();
     <link rel="stylesheet" href="style.css">
     <style>
         /* Sidebar Styles */
+        .sidebar-menu li a.nav-link {
+        color: #FFFFFF;
+        }
+
         .sidebar {
             width: 250px;
             background-color: #2c3e50;
@@ -192,7 +196,7 @@ $conn->close();
         }
         
         .sidebar-menu li.active {
-            background-color:rgb(255, 255, 255);
+            background-color: #34485f;
         }
         
         /* Main Content Styles */
