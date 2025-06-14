@@ -69,10 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Generate voucher codes
         $codes = generateVoucherCodes($quantity);
         
-        // Insert voucher codes
-        $insertCode = $conn->prepare("INSERT INTO voucher_code (batchId, code) VALUES (?, ?)");
+        // Insert voucher codes with voucherType
+        $insertCode = $conn->prepare("INSERT INTO voucher_code (batchId, code, voucherType) VALUES (?, ?, ?)");
         foreach ($codes as $code) {
-            $insertCode->bind_param("is", $batchId, $code);
+            $insertCode->bind_param("iss", $batchId, $code, $voucherType);
             $insertCode->execute();
         }
         

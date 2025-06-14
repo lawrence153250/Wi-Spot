@@ -16,42 +16,35 @@ session_start();
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-        <div class="nav-container">
-            <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
-                <ul class="navbar-nav">
+<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="nav-container">
+        <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
+                <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
+                <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
+                <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
+                <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
+            </ul>
+            <?php if (isset($_SESSION['username'])): ?>
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php">HOME</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="booking.php">BOOKING</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="aboutus.php">ABOUT US</a>
+                        <a class="nav-link" href="profile.php"><?= htmlspecialchars($_SESSION['username']) ?> <i class="bi bi-person-circle"></i></a>
                     </li>
                 </ul>
-                <?php if (isset($_SESSION['username'])): ?>
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="profile.php"><?php echo $_SESSION['username']; ?> <i class="bi bi-person-circle"></i></a>
-                        </li>
-                    </ul>
-                <?php else: ?>
-                    <div class="auth-buttons ms-auto">
-                        <a class="btn btn-primary" href="login.php">LOGIN</a>
-                        <a class="nav-link" href="register.php">SIGN UP</a>
-                    </div>
-                <?php endif; ?>
-            </div>
+            <?php else: ?>
+                <div class="auth-buttons ms-auto">
+                    <a class="btn btn-primary" href="login.php">LOGIN</a>
+                    <a class="nav-link" href="register.php">SIGN UP</a>
+                </div>
+            <?php endif; ?>
         </div>
-    </nav>
+    </div>
+</nav>
 <div class="hero">
     <div class="headcontainer">
         <div class="text-content">
@@ -160,7 +153,7 @@ session_start();
     <div class="voucher-content">
         <h1>GET REWARDS: Discounts & Vouchers with Every Booking</h1>
         <p>Enjoy exclusive discounts and vouchers with our loyalty program. The more you book, the more you save on future events and projects!</p>
-        <a href="voucher.php" class="btn btn-primary">CHECK REWARDS</a>
+        <a href="customer_voucher.php" class="btn btn-primary">CHECK REWARDS</a>
     </div>
     <img src="uploads/discount.png" alt="Discount" class="feature-voucher">
 </div>

@@ -28,12 +28,13 @@ require 'login_code.php'; // Includes the login logic
                 <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
                 <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
                 <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
+                <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
             </ul>
             <?php if (isset($_SESSION['username'])): ?>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="profile.php"><?= $_SESSION['username']; ?> <i class="bi bi-person-circle"></i></a>
+                        <a class="nav-link" href="profile.php"><?= htmlspecialchars($_SESSION['username']) ?> <i class="bi bi-person-circle"></i></a>
                     </li>
                 </ul>
             <?php else: ?>

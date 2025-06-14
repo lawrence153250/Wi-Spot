@@ -57,17 +57,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profileImage'])) {
     }
 }
 
-// Update Profile function
+// Update Profile function with security enhancements
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update'])) {
-    $firstName = htmlspecialchars($_POST['firstName']);
-    $lastName = htmlspecialchars($_POST['lastName']);
-    $email = htmlspecialchars($_POST['email']);
-    $birthday = htmlspecialchars($_POST['birthday']);
-    $contactNumber = htmlspecialchars($_POST['contactNumber']);
-    $address = htmlspecialchars($_POST['address']);
-    $facebookProfile = htmlspecialchars($_POST['facebookProfile']);
+    // Sanitize inputs
+    $firstName = trim(htmlspecialchars($_POST['firstName']));
+    $lastName = trim(htmlspecialchars($_POST['lastName']));
+    $email = trim(htmlspecialchars($_POST['email']));
+    $birthday = $_POST['birthday'];
+    $contactNumber = trim(htmlspecialchars($_POST['contactNumber']));
+    $address = trim(htmlspecialchars($_POST['address']));
+    $facebookProfile = trim(htmlspecialchars($_POST['facebookProfile']));
 
-    // Update query
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $message = "Invalid email format";
+        $messageType = "error";
+        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+        exit();
+    }
+
+    // Validate age (must be at least 18)
+    $birthDate = new DateTime($birthday);
+    $today = new DateTime();
+    $age = $today->diff($birthDate)->y;
+    if ($age < 18) {
+        $message = "You must be at least 18 years old";
+        $messageType = "error";
+        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+        exit();
+    }
+
+    // Validate Philippine contact number format
+    if (!preg_match('/^09\d{9}$/', $contactNumber)) {
+    $message = "Invalid Philippine number format. Must start with 09 followed by 9 digits (11 digits total)";
+        $messageType = "error";
+        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+        exit();
+    }
+
+    // Validate Facebook profile URL
+    if (!preg_match('/^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/', $facebookProfile)) {
+        $message = "Invalid Facebook profile URL";
+        $messageType = "error";
+        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+        exit();
+    }
+
+    // Check if email already exists (excluding current user)
+    $stmt = $conn->prepare("SELECT * FROM customer WHERE email = ? AND username != ?");
+    $stmt->bind_param("ss", $email, $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $message = "Email already exists";
+        $messageType = "error";
+        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+        exit();
+    }
+
+    // Update query using prepared statement
     $sql = "UPDATE customer SET 
                 firstName = ?, 
                 lastName = ?, 
@@ -84,48 +133,73 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update'])) {
     if ($stmt->execute()) {
         $message = "Profile Updated successfully!";
         $messageType = "success";
-        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+        // Update session variables if needed
+        $_SESSION['email'] = $email;
     } else {
-        $message = "Error Updating Profile";
+        $message = "Error Updating Profile: " . $conn->error;
         $messageType = "error";
-        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
     }
+    
+    $stmt->close();
+    echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+    exit();
 }
 
-// Reset password function
+// Reset password function with security enhancements
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
-    $current_password = htmlspecialchars($_POST['current_password']);
-    $new_password = htmlspecialchars($_POST['new_password']);
-    $confirm_new_password = htmlspecialchars($_POST['confirm_new_password']);
+    $current_password = $_POST['current_password'];
+    $new_password = $_POST['new_password'];
+    $confirm_new_password = $_POST['confirm_new_password'];
 
-    $sql = "SELECT * FROM customer WHERE username = '$username'";
-    $result = $conn->query($sql);
+    // Validate new password requirements
+    if (strlen($new_password) < 8 || 
+        !preg_match('/[A-Z]/', $new_password) || 
+        !preg_match('/[a-z]/', $new_password) || 
+        !preg_match('/[0-9]/', $new_password) || 
+        !preg_match('/[^A-Za-z0-9]/', $new_password)) {
+        $message = "Password must be at least 8 characters with uppercase, lowercase, number, and special character";
+        $messageType = "error";
+        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+        exit();
+    }
+
+    // Validate password match
+    if ($new_password !== $confirm_new_password) {
+        $message = "New password and Confirm new password do not match!";
+        $messageType = "error";
+        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+        exit();
+    }
+
+    // Get user data using prepared statement
+    $stmt = $conn->prepare("SELECT * FROM customer WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
     $user = $result->fetch_assoc();
 
     if (password_verify($current_password, $user['password'])) {
-        if ($new_password === $confirm_new_password) {
-            $hashed_new_password = password_hash($new_password, PASSWORD_DEFAULT);
+        $hashed_new_password = password_hash($new_password, PASSWORD_DEFAULT);
 
-            $sql = "UPDATE customer SET password = '$hashed_new_password' WHERE username = '$username'";
-            if ($conn->query($sql) === TRUE) {
-                $message = "Password has been reset successfully!";
-                $messageType = "success";
-                echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
-            } else {
-                $message = "Error updating password: " . $conn->error;
-                $messageType = "error";
-                echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
-            }
+        // Update password using prepared statement
+        $stmt = $conn->prepare("UPDATE customer SET password = ? WHERE username = ?");
+        $stmt->bind_param("ss", $hashed_new_password, $username);
+
+        if ($stmt->execute()) {
+            $message = "Password has been reset successfully!";
+            $messageType = "success";
         } else {
-            $message = "New password and Confirm new password do not match!";
+            $message = "Error updating password: " . $conn->error;
             $messageType = "error";
-            echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
         }
     } else {
         $message = "Current password is incorrect!";
         $messageType = "error";
-        echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
     }
+    
+    $stmt->close();
+    echo "<script>setTimeout(() => { window.location.href = 'profile.php'; }, 3000);</script>";
+    exit();
 }
 
 //  Upload Id Function
@@ -403,46 +477,52 @@ $conn->close();
         width: 200px; 
         box-sizing: border-box; /
     }
+    /* Ensure modal backdrop doesn't block interactions when closed */
+    .modal-backdrop {
+        z-index: 1040 !important;
+    }
+    .modal {
+        z-index: 1050 !important;
+    }
+    
+    /* Make sure no other elements are covering the modal */
+    body.modal-open {
+        overflow: auto;
+        padding-right: 0 !important;
+    }
 
 </style>
 <body>
     
-    <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-        <div class="nav-container">
-            <a class="navbar-brand" href="index.php"><img src="logo.png"></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item active">
-                        <a class="nav-link" href="index.php">HOME</a>
-                    </li>
+<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="nav-container">
+        <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
+                <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
+                <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
+                <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
+                <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
+            </ul>
+            <?php if (isset($_SESSION['username'])): ?>
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="booking.php">BOOKING</a>
+                        <a class="nav-link" href="profile.php"><?= htmlspecialchars($_SESSION['username']) ?> <i class="bi bi-person-circle"></i></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="aboutus.php">ABOUT US</a>
-                    </li>
-                    <?php if (isset($_SESSION['username'])): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="profile.php"><?php echo $_SESSION['username']; ?> <i class="bi bi-person-circle"></i></a>
-                        </li>
-                    <?php else: ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="login.php">LOGIN</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="register.php">SIGN UP</a>
-                        </li>
-                    <?php endif; ?>
                 </ul>
-            </div>
+            <?php else: ?>
+                <div class="auth-buttons ms-auto">
+                    <a class="btn btn-primary" href="login.php">LOGIN</a>
+                    <a class="nav-link" href="register.php">SIGN UP</a>
+                </div>
+            <?php endif; ?>
         </div>
-    </nav>
+    </div>
+</nav>
     <div class="container">
         <div class="row gutters">
             <div class="col-xl-3 col-lg-3 col-md-12 col-sm-12 col-12">
@@ -602,22 +682,25 @@ $conn->close();
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="">
-                        <div class="form-group">
+                    <form method="POST" action="" id="resetPasswordForm">
+                        <div class="form-group mb-3">
                             <label for="current_password">Enter Current Password:</label>
                             <input type="password" id="current_password" name="current_password" class="form-control" required>
+                            <div class="invalid-feedback" id="currentPasswordError"></div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="new_password">New Password:</label>
                             <input type="password" id="new_password" name="new_password" class="form-control" required>
+                            <div class="invalid-feedback" id="newPasswordError"></div>
+                            <small class="form-text text-muted">Password must be at least 8 characters with uppercase, lowercase, number, and special character.</small>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="confirm_new_password">Confirm New Password:</label>
                             <input type="password" id="confirm_new_password" name="confirm_new_password" class="form-control" required>
+                            <div class="invalid-feedback" id="confirmPasswordError"></div>
                         </div>
                         <div class="form-group">
                             <button type="submit" name="reset" class="btn btn-primary">Reset Password</button>
-                            
                         </div>
                     </form>
                 </div>
@@ -634,34 +717,42 @@ $conn->close();
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="">
-                        <div class="form-group">
+                    <form method="POST" action="" id="updateProfileForm">
+                        <div class="form-group mb-3">
                             <label for="firstName">First Name:</label>
                             <input type="text" id="firstName" name="firstName" class="form-control" required>
+                            <div class="invalid-feedback" id="firstNameError"></div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="lastName">Last Name:</label>
                             <input type="text" id="lastName" name="lastName" class="form-control" required>
+                            <div class="invalid-feedback" id="lastNameError"></div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="email">Email:</label>
                             <input type="email" id="email" name="email" class="form-control" required>
+                            <div class="invalid-feedback" id="emailError"></div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="birthday">Birthday: </label>
-                            <input type="date" id="birthday" name="birthday" class="form-control" value="<?php echo $user['birthday']; ?>" required>
+                            <input type="date" id="birthday" name="birthday" class="form-control" value="<?php echo htmlspecialchars($user['birthday']); ?>" required>
+                            <div class="invalid-feedback" id="birthdayError"></div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="contactNumber">Contact number:</label>
                             <input type="text" id="contactNumber" name="contactNumber" class="form-control" required>
+                            <div class="invalid-feedback" id="contactNumberError"></div>
+                            <small class="form-text text-muted">Format: 09 followed by 9 digits (11 digits total, e.g., 09123456789)</small>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="address">Address:</label>
                             <input type="text" id="address" name="address" class="form-control" required>
+                            <div class="invalid-feedback" id="addressError"></div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="facebookProfile">Facebook Profile link:</label>
                             <input type="text" id="facebookProfile" name="facebookProfile" class="form-control" required>
+                            <div class="invalid-feedback" id="facebookProfileError"></div>
                         </div>
                         <div class="form-group">
                             <button type="submit" name="update" class="btn btn-primary">Update Profile</button>
@@ -671,6 +762,7 @@ $conn->close();
             </div>
         </div>
     </div>
+
 
 
     <!-- Upload ID modal -->
@@ -770,7 +862,7 @@ $conn->close();
         </div>
     </div>
      
-    <?php if (!empty($message)) : ?>
+     <?php if (!empty($message)) : ?>
         <div id="messagePopup" class="popup <?= $messageType ?>">
             <p><?= $message ?></p>
             <button onclick="closePopup()">OK</button>
@@ -782,10 +874,118 @@ $conn->close();
         </script>
     <?php endif; ?>
 
-<script>
-    function closePopup() {
-        document.getElementById("messagePopup").style.display = "none";
-    }
-</script>
+    <script>
+        function closePopup() {
+            document.getElementById("messagePopup").style.display = "none";
+        }
+        // Properly handle modal closing
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all modals
+            var modals = document.querySelectorAll('.modal');
+            
+            modals.forEach(function(modal) {
+                modal.addEventListener('hidden.bs.modal', function () {
+                    // Remove backdrop when modal is closed
+                    var backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(function(backdrop) {
+                        backdrop.parentNode.removeChild(backdrop);
+                    });
+                    
+                    // Enable body scrolling
+                    document.body.style.overflow = 'auto';
+                    document.body.style.paddingRight = '0';
+                });
+            });
+        });
+
+        // Password Reset Form Validation
+        document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let isValid = true;
+            
+            // Reset error states
+            document.querySelectorAll('#resetPasswordForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            
+            // Validate new password
+            const newPassword = document.getElementById('new_password').value;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                document.getElementById('new_password').classList.add('is-invalid');
+                document.getElementById('newPasswordError').textContent = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.';
+                isValid = false;
+            }
+            
+            // Validate password match
+            const confirmPassword = document.getElementById('confirm_new_password').value;
+            if (newPassword !== confirmPassword) {
+                document.getElementById('confirm_new_password').classList.add('is-invalid');
+                document.getElementById('confirmPasswordError').textContent = 'Passwords do not match.';
+                isValid = false;
+            }
+            
+            if (isValid) {
+                this.submit();
+            }
+        });
+
+        // Profile Update Form Validation
+        document.getElementById('updateProfileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let isValid = true;
+            
+            // Reset error states
+            document.querySelectorAll('#updateProfileForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            
+            // Validate email
+            const email = document.getElementById('email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                document.getElementById('email').classList.add('is-invalid');
+                document.getElementById('emailError').textContent = 'Please enter a valid email address.';
+                isValid = false;
+            }
+            
+            // Validate birthday (must be at least 18 years old)
+            const birthday = document.getElementById('birthday').value;
+            if (birthday) {
+                const birthDate = new Date(birthday);
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                
+                if (age < 18) {
+                    document.getElementById('birthday').classList.add('is-invalid');
+                    document.getElementById('birthdayError').textContent = 'You must be at least 18 years old.';
+                    isValid = false;
+                }
+            }
+            
+            // Validate contact number (Philippine format: +63 followed by 10 digits)
+            const contactNumber = document.getElementById('contactNumber').value;
+            const contactRegex = /^09\d{9}$/;
+            if (!contactRegex.test(contactNumber)) {
+                document.getElementById('contactNumber').classList.add('is-invalid');
+                document.getElementById('contactNumberError').textContent = 'Please enter a valid Philippine number starting with 09 followed by 9 digits (11 digits total).';
+                isValid = false;
+            }
+            
+            // Validate Facebook profile link
+            const facebookProfile = document.getElementById('facebookProfile').value;
+            const facebookRegex = /^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/;
+            if (!facebookRegex.test(facebookProfile)) {
+                document.getElementById('facebookProfile').classList.add('is-invalid');
+                document.getElementById('facebookProfileError').textContent = 'Please enter a valid Facebook profile URL.';
+                isValid = false;
+            }
+            
+            if (isValid) {
+                this.submit();
+            }
+        });
+    </script>
 </body>
 </html>

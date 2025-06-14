@@ -10,6 +10,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="registerstyle.css">
+    <style>
+        .error-message {
+            color: red;
+            font-size: 0.875em;
+            margin-top: 0.25rem;
+        }
+        .is-invalid {
+            border-color: #dc3545;
+        }
+    </style>
 </head>
 <body style="background-color: #f0f3fa;">
 <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
@@ -23,12 +33,13 @@
                 <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
                 <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
                 <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
+                <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
             </ul>
             <?php if (isset($_SESSION['username'])): ?>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="profile.php"><?php echo $_SESSION['username']; ?> <i class="bi bi-person-circle"></i></a>
+                        <a class="nav-link" href="profile.php"><?= htmlspecialchars($_SESSION['username']) ?> <i class="bi bi-person-circle"></i></a>
                     </li>
                 </ul>
             <?php else: ?>
@@ -63,56 +74,68 @@
                 <div class="alert alert-danger text-center"><?php echo htmlspecialchars($_GET['error']); ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="register_code.php">
+            <form method="POST" action="register_code.php" id="registrationForm" novalidate>
                 <div class="form-group mb-3">
                     <label for="firstname">First name</label>
                     <input type="text" id="firstname" name="firstname" class="form-control wi-input" required>
+                    <div class="error-message" id="firstnameError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="lastname">Last name</label>
                     <input type="text" id="lastname" name="lastname" class="form-control wi-input" required>
+                    <div class="error-message" id="lastnameError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="username">Username</label>
                     <input type="text" id="username" name="username" class="form-control wi-input" required>
+                    <div class="error-message" id="usernameError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" class="form-control wi-input" required>
+                    <div class="error-message" id="emailError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" class="form-control wi-input" required>
+                    <div class="error-message" id="passwordError"></div>
+                    <small class="form-text text-muted">Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character.</small>
                 </div>
                 <div class="form-group mb-3">
                     <label for="confirm_password">Confirm Password</label>
                     <input type="password" id="confirm_password" name="confirm_password" class="form-control wi-input" required>
+                    <div class="error-message" id="confirmPasswordError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="birthday">Birthday</label>
                     <input type="date" id="birthday" name="birthday" class="form-control wi-input" required>
+                    <div class="error-message" id="birthdayError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="contactnumber">Contact Number</label>
                     <input type="text" id="contactnumber" name="contactnumber" class="form-control wi-input" required>
+                    <div class="error-message" id="contactnumberError"></div>
+                    <small class="form-text text-muted">Format: 09 followed by 9 digits (11 digits total, e.g., 09123456789)</small>
                 </div>
                 <div class="form-group mb-3">
                     <label for="address">Address</label>
                     <input type="text" id="address" name="address" class="form-control wi-input" required>
+                    <div class="error-message" id="addressError"></div>
                 </div>
                 <div class="form-group mb-4">
                     <label for="facebookProfile">Facebook Profile Link</label>
                     <input type="text" id="facebookProfile" name="facebookProfile" class="form-control wi-input" required>
+                    <div class="error-message" id="facebookProfileError"></div>
                 </div>
                 <div class="d-grid text-center">
-                    <button type="submit" name="register" class="btn btn-primary">SUBMIT</button>
+                    <button type="submit" name="register" class="btn btn-primary" id="submitBtn">SUBMIT</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- FOOTER -->
+<!-- footer -->
 <div class="foot-container">
     <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
     <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
@@ -139,6 +162,92 @@
     <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
   </div>
 </div>
-</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registrationForm');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (validateForm()) {
+            form.submit();
+        }
+    });
+    
+    function validateForm() {
+        let isValid = true;
+        
+        // Reset error messages
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        
+        // Validate email
+        const email = document.getElementById('email').value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            document.getElementById('emailError').textContent = 'Please enter a valid email address.';
+            document.getElementById('email').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate password
+        const password = document.getElementById('password').value;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            document.getElementById('passwordError').textContent = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.';
+            document.getElementById('password').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate password match
+        const confirmPassword = document.getElementById('confirm_password').value;
+        if (password !== confirmPassword) {
+            document.getElementById('confirmPasswordError').textContent = 'Passwords do not match.';
+            document.getElementById('confirm_password').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate birthday (must be at least 18 years old)
+        const birthday = document.getElementById('birthday').value;
+        if (birthday) {
+            const birthDate = new Date(birthday);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            if (age < 18) {
+                document.getElementById('birthdayError').textContent = 'You must be at least 18 years old to register.';
+                document.getElementById('birthday').classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+        
+        // Validate contact number (Philippine format: +63 followed by 10 digits)
+        const contactNumber = document.getElementById('contactnumber').value;
+        const contactRegex = /^09\d{9}$/;
+        if (!contactRegex.test(contactNumber)) {
+            document.getElementById('contactnumberError').textContent = 'Please enter a valid Philippine number starting with 09 followed by 9 digits (11 digits total).';
+            document.getElementById('contactnumber').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate Facebook profile link
+        const facebookProfile = document.getElementById('facebookProfile').value;
+        const facebookRegex = /^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/;
+        if (!facebookRegex.test(facebookProfile)) {
+            document.getElementById('facebookProfileError').textContent = 'Please enter a valid Facebook profile URL.';
+            document.getElementById('facebookProfile').classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+});
+</script>
 </body>
 </html>

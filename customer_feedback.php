@@ -145,7 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($stmt->execute()) {
             // Get a voucher code that hasn't been given yet
-            $voucherQuery = $conn->query("SELECT * FROM voucher_code WHERE isGiven = FALSE LIMIT 1");
+            $voucherQuery = $conn->query("SELECT * FROM voucher_code WHERE isGiven = FALSE AND voucherType = 'Returning Customer' LIMIT 1");
+
             if ($voucherQuery && $voucherQuery->num_rows > 0) {
                 $voucher = $voucherQuery->fetch_assoc();
                 $voucherCode = $voucher['code'];

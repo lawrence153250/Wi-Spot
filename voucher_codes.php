@@ -348,6 +348,7 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
                                     -
                                 <?php endif; ?>
                             </td>
+                            <td><?php echo htmlspecialchars($code['voucherType']); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -362,8 +363,8 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
             const batchId = <?php echo $batchId; ?>;
             
             // Create CSV content
-            let csvContent = "Voucher Code,Status,Created Date,Used Date,Customer ID,Booking ID\n";
-            
+            let csvContent = "Voucher Code,Status,Created Date,Used Date,Customer ID,Booking ID,Voucher Type\n";
+
             <?php foreach ($voucherCodes as $code): ?>
                 csvContent += `"<?php echo $code['code']; ?>",`;
                 csvContent += `"<?php echo $code['isUsed'] ? 'Used' : 'Available'; ?>",`;
@@ -371,6 +372,7 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
                 csvContent += `"<?php echo $code['usedDate'] ? date('M d, Y H:i', strtotime($code['usedDate'])) : ''; ?>",`;
                 csvContent += `"<?php echo $code['customerId'] ?: ''; ?>",`;
                 csvContent += `"<?php echo $code['bookingId'] ?: ''; ?>"\n`;
+                csvContent += `"<?php echo $code['voucherType']; ?>"\n`;
             <?php endforeach; ?>
             
             // Create download link
