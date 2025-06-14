@@ -112,8 +112,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
             background-color: #34495e;
         }
         
-        .sidebar-menu li.active {
-            background-color: #3498db;
+.sidebar-menu li.active {
+            background-color:rgb(255, 255, 255);
         }
         
         /* Main Content Styles */
