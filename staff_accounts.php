@@ -61,7 +61,7 @@ $order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
 
 // Build the base query
 $sql = "SELECT customerId, email, firstName, lastName, contactNumber, address, birthday, 
-               userName, facebookProfile, validId, proofOfBilling, idNumber, accountVerification,
+               userName, facebookProfile, validId, proofOfBilling, idNumber, accountVerification, emailVerification,
                CASE WHEN validId IS NOT NULL AND proofOfBilling IS NOT NULL THEN 'ID Uploaded' ELSE 'ID not yet uploaded' END as idUploaded
         FROM customer";
 
@@ -392,6 +392,7 @@ $conn->close();
                         <tr>
                             <th>Username</th>
                             <th>Email</th>
+                            <th>Email Verification</th>
                             <th>Full Name</th>
                             <th>Contact Number</th>
                             <th>Address</th>
@@ -410,6 +411,15 @@ $conn->close();
                                 <tr>
                                     <td><?php echo htmlspecialchars($customer['userName']); ?></td>
                                     <td><?php echo htmlspecialchars($customer['email']); ?></td>
+                                    <td>
+                                        <?php 
+                                        $emailStatus = $customer['emailVerification'] ?? 'unverified';
+                                        $emailBadgeClass = ($emailStatus == 'verified') ? 'bg-success' : 'bg-secondary';
+                                        ?>
+                                        <span class="badge <?php echo $emailBadgeClass; ?>">
+                                            <?php echo ucfirst($emailStatus); ?>
+                                        </span>
+                                    </td>
                                     <td><?php echo htmlspecialchars($customer['firstName'] . ' ' . $customer['lastName']); ?></td>
                                     <td><?php echo htmlspecialchars($customer['contactNumber']); ?></td>
                                     <td><?php echo htmlspecialchars($customer['address']); ?></td>
@@ -519,7 +529,7 @@ $conn->close();
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="12" class="text-center">No customer accounts found.</td>
+                                <td colspan="13" class="text-center">No customer accounts found.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

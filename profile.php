@@ -31,6 +31,7 @@ $username = $_SESSION['username'];
 
 $conn = new mysqli('localhost', 'root', '', 'capstonesample');
 
+
 $sql = "SELECT * FROM customer WHERE username = '$username'";
 $result = $conn->query($sql);
 $user = $result->fetch_assoc();
@@ -353,18 +354,55 @@ $conn->close();
     .popup button {
         margin-top: 10px;
     }
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 500px;
+        border-radius: 5px;
+    }
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .close:hover {
+        color: black;
+    }
+    #response {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 4px;
+    }
+    .success {
+        background-color: #dff0d8;
+        color: #3c763d;
+    }
+    .error {
+        background-color: #f2dede;
+        color: #a94442;
+    }
+    .form-group {
+        text-align: center; 
+    }
 
-
-
-.form-group {
-    text-align: center; 
-}
-
-.custom-button {
-   
-    width: 200px; 
-    box-sizing: border-box; /
-}
+    .custom-button {
+    
+        width: 200px; 
+        box-sizing: border-box; /
+    }
 
 </style>
 <body>
@@ -482,7 +520,17 @@ $conn->close();
                             <p><strong>Address: </strong><?php echo $user['address']; ?></p>
                         </div>
                         <div class="user-info-section">
-                            <p><strong>&nbsp; Email: </strong><?php echo $user['email'] ?></p>
+                            <p><strong>&nbsp; Email: </strong><?php echo htmlspecialchars($user['email']); ?>
+                            <?php if ($user['emailVerification'] === "verified"): ?>
+                                <span style="color: green;"> (Email Verified)</span>
+                            <?php else: ?>
+                                <span style="color: red;"> (Email Unverified)</span><br>
+                                <form action="otp_form.php" method="POST">
+                                    <input type="hidden" name="email" value="<?php echo htmlspecialchars($user['email']); ?>">
+                                    <button type="submit" class="btn btn-primary mt-2 custom-button">Verify Your Email</button>
+                                </form>
+                            <?php endif; ?>
+                            </p>
                         </div>
                         <div class="user-info-section">
                             <p><strong>&nbsp; Contact: </strong><?php echo $user['contactNumber'] ?></p>
@@ -734,10 +782,10 @@ $conn->close();
         </script>
     <?php endif; ?>
 
-    <script>
-        function closePopup() {
-            document.getElementById("messagePopup").style.display = "none";
-        }
-    </script>
+<script>
+    function closePopup() {
+        document.getElementById("messagePopup").style.display = "none";
+    }
+</script>
 </body>
 </html>
