@@ -316,198 +316,28 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile Page</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="profilestyle.css">
-</head>
-<style>
-    body {
-        margin: 0;
-        color: #2e323c;
-        background: #f5f6fa;
-        position: relative;
-        height: 100%;
-
-    }
-    .account-settings .user-profile {
-        margin: 0 0 1rem 0;
-        text-align: center;
-        
-    }
-    .account-settings .user-profile .user-avatar {
-        margin: 0 0 1rem 0;
-    }
-    .account-settings .user-profile .user-avatar img {
-        width: 200px;
-        height: 200px;
-        -webkit-border-radius: 100px;
-        -moz-border-radius: 100px;
-        border-radius: 100px;
-        margin-right: 250px;
-        margin-bottom: 20px;
-    }
-    .account-settings .user-profile h5.user-name {
-        margin: 0 0 0.5rem 0;
-    }
-    .account-settings .user-profile h6.user-email {
-        margin: 0;
-        font-size: 0.8rem;
-        font-weight: 400;
-        color: #9fa8b9;
-    }
-    .account-settings .about {
-        margin: 2rem 0 0 0;
-        text-align: center;
-    }
-    .account-settings .about h5 {
-        margin: 0 0 15px 0;
-        color: #007ae1;
-    }
-    .account-settings .about p {
-        font-size: 0.825rem;
-    }
-    .form-control {
-        border: 1px solid #cfd1d8;
-        -webkit-border-radius: 2px;
-        -moz-border-radius: 2px;
-        border-radius: 2px;
-        font-size: .825rem;
-        background: #ffffff;
-        color: #2e323c;
-    }
-
-    .card {
-        background: #ffffff;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        border: 0;
-        margin-bottom: 1rem;
-    }
-
-    .reset-password-form {
-        max-width: 600px;
-        margin: auto;
-    }
-    .reset-password-form .form-group {
-        margin-bottom: 1rem;
-    }
-    .reset-password-form button {
-        width: 100%;
-    }
-
-    .user-info-section {
-        border: 1px solid #cfd1d8;
-        padding: 10px;
-        margin-bottom: 20px;
-        border-radius: 5px;
-        background-color: #f5f6fa;   
- }
-    .popup {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
-        text-align: center;
-    }
-    .popup.success {
-        border: 2px solid green;
-        color: green;
-    }
-    .popup.error {
-        border: 2px solid red;
-        color: red;
-    }
-    .popup button {
-        margin-top: 10px;
-    }
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1;
-        left: 0; top: 0;
-        width: 100%; height: 100%;
-        background-color: rgba(0,0,0,0.4);
-    }
-    .modal-content {
-        background-color: #fefefe;
-        margin: 15% auto;
-        padding: 20px;
-        border: 1px solid #888;
-        width: 80%;
-        max-width: 500px;
-        border-radius: 5px;
-    }
-    .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    .close:hover {
-        color: black;
-    }
-    #response {
-        margin: 10px 0;
-        padding: 10px;
-        border-radius: 4px;
-    }
-    .success {
-        background-color: #dff0d8;
-        color: #3c763d;
-    }
-    .error {
-        background-color: #f2dede;
-        color: #a94442;
-    }
-    .form-group {
-        text-align: center; 
-    }
-
-    .custom-button {
-    
-        width: 200px; 
-        box-sizing: border-box; /
-    }
-    /* Ensure modal backdrop doesn't block interactions when closed */
-    .modal-backdrop {
-        z-index: 1040 !important;
-    }
-    .modal {
-        z-index: 1050 !important;
-    }
-    
-    /* Make sure no other elements are covering the modal */
-    body.modal-open {
-        overflow: auto;
-        padding-right: 0 !important;
-    }
-
-</style>
-<body>
-    
-<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-    <div class="nav-container">
+</head>   
+<body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
-            <ul class="navbar-nav">
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
                 <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
                 <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
                 <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
             </ul>
+
             <?php if (isset($_SESSION['username'])): ?>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -515,7 +345,7 @@ $conn->close();
                     </li>
                 </ul>
             <?php else: ?>
-                <div class="auth-buttons ms-auto">
+                <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
                     <a class="btn btn-primary" href="login.php">LOGIN</a>
                     <a class="nav-link" href="register.php">SIGN UP</a>
                 </div>
@@ -523,6 +353,7 @@ $conn->close();
         </div>
     </div>
 </nav>
+
     <div class="container">
         <div class="row gutters">
             <div class="col-xl-3 col-lg-3 col-md-12 col-sm-12 col-12">
@@ -633,45 +464,34 @@ $conn->close();
     <p style="background-image: url('img/Background.png');" >
     </p>
     </div>
-    <!-- footer -->
-    <div class="foot-container" id="grad">
-            <div class="foot-icons">
-                <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target=”_blank”></a>
-                <a href="https://web.facebook.com/" class="bi bi-facebook text-altlight" target=”_blank”></a>
-                <a href="https://www.instagram.com/" class="bi bi-instagram text-altlight" target=”_blank”></a>
-                <a href="https://www.tiktok.com/" class="bi bi-tiktok text-altlight" target=”_blank”></a>
-            </div>
-            <hr>
-            <div class="foot-policy">
-                <div class="row">
-                    <div class="col-md-3">
-                        <a class="foot-policy text-altlight" href="termsofservice.php" target="_blank">Terms of Service</a>
-                    </div>
-                    <div class="col-md-3">
-                        <a class="foot-policy text-altlight" href="copyrightpolicy.php" target="_blank">Copyright Policy</a>
-                    </div>
-                    <div class="col-md-3">
-                        <a class="foot-policy text-altlight" href="privacypolicy.php" target="_blank">Privacy Policy</a>
-                    </div>
-                    <div class="col-md-3">
-                        <a class="foot-policy text-altlight" href="contactus.php" target=”_blank”>Contact Us</a>
-                    </div>
-                </div>
-            </div>
-            <hr>
-            <div class="foot_text text-altlight">
-                <p>Wi-spot is available in English, French, German, Italian, Spanish, and more.</p><br>
-                <p>
-                    &copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.
-                </p><br>
-                <p>
-                    This webpage is for educational purposes only and no copyright infringement is intended.
-                </p>
-            </div>
-        </div>
-    
-    
+
+       <div class="foot-container">
+    <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
+    <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
+  </div>
+  <div class="foot-icons">
+    <a href="https://www.facebook.com/WiSpotServices" class="bi bi-facebook" target="_blank"></a>
+  </div>
+
+  <hr>
+
+  <div class="foot-policy">
+    <div class="policy-links">
+      <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
+      <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
+      <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
+      <a href="contactus.php" target="_blank">CONTACT US</a>
     </div>
+  </div>
+
+  <hr>
+
+  <div class="foot_text">
+    <br>
+    <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
+  </div>
+</div>
+</div>
 
     <!-- Reset password modal -->
     <div class="modal fade" id="resetPass" tabindex="-1" aria-labelledby="resetPassLabel" aria-hidden="true">

@@ -36,21 +36,22 @@ unset($_SESSION['form_data']);
         }
     </style>
 </head>
-<body style="background-color: #f0f3fa;">
-<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-    <div class="nav-container">
+<body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
-            <ul class="navbar-nav">
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
                 <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
                 <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
                 <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
             </ul>
+
             <?php if (isset($_SESSION['username'])): ?>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -58,7 +59,7 @@ unset($_SESSION['form_data']);
                     </li>
                 </ul>
             <?php else: ?>
-                <div class="auth-buttons ms-auto">
+                <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
                     <a class="btn btn-primary" href="login.php">LOGIN</a>
                     <a class="nav-link" href="register.php">SIGN UP</a>
                 </div>

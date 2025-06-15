@@ -16,20 +16,22 @@ session_start();
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-    <div class="nav-container">
+<body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
-            <ul class="navbar-nav">
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
                 <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
                 <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
                 <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
             </ul>
+
             <?php if (isset($_SESSION['username'])): ?>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -37,7 +39,7 @@ session_start();
                     </li>
                 </ul>
             <?php else: ?>
-                <div class="auth-buttons ms-auto">
+                <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
                     <a class="btn btn-primary" href="login.php">LOGIN</a>
                     <a class="nav-link" href="register.php">SIGN UP</a>
                 </div>
@@ -45,6 +47,7 @@ session_start();
         </div>
     </div>
 </nav>
+
 <div class="hero">
     <div class="headcontainer">
         <div class="text-content">
@@ -73,37 +76,39 @@ session_start();
         </div>
     </div>
 
-    <div class="customercontainer">
-        <div class="row">
-            <div class="col-sm-4">
-                <div class="card">
-                <img src="uploads/businesses.png" alt="Business Image" class="card-image">
-                <div class="card-body">
-                    <h5 class="card-title">BUSINESSES</h5>
-                    <p class="card-text">Get fast, reliable internet for remote or temporary setups, ensuring seamless communication and uninterrupted operations with your team and clients.</p>
-                </div>
-                </div>
-            </div>
-            <div class="col-sm-4">
-                <div class="card">
-                <img src="uploads/events.png" alt="Events" class="card-image">
-                <div class="card-body">
-                    <h5 class="card-title">EVENTS AND LIVESTREAMS</h5>
-                    <p class="card-text"> Ensure smooth events and high-quality livestreaming with fast, stable internet for seamless broadcasts and real-time coordination.</p>
-                </div>
+    <div class="helpcontainer">
+    <div class="row">
+        <!-- LEFT SIDE: Text -->
+        <div class="col-sm-6">
+            <h1>Made for people on the move.</h1>
+            <p>
+                Wi-Spot offers fast, reliable WiFi rental solutions for events, travels, short-term setups, and on-the-go lifestyles. No long-term contracts—just seamless connectivity, anytime, anywhere.
+            </p>
+        </div>
+
+        <!-- RIGHT SIDE: Cards -->
+        <div class="col-sm-6">
+            <div class="card card-1">
+                <div class="card-body1">
+                    <h5 class="card-title">01</h5>
+                    <p class="card-text">Businesses</p> 
                 </div>
             </div>
-            <div class="col-sm-4">
-                <div class="card">
-                <img src="uploads/outdoors.png" alt="Outdoor" class="card-image">
-                <div class="card-body">
-                    <h5 class="card-title">OUTDOOR ENTHUSIASTS</h5>
-                    <p class="card-text">Stay connected even in the most remote areas with reliable satellite Wi-Fi, perfect for streaming, browsing, and staying in touch with the world.</p>
+            <div class="card card-2">
+                <div class="card-body1">
+                    <h5 class="card-title">02</h5>
+                    <p class="card-text">Events and Livestreams</p> 
                 </div>
+            </div>
+            <div class="card card-3">
+                <div class="card-body1">
+                    <h5 class="card-title">03</h5>
+                    <p class="card-text">Outdoor Enthusiasts</p>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
     <div class="customizedcontainer">
     <img src="uploads/booking.png" alt="Satellite Internet" class="left-image">
@@ -113,34 +118,6 @@ session_start();
         <a href="booking.php" class="btn btn-primary">BOOK OUR SERVICE</a>
     </div>
 </div>
-    <div class="helpcontainer">
-        <div class="row">
-            <div class="col-sm-6">
-                    <h1>WHAT CAN WE HELP YOU WITH?</h1>
-                    <p>Wi-Spot offers tailored connectivity solutions for short-term rentals, network setups, and ongoing services. Explore our offerings to stay connected, wherever you are. </p>
-            </div>
-            <div class="col-sm-6">
-            <div class="card card-1">
-                    <div class="card-body1">
-                        <h5 class="card-title">01</h5>
-                        <p class="card-text">Starlink Rental Service</p> 
-                    </div>
-                </div>
-                <div class="card card-2">
-                    <div class="card-body1">
-                        <h5 class="card-title">02</h5>
-                        <p class="card-text">Network Installment and Deployment</p> 
-                    </div>
-                </div>
-                <div class="card card-3">
-                <div class="card-body1">
-                        <h5 class="card-title">03</h5>
-                        <p class="card-text">VPN Services</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="mapcontainer">
                 <img src="uploads/maps.png" alt="Map Coverage" class="feature-maps">
                 <div class="map-content">
