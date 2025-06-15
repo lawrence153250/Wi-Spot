@@ -85,7 +85,7 @@
   }
 
 
-  .btn-primary {
+.btn-primary {
     display: inline-block;
     text-decoration: none;
     padding: 14px 40px;
@@ -101,142 +101,201 @@
     border-top-right-radius: 30px;
 }
 
-.card-booking {
-  width: 100%;
-  max-width: 900px;
-  background-color: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-  padding: 40px;
+/* Container */
+.booking-container {
+  max-width: 960px;
+  margin: 30px auto;
+  padding: 20px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #333;
 }
 
-.card-booking h2 {
-  font-size: 28px;
+/* Title */
+.booking-title {
+    margin-top: 70px;
+  font-size: 2rem;
   text-align: center;
-  margin-bottom: 30px;
   color: #0d6efd;
-}
-
-section {
   margin-bottom: 2rem;
 }
 
-h5 {
-  font-size: 20px;
-  margin-bottom: 15px;
+/* Card */
+.client-info-card {
+  background-color: #fff;
+  padding: 25px 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+}
+
+/* Section title */
+.section-title {
+  font-size: 1.25rem;
   color: #444;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
 }
 
-.user-info div {
-  margin-bottom: 8px;
-  font-size: 15px;
+/* Grid layout */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
 }
 
-label {
+/* Each info item */
+.info-item label {
   font-weight: 600;
+  color: #555;
+  font-size: 0.9rem;
   display: block;
-  margin-bottom: 5px;
-  font-size: 14px;
+  margin-bottom: 0.3rem;
 }
 
-input[type="text"],
-input[type="date"] {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 16px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+.info-item p {
+  font-size: 1rem;
+  padding: 10px 14px;
   background-color: #f8f9fa;
-  transition: border-color 0.3s;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin: 0;
 }
 
-input:focus {
-  border-color: #0d6efd;
-  outline: none;
+/* Responsive tweak for smaller devices */
+@media (max-width: 500px) {
+  .booking-title {
+    font-size: 1.5rem;
+  }
+  .client-info-card {
+    padding: 20px;
+  }
 }
 
+
+.loan-form-container {
+  max-width: 960px;
+  margin: 40px auto;
+  padding: 25px 30px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  font-family: 'Segoe UI', sans-serif;
+  color: #333;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  color: #0d6efd;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.booking-form .form-group {
+  margin-bottom: 20px;
+}
+
+.booking-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+}
+
+.booking-form input[type="text"],
+.booking-form input[type="date"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #f9f9f9;
+}
+
+.info-links h4 {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.info-links a {
+  color: #0d6efd;
+  text-decoration: underline;
+}
+
+/* Package Selection */
 .package-selection {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr); /* Forces 2 columns */
+  gap: 20px;
+  margin-top: 15px;
+}
+
+@media (max-width: 600px) {
+  .package-selection {
+    grid-template-columns: 1fr; /* Stack on smaller screens */
+  }
 }
 
 .package-option {
-  border: 2px solid #e0e0e0;
+  background-color: #f8f9fa;
+  border: 2px solid transparent;
   border-radius: 12px;
   padding: 15px;
   text-align: center;
   transition: all 0.3s ease;
   cursor: pointer;
-  background-color: #fdfdfd;
+  position: relative;
 }
 
-.package-option:hover,
-.package-option input:checked + img {
-  border-color: #0d6efd;
+.package-option input[type="radio"] {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  transform: scale(1.3);
 }
 
-.package-option input {
-  display: none;
-}
-
-.package-img {
+.package-option img {
   width: 100%;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  border: 2px solid transparent;
-  transition: 0.3s ease;
+  height: auto;
+  max-height: 130px;
+  object-fit: contain;
+  margin: 10px 0;
 }
 
-.package-label {
-  font-weight: 500;
-  font-size: 14px;
+.package-option:hover {
+  border-color: #0d6efd;
+  background-color: #e9f1ff;
 }
 
-.button-group {
-  text-align: center;
-  margin-top: 20px;
+.package-details span {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 1.1rem;
 }
 
-button {
-  padding: 12px 25px;
-  font-size: 16px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.3s ease;
+.package-details p {
+  font-size: 0.95rem;
+  color: #666;
 }
 
-.btn-primary {
-  background-color: #0d6efd;
-  color: #fff;
-  margin-left: 10px;
-}
-
-.btn-primary:hover {
-  background-color: #005ce6;
-}
-
-.btn-secondary {
-  background-color: #dee2e6;
-  color: #333;
-}
-
-.btn-secondary:hover {
-  background-color: #ced4da;
-}
-
-@media (max-width: 600px) {
-  .card-booking {
-    padding: 25px;
+/* Mobile tweaks */
+@media (max-width: 480px) {
+  .section-title {
+    font-size: 1.25rem;
   }
 
-  .package-img {
-    height: 100px;
+  .package-option input[type="radio"] {
+    top: 6px;
+    left: 6px;
+  }
+
+  .package-details span {
+    font-size: 1rem;
   }
 }
+
  .foot-container {
     background: linear-gradient(90deg, rgba(117, 213, 252, 1) 5%, rgba(24, 71, 208, 1) 41%, rgba(15, 7, 144, 1) 100%);
     color: #fff;
