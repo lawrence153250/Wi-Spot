@@ -123,6 +123,7 @@ session_start();
                 <div class="map-content">
                     <h1>REAL-TIME COVERAGE VISUALIZATION</h1>
                     <p>Visualize and monitor the satellite signal strength at your location in real-time, ensuring reliable connectivity wherever you are.</p>
+                <a href="mapcoverage.php" class="btn btn-primary">MAP COVERAGE</a>
                 </div>
             </div>
 
