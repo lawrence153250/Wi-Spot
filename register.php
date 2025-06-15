@@ -1,4 +1,19 @@
-<?php session_start(); ?>
+<?php 
+session_start(); 
+// Display validation errors
+if (isset($_SESSION['errors'])) {
+    echo '<div class="alert alert-danger">';
+    foreach ($_SESSION['errors'] as $error) {
+        echo htmlspecialchars($error) . '<br>';
+    }
+    echo '</div>';
+    unset($_SESSION['errors']);
+}
+
+// Repopulate form fields if available
+$formData = $_SESSION['form_data'] ?? [];
+unset($_SESSION['form_data']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,36 +78,56 @@
             </div>
         </div>
 
-        <!-- RIGHT SIDE -->
+ <!-- RIGHT SIDE -->
         <div class="col-md-6 login-form p-5 bg-white">
             <h2 class="text-center mb-4">SIGN UP</h2>
 
             <!-- SUCCESS OR ERROR MESSAGE -->
-            <?php if (isset($_GET['success']) && $_GET['success'] == 1): ?>
-                <div class="alert alert-success text-center">Registration Successful!</div>
-            <?php elseif (isset($_GET['error'])): ?>
-                <div class="alert alert-danger text-center"><?php echo htmlspecialchars($_GET['error']); ?></div>
-            <?php endif; ?>
+            <?php
+                if (isset($_GET['success']) && $_GET['success'] == 1) {
+                    echo '<div class="alert alert-success text-center">Registration Successful!</div>';
+                } elseif (isset($_GET['error'])) {
+                    echo '<div class="alert alert-danger text-center">' . htmlspecialchars($_GET['error']) . '</div>';
+                }
+                
+                // Display validation errors
+                if (isset($_SESSION['errors'])) {
+                    echo '<div class="alert alert-danger">';
+                    foreach ($_SESSION['errors'] as $error) {
+                        echo htmlspecialchars($error) . '<br>';
+                    }
+                    echo '</div>';
+                    unset($_SESSION['errors']);
+                }
+                
+                // Get form data for repopulation
+                $formData = $_SESSION['form_data'] ?? [];
+                unset($_SESSION['form_data']);
+            ?>
 
             <form method="POST" action="register_code.php" id="registrationForm" novalidate>
                 <div class="form-group mb-3">
                     <label for="firstname">First name</label>
-                    <input type="text" id="firstname" name="firstname" class="form-control wi-input" required>
+                    <input type="text" id="firstname" name="firstname" class="form-control wi-input" 
+                           value="<?= htmlspecialchars($formData['firstname'] ?? '') ?>" required>
                     <div class="error-message" id="firstnameError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="lastname">Last name</label>
-                    <input type="text" id="lastname" name="lastname" class="form-control wi-input" required>
+                    <input type="text" id="lastname" name="lastname" class="form-control wi-input" 
+                           value="<?= htmlspecialchars($formData['lastname'] ?? '') ?>" required>
                     <div class="error-message" id="lastnameError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="username">Username</label>
-                    <input type="text" id="username" name="username" class="form-control wi-input" required>
+                    <input type="text" id="username" name="username" class="form-control wi-input" 
+                           value="<?= htmlspecialchars($formData['username'] ?? '') ?>" required>
                     <div class="error-message" id="usernameError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-control wi-input" required>
+                    <input type="email" id="email" name="email" class="form-control wi-input" 
+                           value="<?= htmlspecialchars($formData['email'] ?? '') ?>" required>
                     <div class="error-message" id="emailError"></div>
                 </div>
                 <div class="form-group mb-3">
@@ -108,23 +143,27 @@
                 </div>
                 <div class="form-group mb-3">
                     <label for="birthday">Birthday</label>
-                    <input type="date" id="birthday" name="birthday" class="form-control wi-input" required>
+                    <input type="date" id="birthday" name="birthday" class="form-control wi-input" 
+                           value="<?= htmlspecialchars($formData['birthday'] ?? '') ?>" required>
                     <div class="error-message" id="birthdayError"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label for="contactnumber">Contact Number</label>
-                    <input type="text" id="contactnumber" name="contactnumber" class="form-control wi-input" required>
+                    <input type="text" id="contactnumber" name="contactnumber" class="form-control wi-input" 
+                           value="<?= htmlspecialchars($formData['contactnumber'] ?? '') ?>" required>
                     <div class="error-message" id="contactnumberError"></div>
                     <small class="form-text text-muted">Format: 09 followed by 9 digits (11 digits total, e.g., 09123456789)</small>
                 </div>
                 <div class="form-group mb-3">
                     <label for="address">Address</label>
-                    <input type="text" id="address" name="address" class="form-control wi-input" required>
+                    <input type="text" id="address" name="address" class="form-control wi-input" 
+                           value="<?= htmlspecialchars($formData['address'] ?? '') ?>" required>
                     <div class="error-message" id="addressError"></div>
                 </div>
                 <div class="form-group mb-4">
                     <label for="facebookProfile">Facebook Profile Link</label>
-                    <input type="text" id="facebookProfile" name="facebookProfile" class="form-control wi-input" required>
+                    <input type="text" id="facebookProfile" name="facebookProfile" class="form-control wi-input" 
+                           value="<?= htmlspecialchars($formData['facebookProfile'] ?? '') ?>" required>
                     <div class="error-message" id="facebookProfileError"></div>
                 </div>
                 <div class="d-grid text-center">
@@ -167,12 +206,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('registrationForm');
     
+    // Client-side validation
     form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (validateForm()) {
-            form.submit();
+        if (!validateForm()) {
+            e.preventDefault();
         }
+        // Let the form submit if validation passes
     });
     
     function validateForm() {
@@ -181,6 +220,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset error messages
         document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        
+        // Validate required fields
+        const requiredFields = ['firstname', 'lastname', 'username', 'email', 'password', 'confirm_password', 'birthday', 'contactnumber', 'address', 'facebookProfile'];
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (!element.value.trim()) {
+                document.getElementById(field + 'Error').textContent = 'This field is required';
+                element.classList.add('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        // Only proceed with other validations if required fields are filled
+        if (!isValid) return false;
         
         // Validate email
         const email = document.getElementById('email').value;

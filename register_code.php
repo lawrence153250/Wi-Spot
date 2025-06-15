@@ -1,6 +1,9 @@
 <?php
 session_start();
 $conn = new mysqli('localhost', 'root', '', 'capstonesample');
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     // Sanitize inputs
@@ -15,87 +18,89 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $address = trim(htmlspecialchars($_POST['address']));
     $facebookProfile = trim(htmlspecialchars($_POST['facebookProfile']));
 
-    // Validate email format
+    // Validate inputs
+    $errors = [];
+    
+    if (empty($username)) $errors[] = "Username is required";
+    if (empty($email)) $errors[] = "Email is required";
+    if (empty($password)) $errors[] = "Password is required";
+    if (empty($firstname)) $errors[] = "First name is required";
+    if (empty($lastname)) $errors[] = "Last name is required";
+    if (empty($birthday)) $errors[] = "Birthday is required";
+    if (empty($contactnumber)) $errors[] = "Contact number is required";
+    if (empty($address)) $errors[] = "Address is required";
+    if (empty($facebookProfile)) $errors[] = "Facebook profile is required";
+    
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Invalid email format";
-        header("Location: register.php?error=" . urlencode($error));
-        exit();
+        $errors[] = "Invalid email format";
     }
 
-    // Validate password requirements
     if (strlen($password) < 8 || 
         !preg_match('/[A-Z]/', $password) || 
         !preg_match('/[a-z]/', $password) || 
         !preg_match('/[0-9]/', $password) || 
         !preg_match('/[^A-Za-z0-9]/', $password)) {
-        $error = "Password must be at least 8 characters with uppercase, lowercase, number, and special character";
-        header("Location: register.php?error=" . urlencode($error));
-        exit();
+        $errors[] = "Password must be at least 8 characters with uppercase, lowercase, number, and special character";
     }
 
-    // Validate password match
     if ($password !== $confirm_password) {
-        $error = "Password and Confirm Password do not match!";
-        header("Location: register.php?error=" . urlencode($error));
-        exit();
+        $errors[] = "Password and Confirm Password do not match!";
     }
 
-    // Validate age (must be at least 18)
-    $birthDate = new DateTime($birthday);
-    $today = new DateTime();
-    $age = $today->diff($birthDate)->y;
-    if ($age < 18) {
-        $error = "You must be at least 18 years old to register";
-        header("Location: register.php?error=" . urlencode($error));
-        exit();
+    if (!empty($birthday)) {
+        $birthDate = new DateTime($birthday);
+        $today = new DateTime();
+        $age = $today->diff($birthDate)->y;
+        if ($age < 18) {
+            $errors[] = "You must be at least 18 years old to register";
+        }
     }
 
-    // Validate Philippine contact number format (+63 followed by 10 digits)
     if (!preg_match('/^09\d{9}$/', $contactnumber)) {
-        $error = "Invalid Philippine number format. Must start with 09 followed by 9 digits (11 digits total)";
-        header("Location: register.php?error=" . urlencode($error));
-        exit();
+        $errors[] = "Invalid Philippine number format. Must start with 09 followed by 9 digits (11 digits total)";
     }
 
-    // Validate Facebook profile URL
     if (!preg_match('/^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/', $facebookProfile)) {
-        $error = "Invalid Facebook profile URL";
-        header("Location: register.php?error=" . urlencode($error));
+        $errors[] = "Invalid Facebook profile URL";
+    }
+
+    // Only check database if no validation errors
+    if (empty($errors)) {
+        $stmt = $conn->prepare("SELECT * FROM customer WHERE username = ? OR email = ?");
+        $stmt->bind_param("ss", $username, $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $errors[] = "Username or email already exists";
+        } else {
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("INSERT INTO customer (firstname, lastname, username, password, email, birthday, contactnumber, address, facebookProfile) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssssssss", $firstname, $lastname, $username, $hashed_password, $email, $birthday, $contactnumber, $address, $facebookProfile);
+
+            if ($stmt->execute()) {
+                $stmt->close();
+                $conn->close();
+                header("Location: login.php?success=1");
+                exit();
+            } else {
+                $errors[] = "Database error: " . $stmt->error;
+            }
+        }
+        $stmt->close();
+    }
+
+    if (!empty($errors)) {
+        $_SESSION['errors'] = $errors;
+        $_SESSION['form_data'] = $_POST; // Save form data to repopulate
+        header("Location: register.php");
         exit();
     }
-
-    // Check if username or email already exists using prepared statement
-    $stmt = $conn->prepare("SELECT * FROM customer WHERE username = ? OR email = ?");
-    $stmt->bind_param("ss", $username, $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        $error = "Username or email already exists";
-        header("Location: register.php?error=" . urlencode($error));
-        exit();
-    }
-
-    // Hash the password
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-    // Insert new user using prepared statement
-    $stmt = $conn->prepare("INSERT INTO customer (firstname, lastname, username, password, email, birthday, contactnumber, address, facebookProfile) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssssssss", $firstname, $lastname, $username, $hashed_password, $email, $birthday, $contactnumber, $address, $facebookProfile);
-
-    if ($stmt->execute()) {
-        header("Location: register.php?success=1");
-    } else {
-        $error = "Database error: " . $conn->error;
-        header("Location: register.php?error=" . urlencode($error));
-    }
-    
-    $stmt->close();
 } else {
     header("Location: register.php");
+    exit();
 }
 
 $conn->close();
-exit();
 ?>
