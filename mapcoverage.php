@@ -475,7 +475,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 
 <!-- Google Maps API -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFx7Z_5qK__AetA_wIPEFEpuAhIxIsouI&libraries=drawing,geometry&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=''&libraries=drawing,geometry&callback=initMap" async defer></script>
 
 <script>
     // Global variables
