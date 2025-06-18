@@ -209,7 +209,7 @@ session_start();
             <div class="map-wrapper" id="map-container">
                 <script type="module" src="https://ajax.googleapis.com/ajax/libs/@googlemaps/extended-component-library/0.6.11/index.min.js"></script>
                 <gmpx-api-loader
-                    key="AIzaSyCFx7Z_5qK__AetA_wIPEFEpuAhIxIsouI"
+                    key=""
                     solution-channel="GMP_CCS_autocomplete_v5">
                 </gmpx-api-loader>
                 <gmp-map id="map" center="40.749933,-73.98633" zoom="13" map-id="DEMO_MAP_ID" style="width: 100%; height: 500px;">
