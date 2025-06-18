@@ -1,10 +1,7 @@
 <?php
 session_start();
 
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Get current admin ID
 $username = $_SESSION['username'];

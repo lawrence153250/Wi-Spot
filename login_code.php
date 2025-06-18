@@ -1,9 +1,6 @@
 <?php
 session_start();
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 echo '<meta http-equiv="refresh" content="30">';
 

@@ -27,11 +27,7 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'admin') {
 }
 
 // Database 
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Handle account status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {

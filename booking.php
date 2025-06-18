@@ -30,11 +30,7 @@ if (!isset($_SESSION['username'])) {
 
 $username = $_SESSION['username'];
 
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Fetch user information safely using prepared statements
 $stmt = $conn->prepare("SELECT * FROM customer WHERE username = ?");

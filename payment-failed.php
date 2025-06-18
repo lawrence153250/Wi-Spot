@@ -21,11 +21,7 @@ if (isset($_SESSION['timeout'])) {
 // Update timeout with current time
 $_SESSION['timeout'] = time();
 
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Get parameters from URL
 $bookingId = isset($_GET['bookingId']) ? intval($_GET['bookingId']) : 0;

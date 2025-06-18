@@ -27,11 +27,7 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     exit();
 }
 
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Function to get counts from database
 function getCount($conn, $table, $column = null, $values = null) {

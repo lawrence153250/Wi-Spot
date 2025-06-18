@@ -28,11 +28,7 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
 }
 
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Get current staff ID
 $username = $_SESSION['username'];

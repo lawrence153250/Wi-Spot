@@ -27,11 +27,7 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
 }
 
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Handle booking status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -474,7 +470,7 @@ $conn->close();
                                                 <div class="modal-item-list">
                                                     <?php
                                                     // Reconnect to database for package query
-                                                    $conn = new mysqli('localhost', 'root', '', 'capstonesample');
+                                                    require_once 'config.php';
                                                     if ($conn->connect_error) {
                                                         die("Connection failed: " . $conn->connect_error);
                                                     }

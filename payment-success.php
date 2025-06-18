@@ -21,11 +21,7 @@ if (isset($_SESSION['timeout'])) {
 // Update timeout with current time
 $_SESSION['timeout'] = time();
 
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 // Verify payment was successful
 if (!isset($_GET['bookingId']) || !isset($_GET['paymentType']) || !isset($_GET['amount'])) {
     die("Invalid request parameters");

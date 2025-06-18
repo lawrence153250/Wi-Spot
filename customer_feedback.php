@@ -22,11 +22,7 @@ if (isset($_SESSION['timeout'])) {
 $_SESSION['timeout'] = time();
 
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Check if bookingId is provided
 if (!isset($_GET['bookingId']) || !is_numeric($_GET['bookingId'])) {

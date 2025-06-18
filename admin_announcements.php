@@ -28,10 +28,7 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'admin') {
 }
 
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Function to delete expired announcements
 function deleteExpiredAnnouncements($conn) {

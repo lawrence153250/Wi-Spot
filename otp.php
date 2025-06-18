@@ -15,11 +15,6 @@ require 'phpmailer/src/Exception.php';
 require 'phpmailer/src/PHPMailer.php';
 require 'phpmailer/src/SMTP.php';
 
-// Database configuration
-$db_host = 'localhost';
-$db_user = 'root';
-$db_pass = '';
-$db_name = 'capstonesample';
 
 try {
     // Only allow POST
@@ -37,10 +32,7 @@ try {
     $email = trim($input['email'] ?? '');
 
     // Database connection
-    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-    if ($conn->connect_error) {
-        throw new Exception("Database connection failed: " . $conn->connect_error);
-    }
+    require_once 'config.php';
 
     if ($action === 'send_otp') {
         // Validate email

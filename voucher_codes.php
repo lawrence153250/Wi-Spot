@@ -22,11 +22,7 @@ if (isset($_SESSION['timeout'])) {
 $_SESSION['timeout'] = time();
 
 // Database connection
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config.php';
 
 // Get batch ID from URL
 $batchId = isset($_GET['batchId']) ? intval($_GET['batchId']) : 0;

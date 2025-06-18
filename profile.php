@@ -29,8 +29,7 @@ if (!isset($_SESSION['username'])) {
 
 $username = $_SESSION['username'];
 
-$conn = new mysqli('localhost', 'root', '', 'capstonesample');
-
+require_once 'config.php';
 
 $sql = "SELECT * FROM customer WHERE username = '$username'";
 $result = $conn->query($sql);
@@ -365,7 +364,7 @@ $conn->close();
                                     <h2>User Account</h2>
                                     <div class="profile-image">
                                         <?php
-                                        $conn = new mysqli('localhost', 'root', '', 'capstonesample');
+                                        require_once 'config.php';
                                         $sql = "SELECT profileImage FROM customer WHERE username = ?";
                                         $stmt = $conn->prepare($sql);
                                         $stmt->bind_param("s", $_SESSION['username']);
