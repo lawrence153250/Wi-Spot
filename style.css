@@ -586,27 +586,3 @@ hr {
     margin: 1.5rem 0;
 }
 
-.section-title {
-    font-size: 46px;
-}
-
-.about-section {
-    background-color: #f0f3fa
-}
-
-.ownercontainer {
-    background: white; /* Matches info-card */
-    padding: 2rem; /* Matches info-card */
-    border-radius: 10px; /* Matches info-card */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Matches info-card (changed 20px to 6px) */
-
-    margin: 20px auto; /* Center the container with margin */
-    max-width: 600px; /* Limit the width of the container */
-    text-align: center; /* Center align text */
-    position: relative; /* For pseudo-elements */
-    overflow: hidden; /* To contain pseudo-elements */
-}
-
-.about-page-body {
-    background-color: #f0f3fa;
-}
