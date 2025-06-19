@@ -1,6 +1,4 @@
 <?php
-
-// Start the session
 session_start();
 
 // Set session timeout to 15 minutes (900 seconds)
@@ -76,24 +74,64 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     $dateOfReturn = $_POST['dateOfReturn'];
     $eventLocation = $_POST['eventLocation'];
     $lendingAgreement = $_POST['lendingAgreement'];
+    $totalPrice = $_POST['totalPrice']; // Get the total price from the form
 
     // Validate date range
     if (new DateTime($dateOfBooking) >= new DateTime($dateOfReturn)) {
         echo '<div class="alert alert-danger">Error: Return date must be after the booking date.</div>';
     } else {
-        // Compute price
-        $price = computePrice($packageId, $dateOfBooking, $dateOfReturn);
-
-        // Insert booking
+        // Insert booking with the total price
         $stmt = $conn->prepare("INSERT INTO booking (customerId, packageId, dateOfBooking, dateOfReturn, eventLocation, price, lendingAgreement) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iisssds", $customerId, $packageId, $dateOfBooking, $dateOfReturn, $eventLocation, $price, $lendingAgreement);
+        $stmt->bind_param("iisssds", $customerId, $packageId, $dateOfBooking, $dateOfReturn, $eventLocation, $totalPrice, $lendingAgreement);
 
         if ($stmt->execute()) {
+            // Clear the custom equipment from session after successful booking
+            unset($_SESSION['custom_equipment']);
             echo '<div class="alert alert-success">Booking successfully created!</div>';
         } else {
             echo '<div class="alert alert-danger">Error: ' . $stmt->error . '</div>';
         }
         $stmt->close();
+    }
+}
+
+// Initialize equipment variables
+$equipment_name = $_POST['equipment_name'] ?? null;
+$equipment_price = $_POST['equipment_price'] ?? null;
+$equipment_quantity = $_POST['equipment_quantity'] ?? 1; // Default to 1 if not specified
+
+// If receiving multiple equipment items (array format)
+$equipment_list = $_POST['equipment'] ?? []; // Array of equipment items
+
+// Process single equipment item
+if ($equipment_name && $equipment_price) {
+    $equipment_item = [
+        'name' => $equipment_name,
+        'price' => (float)$equipment_price,
+        'quantity' => (int)$equipment_quantity
+    ];
+    
+    // Add to session or process as needed
+    $_SESSION['selected_equipment'] = $equipment_item;
+}
+
+// Process multiple equipment items
+if (!empty($equipment_list)) {
+    $processed_equipment = [];
+    
+    foreach ($equipment_list as $item) {
+        // Ensure we have the required fields
+        if (!empty($item['name']) && isset($item['price'])) {
+            $processed_equipment[] = [
+                'name' => htmlspecialchars($item['name']),
+                'price' => (float)$item['price'],
+                'quantity' => isset($item['quantity']) ? (int)$item['quantity'] : 1
+            ];
+        }
+    }
+    
+    if (!empty($processed_equipment)) {
+        $_SESSION['selected_equipment'] = $processed_equipment;
     }
 }
 
@@ -352,7 +390,17 @@ $conn->close();
                     <p><strong>Return Date:</strong> <span id="modalDateOfReturn"></span></p>
                     <p><strong>Event Location:</strong> <span id="modalEventLocation"></span></p>
                     <p><strong>Package Chosen:</strong> <span id="modalPackageChosen"></span></p>
-                    <p><strong>Total Price:</strong> <span id="modalTotalPrice"></span></p>
+                    
+                    <!-- Added Equipment Section -->
+                    <div class="equipment-summary mt-3">
+                        <h6><strong>Additional Equipment:</strong></h6>
+                        <div id="modalEquipmentList" class="mb-2">
+                            <!-- Equipment items will be inserted here by JavaScript -->
+                        </div>
+                        <p class="text-end"><strong>Equipment Total: </strong><span id="modalEquipmentTotal">₱0.00</span></p>
+                    </div>
+                    
+                    <p class="mt-3"><strong>Total Price:</strong> <span id="modalTotalPrice"></span></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Back</button>
@@ -361,83 +409,114 @@ $conn->close();
             </div>
         </div>
     </div>
-
     <!-- Signature Pad Script -->
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const canvas = document.getElementById('signature-canvas');
-        const signaturePad = new SignaturePad(canvas);
+   document.addEventListener('DOMContentLoaded', function () {
+    const canvas = document.getElementById('signature-canvas');
+    const signaturePad = new SignaturePad(canvas);
 
-        // Clear signature
-        document.getElementById('clear-signature').addEventListener('click', function () {
-            signaturePad.clear();
-        });
+    // Clear signature
+    document.getElementById('clear-signature').addEventListener('click', function () {
+        signaturePad.clear();
+    });
 
-        // Save signature
-        document.getElementById('save-signature').addEventListener('click', function () {
-            if (signaturePad.isEmpty()) {
-                alert('Please provide a signature first.');
-            } else {
-                const signatureData = signaturePad.toDataURL(); // Get signature as image data URL
-                document.getElementById('lendingAgreement').value = signatureData; // Store in hidden input
-                alert('Lending Agreement has been signed successfully.');
-            }
-        });
-
-        // Book Now button click handler
-        document.querySelector('.btn-primary').addEventListener('click', function (event) {
-            event.preventDefault(); // Prevent the default behavior of the button
-
-            const signatureData = document.getElementById('lendingAgreement').value;
-
-            if (!signatureData) {
-                alert('You need to sign the agreement first before proceeding.');
-            } else {
-                // Update confirmation modal with form data
-                const customerName = "<?php echo $user['firstName'] . ' ' . $user['lastName']; ?>";
-                const dateOfBooking = formatDate(document.getElementById('dateOfBooking').value); // Format the date
-                const dateOfReturn = formatDate(document.getElementById('dateOfReturn').value); // Format the date
-                const eventLocation = document.getElementById('eventLocation').value;
-                const packageId = document.querySelector('input[name="packageId"]:checked').value;
-                const packageName = document.querySelector('input[name="packageId"]:checked + .package-img + span').textContent;
-                const totalPrice = computePrice(packageId, dateOfBooking, dateOfReturn);
-
-                // Update modal content
-                document.getElementById('modalCustomerName').textContent = customerName;
-                document.getElementById('modalDateOfBooking').textContent = dateOfBooking;
-                document.getElementById('modalDateOfReturn').textContent = dateOfReturn;
-                document.getElementById('modalEventLocation').textContent = eventLocation;
-                document.getElementById('modalPackageChosen').textContent = packageName;
-                document.getElementById('modalTotalPrice').textContent = '₱' + totalPrice.toFixed(2);
-
-                // Show the confirmation modal
-                const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-                confirmationModal.show();
-            }
-        });
-
-        // Function to compute price
-        function computePrice(packageId, dateOfBooking, dateOfReturn) {
-            const packagePrices = {
-                1: 1000, // Package 1: ₱1000 per day
-                2: 1500, // Package 2: ₱1500 per day
-                3: 4000, // Package 3: ₱4000 per day
-                4: 5000, // Package 4: ₱5000 per day
-            };
-
-            const startDate = new Date(dateOfBooking);
-            const endDate = new Date(dateOfReturn);
-            const timeDiff = endDate - startDate;
-            const numberOfDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-            return packagePrices[packageId] * numberOfDays;
+    // Save signature
+    document.getElementById('save-signature').addEventListener('click', function () {
+        if (signaturePad.isEmpty()) {
+            alert('Please provide a signature first.');
+        } else {
+            const signatureData = signaturePad.toDataURL(); // Get signature as image data URL
+            document.getElementById('lendingAgreement').value = signatureData; // Store in hidden input
+            alert('Lending Agreement has been signed successfully.');
         }
     });
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        return date.toLocaleDateString('en-US', options);
+
+    // Book Now button click handler
+    document.querySelector('.btn-primary').addEventListener('click', function (event) {
+        event.preventDefault(); // Prevent the default behavior of the button
+
+        const signatureData = document.getElementById('lendingAgreement').value;
+
+        if (!signatureData) {
+            alert('You need to sign the agreement first before proceeding.');
+        } else {
+            // Update confirmation modal with form data
+            const customerName = "<?php echo $user['firstName'] . ' ' . $user['lastName']; ?>";
+            const dateOfBooking = formatDate(document.getElementById('dateOfBooking').value);
+            const dateOfReturn = formatDate(document.getElementById('dateOfReturn').value);
+            const eventLocation = document.getElementById('eventLocation').value;
+            const packageId = document.querySelector('input[name="packageId"]:checked').value;
+            const packageName = document.querySelector('input[name="packageId"]:checked + .package-img + span').textContent;
+            const packagePrice = computePrice(packageId, document.getElementById('dateOfBooking').value, document.getElementById('dateOfReturn').value);
+            
+            // Get custom equipment data from PHP session
+            const customEquipment = <?php echo isset($_SESSION['custom_equipment']) ? json_encode($_SESSION['custom_equipment']) : '[]'; ?>;
+            let equipmentTotal = 0;
+            let equipmentHTML = '';
+            
+            if (customEquipment.length > 0) {
+                customEquipment.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    equipmentTotal += itemTotal;
+                    equipmentHTML += `
+                        <div class="d-flex justify-content-between">
+                            <span>${item.name} (${item.type}) x ${item.quantity}</span>
+                            <span>₱${itemTotal.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                equipmentHTML = '<p class="text-muted">No additional equipment selected</p>';
+            }
+            
+            // Update modal content
+            document.getElementById('modalCustomerName').textContent = customerName;
+            document.getElementById('modalDateOfBooking').textContent = dateOfBooking;
+            document.getElementById('modalDateOfReturn').textContent = dateOfReturn;
+            document.getElementById('modalEventLocation').textContent = eventLocation;
+            document.getElementById('modalPackageChosen').textContent = packageName;
+            
+            // Update equipment section
+            const equipmentList = document.getElementById('modalEquipmentList');
+            equipmentList.innerHTML = equipmentHTML;
+            document.getElementById('modalEquipmentTotal').textContent = `₱${equipmentTotal.toFixed(2)}`;
+            
+            // Calculate and display total price (package + equipment)
+            const totalPrice = packagePrice + equipmentTotal;
+            document.getElementById('modalTotalPrice').textContent = `₱${totalPrice.toFixed(2)}`;
+            
+            // Store the total price in the hidden field
+            document.getElementById('totalPrice').value = totalPrice;
+
+            // Show the confirmation modal
+            const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            confirmationModal.show();
+        }
+    });
+
+    // Function to compute price
+    function computePrice(packageId, dateOfBooking, dateOfReturn) {
+        const packagePrices = {
+            1: 1000, // Package 1: ₱1000 per day
+            2: 1500, // Package 2: ₱1500 per day
+            3: 4000, // Package 3: ₱4000 per day
+            4: 5000, // Package 4: ₱5000 per day
+        };
+
+        const startDate = new Date(dateOfBooking);
+        const endDate = new Date(dateOfReturn);
+        const timeDiff = endDate - startDate;
+        const numberOfDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+        return packagePrices[packageId] * numberOfDays;
     }
+});
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
 </script>
 
 </body>

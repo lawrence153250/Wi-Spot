@@ -1,4 +1,5 @@
 <?php
+session_start();
 // Define bandwidth requirements for different websites/services (in Mbps)
 $bandwidthRequirements = [
     // Social Media
@@ -95,6 +96,7 @@ $bandwidthRequirements = [
     'cloud_storage' => 5,
     'vpn' => 2
 ];
+
 
 // Initialize variables
 $selectedServices = [];
