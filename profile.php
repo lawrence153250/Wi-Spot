@@ -307,7 +307,7 @@ $stmt->execute();
 $stmt->bind_result($validId, $idNumber, $proofOfBilling);
 $stmt->fetch();
 $stmt->close();
-$conn->close();
+// $conn->close(); cinomment ko lang, nag eerror eh.
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -364,7 +364,7 @@ $conn->close();
                                     <h2>User Account</h2>
                                     <div class="profile-image">
                                         <?php
-                                        require 'config.php';
+                                        require_once 'config.php';
                                         $sql = "SELECT profileImage FROM customer WHERE username = ?";
                                         $stmt = $conn->prepare($sql);
                                         $stmt->bind_param("s", $_SESSION['username']);
