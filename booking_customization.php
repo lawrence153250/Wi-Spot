@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 require_once 'config.php'; // Database connection file
@@ -14,6 +13,15 @@ $area_size = '';
 $recommendation = '';
 $package = null;
 
+// Equipment pricing rules
+$equipmentPrices = [
+    'Wifi Router' => 300,
+    'Wifi Extender' => 100,
+    'Ethernet Cable' => 50,
+    'Network Switch' => 500
+];
+$defaultPrice = 300;
+
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
     // Get form data
@@ -23,61 +31,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
     $budget = $_POST['budget'] ?? '';
     $area_size = $_POST['area_size'] ?? '';
 
-    // Find matching package from database
-    try {
-        // First try to find an exact match
-        $stmt = $pdo->prepare("SELECT * FROM package WHERE 
-                              expectedBandwidth >= ? AND 
-                              numberOfUsers >= ? AND
-                              eventAreaSize >= ? AND
-                              eventType = ? AND
-                              status = 'available'
-                              ORDER BY price ASC LIMIT 1");
-        $stmt->execute([$speed, $users, $area_size, $event_type]);
-        $package = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$package) {
-            // If no exact match, find the closest available package
-            $stmt = $pdo->prepare("SELECT * FROM package WHERE 
-                                  (expectedBandwidth >= ? OR numberOfUsers >= ? OR eventAreaSize >= ?)
-                                  AND status = 'available'
-                                  ORDER BY 
-                                  ABS(expectedBandwidth - ?) + 
-                                  ABS(numberOfUsers - ?) + 
-                                  ABS(eventAreaSize - ?) ASC
-                                  LIMIT 1");
-            $stmt->execute([$speed, $users, $area_size, $speed, $users, $area_size]);
-            $package = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($package) {
-                $recommendation = "We couldn't find an exact match, but we recommend our '{$package['packageName']}' package. ";
+    // Process equipment selection if any
+    $selectedEquipment = [];
+    $totalAdditionalPrice = 0;
+    
+    if (!empty($_POST['equipment'])) {
+        foreach ($_POST['equipment'] as $itemId => $quantity) {
+            // Get equipment details from inventory
+            $query = "SELECT itemId, itemName, itemType FROM inventory WHERE itemId = '$itemId' AND status = 'available'";
+            $result = mysqli_query($conn, $query);
+            
+            if ($result && mysqli_num_rows($result) > 0) {
+                $equipment = mysqli_fetch_assoc($result);
                 
-                // Additional recommendations based on requirements
-                $needs = [];
-                if ($speed > $package['expectedBandwidth']) {
-                    $needs[] = "upgrade to higher bandwidth (needed: {$speed}Mbps, package: {$package['expectedBandwidth']}Mbps)";
-                }
-                if ($users > $package['numberOfUsers']) {
-                    $needs[] = "additional equipment for more users (needed: {$users}, package: {$package['numberOfUsers']})";
-                }
-                if ($area_size > $package['eventAreaSize']) {
-                    $needs[] = "extra coverage for larger area (needed: {$area_size}sqm, package: {$package['eventAreaSize']}sqm)";
-                }
-                if ($event_type != $package['eventType']) {
-                    $needs[] = "different event type setup (needed: {$event_type}, package: {$package['eventType']})";
-                }
-
-                if (!empty($needs)) {
-                    $recommendation .= "You may need: " . implode(', ', $needs) . ". ";
+                // Determine price based on itemType
+                $price = $defaultPrice;
+                foreach ($equipmentPrices as $type => $typePrice) {
+                    if (strcasecmp(trim($equipment['itemType']), $type) === 0) {
+                        $price = $typePrice;
+                        break;
+                    }
                 }
                 
-                $recommendation .= "Please contact our team for customization options.";
-            } else {
-                $recommendation = "No suitable package found. Our team can create a custom solution for your event.";
+                $selectedEquipment[] = [
+                    'id' => $equipment['itemId'],
+                    'name' => $equipment['itemName'],
+                    'type' => $equipment['itemType'],
+                    'price' => $price,
+                    'quantity' => $quantity
+                ];
+                
+                $totalAdditionalPrice += $price * $quantity;
             }
         }
-    } catch (PDOException $e) {
-        $recommendation = "Error searching packages: " . $e->getMessage();
+    }
+
+    // Find matching package from database
+    // First try to find an exact match
+    $query = "SELECT * FROM package WHERE 
+              expectedBandwidth >= '$speed' AND 
+              numberOfUsers >= '$users' AND
+              eventAreaSize >= '$area_size' AND
+              eventType = '$event_type' AND
+              status = 'available'
+              ORDER BY price ASC LIMIT 1";
+    $result = mysqli_query(n, $query);
+    $package = mysqli_fetch_assoc($result);
+
+    if (!$package) {
+        // If no exact match, find the closest available package
+        $query = "SELECT * FROM package WHERE 
+                  (expectedBandwidth >= '$speed' OR numberOfUsers >= '$users' OR eventAreaSize >= '$area_size')
+                  AND status = 'available'
+                  ORDER BY 
+                  ABS(expectedBandwidth - '$speed') + 
+                  ABS(numberOfUsers - '$users') + 
+                  ABS(eventAreaSize - '$area_size') ASC
+                  LIMIT 1";
+        $result = mysqli_query($conn, $query);
+        $package = mysqli_fetch_assoc($result);
+
+        if ($package) {
+            $recommendation = "We couldn't find an exact match, but we recommend our '{$package['packageName']}' package. ";
+            
+            // Additional recommendations based on requirements
+            $needs = [];
+            if ($speed > $package['expectedBandwidth']) {
+                $needs[] = "upgrade to higher bandwidth (needed: {$speed}Mbps, package: {$package['expectedBandwidth']}Mbps)";
+            }
+            if ($users > $package['numberOfUsers']) {
+                $needs[] = "additional equipment for more users (needed: {$users}, package: {$package['numberOfUsers']})";
+            }
+            if ($area_size > $package['eventAreaSize']) {
+                $needs[] = "extra coverage for larger area (needed: {$area_size}sqm, package: {$package['eventAreaSize']}sqm)";
+            }
+            if ($event_type != $package['eventType']) {
+                $needs[] = "different event type setup (needed: {$event_type}, package: {$package['eventType']})";
+            }
+
+            if (!empty($needs)) {
+                $recommendation .= "You may need: " . implode(', ', $needs) . ". ";
+            }
+            
+            $recommendation .= "Please contact our team for customization options.";
+        } else {
+            $recommendation = "No suitable package found. Our team can create a custom solution for your event.";
+        }
+    }
+}
+
+// Get available equipment for the form
+$equipmentOptions = [];
+$query = "SELECT itemId, itemName, itemType, quantity FROM inventory WHERE status = 'available' AND quantity > 0";
+$result = mysqli_query($conn, $query);
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $equipmentOptions[] = $row;
     }
 }
 ?>
@@ -172,6 +221,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
             margin-right: 10px;
             color: #F6D110;
         }
+        
+        /* Equipment selection styles */
+        .selected-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .total-additional {
+            padding: 8px;
+            text-align: right;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+        .add-equipment-form {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -256,6 +324,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
                        value="<?= htmlspecialchars($area_size) ?>" step="0.01" required>
             </div>
             
+          <!-- Equipment Selection Section -->
+    <div class="form-group mb-4">
+        <h3>Additional Equipment</h3>
+        
+        <!-- Current selected equipment -->
+        <div id="selectedEquipment" class="mb-3">
+            <?php if (!empty($selectedEquipment)): ?>
+                <?php foreach ($selectedEquipment as $item): ?>
+                    <div class="selected-item">
+                        <span><?= htmlspecialchars($item['name']) ?> (<?= htmlspecialchars($item['type']) ?>)</span>
+                        <span>₱<?= number_format($item['price'], 2) ?></span>
+                        <input type="hidden" name="equipment[<?= $item['id'] ?>]" value="<?= $item['quantity'] ?>">
+                    </div>
+                <?php endforeach; ?>
+                
+                <div class="total-additional">
+                    <strong>Total Additional: ₱<?= number_format($totalAdditionalPrice, 2) ?></strong>
+                </div>
+            <?php endif; ?>
+        </div>
+        
+            <!-- Equipment selection forms -->
+            <div id="equipmentForms">
+                <!-- Initial form -->
+                <div class="add-equipment-form mb-3">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <select class="form-select equipment-select" name="itemId[]" required>
+                                <option value="">Select Equipment</option>
+                                <?php 
+                                $availableEquipment = array_filter($equipmentOptions, function($equip) use ($selectedEquipment) {
+                                    // Only show equipment that hasn't been selected yet
+                                    foreach ($selectedEquipment as $selected) {
+                                        if ($selected['id'] == $equip['itemId']) {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
+                                });
+                                
+                                foreach ($availableEquipment as $equip): ?>
+                                    <option value="<?= $equip['itemId'] ?>" data-type="<?= htmlspecialchars($equip['itemType']) ?>">
+                                        <?= htmlspecialchars($equip['itemName']) ?> 
+                                        (<?= htmlspecialchars($equip['itemType']) ?>, Available: <?= $equip['quantity'] ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-danger remove-equipment" style="display: none;">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Add more equipment button (only shown if there are available options) -->
+            <?php if (count($availableEquipment) > 0): ?>
+                <button type="button" id="addMoreEquipment" class="btn btn-secondary">Add Another Equipment</button>
+            <?php endif; ?>
+        </div>
+            
             <button type="submit" name="submit_booking" class="btn btn-primary">Find Packages</button>
         </form>
         
@@ -295,6 +427,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
                                 <p><?= nl2br(htmlspecialchars($package['equipmentsIncluded'])) ?></p>
                             </div>
                         <?php endif; ?>
+                        
+                        <?php if (!empty($selectedEquipment)): ?>
+                            <div class="mt-3">
+                                <h5>Additional Equipment:</h5>
+                                <ul>
+                                    <?php foreach ($selectedEquipment as $item): ?>
+                                        <li><?= htmlspecialchars($item['name']) ?> (<?= htmlspecialchars($item['type']) ?>) - ₱<?= number_format($item['price'], 2) ?> x <?= $item['quantity'] ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <p><strong>Total Additional Cost: ₱<?= number_format($totalAdditionalPrice, 2) ?></strong></p>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
                 
@@ -309,8 +453,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
                 <?php if ($package): ?>
                     <div class="d-flex justify-content-between mt-4">
                         <a href="booking.php" class="btn btn-secondary">Back to Packages</a>
-                        <a href="booking_confirmation.php?packageId=<?= $package['packageId'] ?>" 
-                           class="btn btn-success">Book This Package</a>
+                        <form action="booking_confirmation.php" method="post" style="display: inline;">
+                            <input type="hidden" name="packageId" value="<?= $package['packageId'] ?>">
+                            <?php foreach ($selectedEquipment as $item): ?>
+                                <input type="hidden" name="equipment[<?= $item['id'] ?>]" value="<?= $item['quantity'] ?>">
+                            <?php endforeach; ?>
+                            <button type="submit" class="btn btn-success">Book This Package</button>
+                        </form>
                     </div>
                 <?php endif; ?>
             </div>
@@ -319,10 +468,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
 
      <div class="foot-container" id="grad">
         <div class="foot-icons">
-            <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target=”_blank”></a>
-            <a href="https://web.facebook.com/" class="bi bi-facebook text-altlight" target=”_blank”></a>
-            <a href="https://www.instagram.com/" class="bi bi-instagram text-altlight" target=”_blank”></a>
-            <a href="https://www.tiktok.com/" class="bi bi-tiktok text-altlight" target=”_blank”></a>
+            <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target="_blank"></a>
+            <a href="https://web.facebook.com/" class="bi bi-facebook text-altlight" target="_blank"></a>
+            <a href="https://www.instagram.com/" class="bi bi-instagram text-altlight" target="_blank"></a>
+            <a href="https://www.tiktok.com/" class="bi bi-tiktok text-altlight" target="_blank"></a>
         </div>
         <hr>
         <div class="foot-policy">
@@ -337,7 +486,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
                     <a class="foot-policy text-altlight" href="privacypolicy.php" target="_blank">Privacy Policy</a>
                 </div>
                 <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="contactus.php" target=”_blank”>Contact Us</a>
+                    <a class="foot-policy text-altlight" href="contactus.php" target="_blank">Contact Us</a>
                 </div>
             </div>
         </div>
@@ -352,5 +501,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
             </p>
         </div>
     </div>
+    
+    <script>
+        // Equipment selection functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const equipmentForms = document.getElementById('equipmentForms');
+            const addMoreBtn = document.getElementById('addMoreEquipment');
+            const availableEquipment = <?= json_encode($availableEquipment) ?>;
+            const selectedEquipment = <?= json_encode($selectedEquipment ?? []) ?>;
+            
+            // Add more equipment form
+            if (addMoreBtn) {
+                addMoreBtn.addEventListener('click', function() {
+                    const newForm = document.createElement('div');
+                    newForm.className = 'add-equipment-form mb-3';
+                    newForm.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-8">
+                                <select class="form-select equipment-select" name="itemId[]" required>
+                                    <option value="">Select Equipment</option>
+                                    ${availableEquipment.map(equip => {
+                                        // Only show equipment that hasn't been selected yet
+                                        let isSelected = selectedEquipment.some(sel => sel.id == equip.itemId);
+                                        if (!isSelected) {
+                                            return `<option value="${equip.itemId}" data-type="${equip.itemType}">
+                                                ${equip.itemName} (${equip.itemType}, Available: ${equip.quantity})
+                                            </option>`;
+                                        }
+                                        return '';
+                                    }).join('')}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-danger remove-equipment">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    equipmentForms.appendChild(newForm);
+                    
+                    // Show remove button if there are multiple forms
+                    updateRemoveButtons();
+                });
+            }
+            
+            // Remove equipment form
+            equipmentForms.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-equipment')) {
+                    e.target.closest('.add-equipment-form').remove();
+                    updateRemoveButtons();
+                }
+            });
+            
+            function updateRemoveButtons() {
+                const forms = document.querySelectorAll('.add-equipment-form');
+                if (forms.length > 1) {
+                    forms.forEach(form => {
+                        form.querySelector('.remove-equipment').style.display = 'block';
+                    });
+                } else if (forms.length === 1) {
+                    forms[0].querySelector('.remove-equipment').style.display = 'none';
+                }
+            }
+        });
+    </script>
 </body>
 </html>
