@@ -1,130 +1,84 @@
-<?php
-// Define bandwidth requirements for different websites/services (in Mbps) asdfasddfadsfasdfADSF
-$bandwidthRequirements = [
-    // Social Media
-    'facebook' => 1,
-    'twitter' => 1,
-    'instagram' => 2,
-    'linkedin' => 1,
-    
-    // Video Platforms
-    'netflix' => [
-        'sd' => 3,
-        'hd' => 5,
-        'uhd' => 25
-    ],
-    'youtube' => [
-        'sd' => 1.5,
-        'hd' => 2.5,
-        'full_hd' => 5,
-        'ultra_hd' => 20
-    ],
-    'tiktok' => 2.5,
-    
-    // Live Streaming (Watching)
-    'twitch_watching' => [
-        'low' => 3,
-        'medium' => 4.5,
-        'high' => 6,
-        'source' => 8
-    ],
-    'youtube_live_watching' => [
-        'sd' => 1.5,
-        'hd' => 2.5,
-        'full_hd' => 5,
-        'ultra_hd' => 20
-    ],
-    'facebook_live_watching' => [
-        'sd' => 1.5,
-        'hd' => 3,
-        'full_hd' => 6
-    ],
-    
-    // Live Streaming (Broadcasting)
-    'twitch_broadcasting' => [
-        '720p' => 4.5,
-        '1080p' => 6,
-        '1440p' => 8,
-        '4k' => 15
-    ],
-    'youtube_live_broadcasting' => [
-        '720p' => 4.5,
-        '1080p' => 6,
-        '1440p' => 8,
-        '4k' => 15
-    ],
-    'facebook_live_broadcasting' => [
-        '720p' => 4,
-        '1080p' => 6,
-        '4k' => 12
-    ],
-    'tiktok_live_broadcasting' => [
-        'standard' => 3,
-        'hd' => 5
-    ],
-    
-    // Video Conferencing
-    'zoom' => [
-        'hd' => 2.5,
-        'full_hd' => 3.5,
-        'group' => 5
-    ],
-    'teams' => [
-        'hd' => 2,
-        'full_hd' => 3,
-        'group' => 4
-    ],
-    'google_meet' => [
-        'hd' => 2.5,
-        'full_hd' => 3.5
-    ],
-    
-    // Other Services
-    'spotify' => 0.5,
-    'gaming' => [
-        'casual' => 3,
-        'competitive' => 5,
-        'streaming' => 8
-    ],
-    'downloads' => [
-        'small' => 5,
-        'medium' => 10,
-        'large' => 20,
-        'frequent' => 30
-    ],
-    'cloud_storage' => 5,
-    'vpn' => 2
-];
 
-// Initialize variables
-$selectedServices = [];
-$requiredBandwidth = 0;
-$qualityLevels = [];
+<?php
+session_start();
+require_once 'config.php'; // Database connection file
+
+// Initialize variables from calculator if they exist
+$calculated_speed = $_POST['speed'] ?? null;
+$calculated_users = $_POST['users'] ?? null;
+
+// Initialize other form fields
+$event_type = '';
+$budget = '';
+$area_size = '';
+$recommendation = '';
+$package = null;
 
 // Process form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $selectedServices = $_POST['services'] ?? [];
-    $qualityLevels = $_POST['quality'] ?? [];
-    
-    // Calculate required bandwidth
-    foreach ($selectedServices as $service) {
-        if (isset($bandwidthRequirements[$service])) {
-            if (is_array($bandwidthRequirements[$service])) {
-                // Service has quality levels
-                $quality = $qualityLevels[$service] ?? array_key_first($bandwidthRequirements[$service]);
-                $requiredBandwidth += $bandwidthRequirements[$service][$quality];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])) {
+    // Get form data
+    $speed = $_POST['speed'] ?? $calculated_speed;
+    $users = $_POST['users'] ?? $calculated_users;
+    $event_type = $_POST['event_type'] ?? '';
+    $budget = $_POST['budget'] ?? '';
+    $area_size = $_POST['area_size'] ?? '';
+
+    // Find matching package from database
+    try {
+        // First try to find an exact match
+        $stmt = $pdo->prepare("SELECT * FROM package WHERE 
+                              expectedBandwidth >= ? AND 
+                              numberOfUsers >= ? AND
+                              eventAreaSize >= ? AND
+                              eventType = ? AND
+                              status = 'available'
+                              ORDER BY price ASC LIMIT 1");
+        $stmt->execute([$speed, $users, $area_size, $event_type]);
+        $package = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$package) {
+            // If no exact match, find the closest available package
+            $stmt = $pdo->prepare("SELECT * FROM package WHERE 
+                                  (expectedBandwidth >= ? OR numberOfUsers >= ? OR eventAreaSize >= ?)
+                                  AND status = 'available'
+                                  ORDER BY 
+                                  ABS(expectedBandwidth - ?) + 
+                                  ABS(numberOfUsers - ?) + 
+                                  ABS(eventAreaSize - ?) ASC
+                                  LIMIT 1");
+            $stmt->execute([$speed, $users, $area_size, $speed, $users, $area_size]);
+            $package = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($package) {
+                $recommendation = "We couldn't find an exact match, but we recommend our '{$package['packageName']}' package. ";
+                
+                // Additional recommendations based on requirements
+                $needs = [];
+                if ($speed > $package['expectedBandwidth']) {
+                    $needs[] = "upgrade to higher bandwidth (needed: {$speed}Mbps, package: {$package['expectedBandwidth']}Mbps)";
+                }
+                if ($users > $package['numberOfUsers']) {
+                    $needs[] = "additional equipment for more users (needed: {$users}, package: {$package['numberOfUsers']})";
+                }
+                if ($area_size > $package['eventAreaSize']) {
+                    $needs[] = "extra coverage for larger area (needed: {$area_size}sqm, package: {$package['eventAreaSize']}sqm)";
+                }
+                if ($event_type != $package['eventType']) {
+                    $needs[] = "different event type setup (needed: {$event_type}, package: {$package['eventType']})";
+                }
+
+                if (!empty($needs)) {
+                    $recommendation .= "You may need: " . implode(', ', $needs) . ". ";
+                }
+                
+                $recommendation .= "Please contact our team for customization options.";
             } else {
-                // Single bandwidth value
-                $requiredBandwidth += $bandwidthRequirements[$service];
+                $recommendation = "No suitable package found. Our team can create a custom solution for your event.";
             }
         }
+    } catch (PDOException $e) {
+        $recommendation = "Error searching packages: " . $e->getMessage();
     }
-    
-    // Add buffer (25%) for multiple simultaneous usage
-    $requiredBandwidth *= 1.25;
-    
-    // Round up to nearest 5 Mbps for recommendation
-    $recommendedBandwidth = ceil($requiredBandwidth / 5) * 5;
 }
 ?>
 
@@ -133,307 +87,270 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Internet Bandwidth Calculator</title>
+    <title>Booking Customization</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
+            background-color: #E6F2F4;
+            font-family: Arial, sans-serif;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
-        .calculator {
-            background: #f5f7fa;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+
+        .nav-link {
+            color: #ffffff; 
         }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 25px;
+
+        .navbar-brand img {
+            max-height: 40px; 
         }
-        .service-group {
+
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #ffffff; 
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+        }
+
+        h1, h2 {
+            text-align: left;
+            color: #F6D110; 
+            font-family: 'Garet', sans-serif;
             margin-bottom: 20px;
-            padding: 15px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .service-group h3 {
-            color: #3498db;
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
+
+        .form-label {
+            font-weight: bold;
         }
-        .service-option {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 4px;
+
+        .readonly-field {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
         }
-        .quality-select {
-            margin-left: 10px;
-            padding: 5px;
-            border-radius: 4px;
+
+        .package-card {
             border: 1px solid #ddd;
-        }
-        .result {
-            margin-top: 30px;
+            border-radius: 10px;
             padding: 20px;
-            background: #e8f4fd;
-            border-radius: 8px;
-            border-left: 5px solid #3498db;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
         }
-        .result h3 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        button {
-            background: #3498db;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
+
+        .package-name {
+            color: #F6D110;
             font-weight: bold;
-            display: block;
-            margin: 25px auto 0;
-            transition: background 0.3s;
+            font-size: 1.2rem;
         }
-        button:hover {
-            background: #2980b9;
-        }
-        .bandwidth-value {
-            font-size: 24px;
-            color: #e74c3c;
-            font-weight: bold;
-        }
+
         .recommendation {
-            background: #eaf7ea;
             padding: 15px;
-            border-radius: 6px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .foot-container {
+            background-color: #E6F2F4; 
+            padding: 100px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+        .package-features {
             margin-top: 15px;
-            border-left: 5px solid #2ecc71;
+        }
+        .feature-item {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .feature-icon {
+            margin-right: 10px;
+            color: #F6D110;
         }
     </style>
 </head>
 <body>
-    <div class="calculator">
-        <h1>Advanced Internet Bandwidth Calculator</h1>
-        <p>Select the websites/services you plan to use to estimate the required bandwidth, including live streaming options.</p>
+<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="nav-container">
+        <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
+                <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
+                <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
+                <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
+                <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
+            </ul>
+            <?php if (isset($_SESSION['username'])): ?>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.php"><?= htmlspecialchars($_SESSION['username']) ?> <i class="bi bi-person-circle"></i></a>
+                    </li>
+                </ul>
+            <?php else: ?>
+                <div class="auth-buttons ms-auto">
+                    <a class="btn btn-primary" href="login.php">LOGIN</a>
+                    <a class="nav-link" href="register.php">SIGN UP</a>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</nav>
+
+    <div class="container">
+        <h1>Customize Your Booking</h1>
         
         <form method="post">
-            <!-- Social Media -->
-            <div class="service-group">
-                <h3>Social Media</h3>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="facebook" <?= in_array('facebook', $selectedServices) ? 'checked' : '' ?>> Facebook</label>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="speed" class="form-label">Required Bandwidth (Mbps)</label>
+                    <?php if ($calculated_speed): ?>
+                        <input type="number" class="form-control readonly-field" id="speed" name="speed" 
+                            value="<?= htmlspecialchars($calculated_speed) ?>" readonly>
+                    <?php else: ?>
+                        <input type="number" class="form-control" id="speed" name="speed" required step="0.01">
+                    <?php endif; ?>
+                    <div class="mt-1">
+                        <small class="text-muted">Don't know what speed you need? <a href="speedCalculator.php">Try our Bandwidth Calculator</a></small>
+                    </div>
                 </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="twitter" <?= in_array('twitter', $selectedServices) ? 'checked' : '' ?>> Twitter</label>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="instagram" <?= in_array('instagram', $selectedServices) ? 'checked' : '' ?>> Instagram</label>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="linkedin" <?= in_array('linkedin', $selectedServices) ? 'checked' : '' ?>> LinkedIn</label>
-                </div>
-            </div>
-            
-            <!-- Video Streaming -->
-            <div class="service-group">
-                <h3>Video Streaming</h3>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="netflix" <?= in_array('netflix', $selectedServices) ? 'checked' : '' ?>> Netflix</label>
-                    <select name="quality[netflix]" class="quality-select">
-                        <option value="sd" <?= ($qualityLevels['netflix'] ?? '') === 'sd' ? 'selected' : '' ?>>SD (3 Mbps)</option>
-                        <option value="hd" <?= ($qualityLevels['netflix'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (5 Mbps)</option>
-                        <option value="uhd" <?= ($qualityLevels['netflix'] ?? '') === 'uhd' ? 'selected' : '' ?>>Ultra HD (25 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="youtube" <?= in_array('youtube', $selectedServices) ? 'checked' : '' ?>> YouTube</label>
-                    <select name="quality[youtube]" class="quality-select">
-                        <option value="sd" <?= ($qualityLevels['youtube'] ?? '') === 'sd' ? 'selected' : '' ?>>SD (1.5 Mbps)</option>
-                        <option value="hd" <?= ($qualityLevels['youtube'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2.5 Mbps)</option>
-                        <option value="full_hd" <?= ($qualityLevels['youtube'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (5 Mbps)</option>
-                        <option value="ultra_hd" <?= ($qualityLevels['youtube'] ?? '') === 'ultra_hd' ? 'selected' : '' ?>>Ultra HD (20 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="tiktok" <?= in_array('tiktok', $selectedServices) ? 'checked' : '' ?>> TikTok</label>
-                </div>
-            </div>
-            
-            <!-- Live Streaming (Watching) -->
-            <div class="service-group">
-                <h3>Watching Live Streams</h3>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="twitch_watching" <?= in_array('twitch_watching', $selectedServices) ? 'checked' : '' ?>> Twitch</label>
-                    <select name="quality[twitch_watching]" class="quality-select">
-                        <option value="low" <?= ($qualityLevels['twitch_watching'] ?? '') === 'low' ? 'selected' : '' ?>>Low (3 Mbps)</option>
-                        <option value="medium" <?= ($qualityLevels['twitch_watching'] ?? '') === 'medium' ? 'selected' : '' ?>>Medium (4.5 Mbps)</option>
-                        <option value="high" <?= ($qualityLevels['twitch_watching'] ?? '') === 'high' ? 'selected' : '' ?>>High (6 Mbps)</option>
-                        <option value="source" <?= ($qualityLevels['twitch_watching'] ?? '') === 'source' ? 'selected' : '' ?>>Source (8 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="youtube_live_watching" <?= in_array('youtube_live_watching', $selectedServices) ? 'checked' : '' ?>> YouTube Live</label>
-                    <select name="quality[youtube_live_watching]" class="quality-select">
-                        <option value="sd" <?= ($qualityLevels['youtube_live_watching'] ?? '') === 'sd' ? 'selected' : '' ?>>SD (1.5 Mbps)</option>
-                        <option value="hd" <?= ($qualityLevels['youtube_live_watching'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2.5 Mbps)</option>
-                        <option value="full_hd" <?= ($qualityLevels['youtube_live_watching'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (5 Mbps)</option>
-                        <option value="ultra_hd" <?= ($qualityLevels['youtube_live_watching'] ?? '') === 'ultra_hd' ? 'selected' : '' ?>>Ultra HD (20 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="facebook_live_watching" <?= in_array('facebook_live_watching', $selectedServices) ? 'checked' : '' ?>> Facebook Live</label>
-                    <select name="quality[facebook_live_watching]" class="quality-select">
-                        <option value="sd" <?= ($qualityLevels['facebook_live_watching'] ?? '') === 'sd' ? 'selected' : '' ?>>SD (1.5 Mbps)</option>
-                        <option value="hd" <?= ($qualityLevels['facebook_live_watching'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (3 Mbps)</option>
-                        <option value="full_hd" <?= ($qualityLevels['facebook_live_watching'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (6 Mbps)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Live Streaming (Broadcasting) -->
-            <div class="service-group">
-                <h3>Broadcasting Live Streams</h3>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="twitch_broadcasting" <?= in_array('twitch_broadcasting', $selectedServices) ? 'checked' : '' ?>> Twitch Streaming</label>
-                    <select name="quality[twitch_broadcasting]" class="quality-select">
-                        <option value="720p" <?= ($qualityLevels['twitch_broadcasting'] ?? '') === '720p' ? 'selected' : '' ?>>720p (4.5 Mbps)</option>
-                        <option value="1080p" <?= ($qualityLevels['twitch_broadcasting'] ?? '') === '1080p' ? 'selected' : '' ?>>1080p (6 Mbps)</option>
-                        <option value="1440p" <?= ($qualityLevels['twitch_broadcasting'] ?? '') === '1440p' ? 'selected' : '' ?>>1440p (8 Mbps)</option>
-                        <option value="4k" <?= ($qualityLevels['twitch_broadcasting'] ?? '') === '4k' ? 'selected' : '' ?>>4K (15 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="youtube_live_broadcasting" <?= in_array('youtube_live_broadcasting', $selectedServices) ? 'checked' : '' ?>> YouTube Live Streaming</label>
-                    <select name="quality[youtube_live_broadcasting]" class="quality-select">
-                        <option value="720p" <?= ($qualityLevels['youtube_live_broadcasting'] ?? '') === '720p' ? 'selected' : '' ?>>720p (4.5 Mbps)</option>
-                        <option value="1080p" <?= ($qualityLevels['youtube_live_broadcasting'] ?? '') === '1080p' ? 'selected' : '' ?>>1080p (6 Mbps)</option>
-                        <option value="1440p" <?= ($qualityLevels['youtube_live_broadcasting'] ?? '') === '1440p' ? 'selected' : '' ?>>1440p (8 Mbps)</option>
-                        <option value="4k" <?= ($qualityLevels['youtube_live_broadcasting'] ?? '') === '4k' ? 'selected' : '' ?>>4K (15 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="facebook_live_broadcasting" <?= in_array('facebook_live_broadcasting', $selectedServices) ? 'checked' : '' ?>> Facebook Live Streaming</label>
-                    <select name="quality[facebook_live_broadcasting]" class="quality-select">
-                        <option value="720p" <?= ($qualityLevels['facebook_live_broadcasting'] ?? '') === '720p' ? 'selected' : '' ?>>720p (4 Mbps)</option>
-                        <option value="1080p" <?= ($qualityLevels['facebook_live_broadcasting'] ?? '') === '1080p' ? 'selected' : '' ?>>1080p (6 Mbps)</option>
-                        <option value="4k" <?= ($qualityLevels['facebook_live_broadcasting'] ?? '') === '4k' ? 'selected' : '' ?>>4K (12 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="tiktok_live_broadcasting" <?= in_array('tiktok_live_broadcasting', $selectedServices) ? 'checked' : '' ?>> TikTok Live Streaming</label>
-                    <select name="quality[tiktok_live_broadcasting]" class="quality-select">
-                        <option value="standard" <?= ($qualityLevels['tiktok_live_broadcasting'] ?? '') === 'standard' ? 'selected' : '' ?>>Standard (3 Mbps)</option>
-                        <option value="hd" <?= ($qualityLevels['tiktok_live_broadcasting'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (5 Mbps)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Video Conferencing -->
-            <div class="service-group">
-                <h3>Video Conferencing</h3>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="zoom" <?= in_array('zoom', $selectedServices) ? 'checked' : '' ?>> Zoom</label>
-                    <select name="quality[zoom]" class="quality-select">
-                        <option value="hd" <?= ($qualityLevels['zoom'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2.5 Mbps)</option>
-                        <option value="full_hd" <?= ($qualityLevels['zoom'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (3.5 Mbps)</option>
-                        <option value="group" <?= ($qualityLevels['zoom'] ?? '') === 'group' ? 'selected' : '' ?>>Group Call (5 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="teams" <?= in_array('teams', $selectedServices) ? 'checked' : '' ?>> Microsoft Teams</label>
-                    <select name="quality[teams]" class="quality-select">
-                        <option value="hd" <?= ($qualityLevels['teams'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2 Mbps)</option>
-                        <option value="full_hd" <?= ($qualityLevels['teams'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (3 Mbps)</option>
-                        <option value="group" <?= ($qualityLevels['teams'] ?? '') === 'group' ? 'selected' : '' ?>>Group Call (4 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="google_meet" <?= in_array('google_meet', $selectedServices) ? 'checked' : '' ?>> Google Meet</label>
-                    <select name="quality[google_meet]" class="quality-select">
-                        <option value="hd" <?= ($qualityLevels['google_meet'] ?? '') === 'hd' ? 'selected' : '' ?>>HD (2.5 Mbps)</option>
-                        <option value="full_hd" <?= ($qualityLevels['google_meet'] ?? '') === 'full_hd' ? 'selected' : '' ?>>Full HD (3.5 Mbps)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Other Services -->
-            <div class="service-group">
-                <h3>Other Services</h3>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="spotify" <?= in_array('spotify', $selectedServices) ? 'checked' : '' ?>> Spotify/Music Streaming</label>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="gaming" <?= in_array('gaming', $selectedServices) ? 'checked' : '' ?>> Online Gaming</label>
-                    <select name="quality[gaming]" class="quality-select">
-                        <option value="casual" <?= ($qualityLevels['gaming'] ?? '') === 'casual' ? 'selected' : '' ?>>Casual (3 Mbps)</option>
-                        <option value="competitive" <?= ($qualityLevels['gaming'] ?? '') === 'competitive' ? 'selected' : '' ?>>Competitive (5 Mbps)</option>
-                        <option value="streaming" <?= ($qualityLevels['gaming'] ?? '') === 'streaming' ? 'selected' : '' ?>>Streaming (8 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="downloads" <?= in_array('downloads', $selectedServices) ? 'checked' : '' ?>> Large File Downloads</label>
-                    <select name="quality[downloads]" class="quality-select">
-                        <option value="small" <?= ($qualityLevels['downloads'] ?? '') === 'small' ? 'selected' : '' ?>>Occasional (5 Mbps)</option>
-                        <option value="medium" <?= ($qualityLevels['downloads'] ?? '') === 'medium' ? 'selected' : '' ?>>Regular (10 Mbps)</option>
-                        <option value="large" <?= ($qualityLevels['downloads'] ?? '') === 'large' ? 'selected' : '' ?>>Frequent (20 Mbps)</option>
-                        <option value="frequent" <?= ($qualityLevels['downloads'] ?? '') === 'frequent' ? 'selected' : '' ?>>Heavy (30 Mbps)</option>
-                    </select>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="cloud_storage" <?= in_array('cloud_storage', $selectedServices) ? 'checked' : '' ?>> Cloud Storage (Google Drive, Dropbox)</label>
-                </div>
-                <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="vpn" <?= in_array('vpn', $selectedServices) ? 'checked' : '' ?>> VPN Usage</label>
-                </div>
-            </div>
-            
-            <button type="submit">Calculate Required Bandwidth</button>
-        </form>
-        
-        <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
-            <div class="result">
-                <h3>Bandwidth Calculation Results</h3>
-                <p>Based on your selected services and quality preferences:</p>
-                <p>Estimated bandwidth needed: <span class="bandwidth-value"><?= round($requiredBandwidth, 1) ?> Mbps</span></p>
-                
-                <div class="recommendation">
-                    <p>Recommended internet plan: <strong><?= getRecommendedPlan($recommendedBandwidth) ?></strong></p>
-                    <p>For optimal performance, especially when using multiple services simultaneously, 
-                    we recommend a plan with at least <strong><?= $recommendedBandwidth ?> Mbps</strong> download speed.</p>
-                    
-                    <?php if ($requiredBandwidth > 50): ?>
-                        <p><strong>Note:</strong> For heavy usage like 4K streaming and live broadcasting, 
-                        consider a business-grade connection for more consistent speeds.</p>
+                <div class="col-md-6">
+                    <label for="users" class="form-label">Number of Users</label>
+                    <?php if ($calculated_users): ?>
+                        <input type="number" class="form-control readonly-field" id="users" name="users" 
+                            value="<?= htmlspecialchars($calculated_users) ?>" readonly>
+                    <?php else: ?>
+                        <input type="number" class="form-control" id="users" name="users" required>
                     <?php endif; ?>
                 </div>
             </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="event_type" class="form-label">Event Type</label>
+                    <select class="form-select" id="event_type" name="event_type" required>
+                        <option value="">Select event type</option>
+                        <option value="indoor" <?= $event_type === 'indoor' ? 'selected' : '' ?>>Indoor Event</option>
+                        <option value="outdoor" <?= $event_type === 'outdoor' ? 'selected' : '' ?>>Outdoor Event</option>
+                        <option value="concert" <?= $event_type === 'concert' ? 'selected' : '' ?>>Concert</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="budget" class="form-label">Budget (PHP)</label>
+                    <input type="number" class="form-control" id="budget" name="budget" 
+                           value="<?= htmlspecialchars($budget) ?>" step="0.01" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="area_size" class="form-label">Area Size (square meters)</label>
+                <input type="number" class="form-control" id="area_size" name="area_size" 
+                       value="<?= htmlspecialchars($area_size) ?>" step="0.01" required>
+            </div>
+            
+            <button type="submit" name="submit_booking" class="btn btn-primary">Find Packages</button>
+        </form>
+        
+        <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_booking'])): ?>
+            <div class="mt-4">
+                <?php if ($package): ?>
+                    <div class="package-card">
+                        <div class="package-name"><?= htmlspecialchars($package['packageName']) ?></div>
+                        <p class="text-muted"><?= htmlspecialchars($package['description']) ?></p>
+                        
+                        <div class="package-features">
+                            <div class="feature-item">
+                                <span class="feature-icon"><i class="bi bi-speedometer2"></i></span>
+                                <span>Bandwidth: <?= htmlspecialchars($package['expectedBandwidth']) ?> Mbps</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon"><i class="bi bi-people-fill"></i></span>
+                                <span>Supports: <?= htmlspecialchars($package['numberOfUsers']) ?> users</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon"><i class="bi bi-pin-map-fill"></i></span>
+                                <span>Area: <?= htmlspecialchars($package['eventAreaSize']) ?> sqm</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon"><i class="bi bi-tag-fill"></i></span>
+                                <span>Price: $<?= htmlspecialchars($package['price']) ?></span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon"><i class="bi bi-gear-fill"></i></span>
+                                <span>Event Type: <?= ucfirst(htmlspecialchars($package['eventType'])) ?></span>
+                            </div>
+                        </div>
+                        
+                        <?php if ($package['equipmentsIncluded']): ?>
+                            <div class="mt-3">
+                                <h5>Equipment Included:</h5>
+                                <p><?= nl2br(htmlspecialchars($package['equipmentsIncluded'])) ?></p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ($recommendation): ?>
+                    <div class="recommendation">
+                        <h4><i class="bi bi-info-circle-fill"></i> Recommendation</h4>
+                        <p><?= htmlspecialchars($recommendation) ?></p>
+                        <a href="contact.php" class="btn btn-outline-primary mt-2">Contact Our Team</a>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ($package): ?>
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="booking.php" class="btn btn-secondary">Back to Packages</a>
+                        <a href="booking_confirmation.php?packageId=<?= $package['packageId'] ?>" 
+                           class="btn btn-success">Book This Package</a>
+                    </div>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
+    </div>
+
+     <div class="foot-container" id="grad">
+        <div class="foot-icons">
+            <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target=”_blank”></a>
+            <a href="https://web.facebook.com/" class="bi bi-facebook text-altlight" target=”_blank”></a>
+            <a href="https://www.instagram.com/" class="bi bi-instagram text-altlight" target=”_blank”></a>
+            <a href="https://www.tiktok.com/" class="bi bi-tiktok text-altlight" target=”_blank”></a>
+        </div>
+        <hr>
+        <div class="foot-policy">
+            <div class="row">
+                <div class="col-md-3">
+                    <a class="foot-policy text-altlight" href="termsofservice.php" target="_blank">Terms of Service</a>
+                </div>
+                <div class="col-md-3">
+                    <a class="foot-policy text-altlight" href="copyrightpolicy.php" target="_blank">Copyright Policy</a>
+                </div>
+                <div class="col-md-3">
+                    <a class="foot-policy text-altlight" href="privacypolicy.php" target="_blank">Privacy Policy</a>
+                </div>
+                <div class="col-md-3">
+                    <a class="foot-policy text-altlight" href="contactus.php" target=”_blank”>Contact Us</a>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="foot_text text-altlight">
+            <p>Wi-spot is available in English, French, German, Italian, Spanish, and more.</p><br>
+            <p>
+                &copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.
+            </p><br>
+            <p>
+                This webpage is for educational purposes only and no copyright infringement is intended.
+            </p>
+        </div>
     </div>
 </body>
 </html>
-
-<?php
-// Helper function to recommend an internet plan
-function getRecommendedPlan($bandwidth) {
-    if ($bandwidth <= 15) {
-        return "Basic Plan (15 Mbps) - Suitable for light browsing and SD video";
-    } elseif ($bandwidth <= 30) {
-        return "Standard Plan (30 Mbps) - Good for HD video and moderate use";
-    } elseif ($bandwidth <= 100) {
-        return "Premium Plan (100 Mbps) - Excellent for 4K streaming and multiple devices";
-    } elseif ($bandwidth <= 300) {
-        return "Ultra Plan (300 Mbps) - Ideal for heavy streaming, gaming, and live broadcasting";
-    } else {
-        return "Gigabit Plan (1000 Mbps) - Best for professional streaming and large households";
-    }
-}
-?>

@@ -364,7 +364,7 @@ $conn->close();
                                     <h2>User Account</h2>
                                     <div class="profile-image">
                                         <?php
-                                        require_once 'config.php';
+                                        require 'config.php';
                                         $sql = "SELECT profileImage FROM customer WHERE username = ?";
                                         $stmt = $conn->prepare($sql);
                                         $stmt->bind_param("s", $_SESSION['username']);

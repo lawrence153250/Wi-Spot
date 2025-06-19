@@ -354,3 +354,68 @@
     text-align: center;
     margin-bottom: 1rem;
 }
+/* Equipment Selection Styles */
+.selected-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.total-additional {
+    text-align: right;
+    padding: 10px;
+    font-size: 1.1em;
+    border-top: 2px solid #ddd;
+    margin-top: 10px;
+}
+
+.add-equipment-form {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+/* Add these styles to your CSS file */
+.equipment-section {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.equipment-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.equipment-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    border-top: 1px solid #eee;
+    padding-top: 5px;
+}
+
+.price-total {
+    border-top: 2px solid #333;
+    padding-top: 10px;
+    font-size: 1.1em;
+}
+/* Temporary debug styles */
+#equipmentPriceDetails {
+    background-color: rgba(255,0,0,0.1);
+    padding: 10px;
+    border: 1px dashed red;
+}
+
+#equipmentPriceDetails:empty::after {
+    content: "DEBUG: This container is empty";
+    color: red;
+    font-weight: bold;
+}
+
+.equipment-section {
+    background-color: rgba(0,255,0,0.1);
+    padding: 10px;
+    border: 1px solid green;
+}

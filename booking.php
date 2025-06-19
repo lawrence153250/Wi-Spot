@@ -109,7 +109,7 @@ $conn->close();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="bookingstyle.css">
+    <link rel="stylesheet" href="bookingstyles.css">
     <!-- Include Signature Pad library -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 </head>
@@ -144,105 +144,77 @@ $conn->close();
         </div>
     </div>
 </nav>
- <div class="booking-container">
-  <h1 class="booking-title">Booking Reservation Form</h1>
-
-  <div class="client-info-card">
-    <h3 class="section-title">Client’s Basic Information</h3>
-    <div class="info-grid">
-      <div class="info-item">
-        <label>First Name:</label>
-        <p><?= htmlspecialchars($user['firstName']) ?></p>
-      </div>
-      <div class="info-item">
-        <label>Last Name:</label>
-        <p><?= htmlspecialchars($user['lastName']) ?></p>
-      </div>
-      <div class="info-item">
-        <label>Address:</label>
-        <p><?= htmlspecialchars($user['address']) ?></p>
-      </div>
-      <div class="info-item">
-        <label>Email:</label>
-        <p><?= htmlspecialchars($user['email']) ?></p>
-      </div>
-      <div class="info-item">
-        <label>Contact:</label>
-        <p><?= htmlspecialchars($user['contactNumber']) ?></p>
-      </div>
-    </div>
+    
+  <div class="booking-header">
+      <h1>BOOKING RESERVATION FORM</h1>
   </div>
-</div>
 
-  <div class="loan-form-container">
-  <h3 class="section-title">Loan Period</h3>
-  <form id="bookingForm" method="POST" class="booking-form">
-    <div class="form-group">
-      <label for="dateOfBooking">Start Date:</label>
-      <input type="date" id="dateOfBooking" name="dateOfBooking" required>
+    <h3>Clients Basic Information</h3>
+    <div class="user-info-section">
+        <p><strong>First Name: </strong> <?php echo $user['firstName']; ?></p>
     </div>
-    <div class="form-group">
-      <label for="dateOfReturn">Date of Return:</label>
-      <input type="date" id="dateOfReturn" name="dateOfReturn" required>
+    <div class="user-info-section">
+        <p><strong>Last Name: </strong> <?php echo $user['lastName']; ?></p>
     </div>
-    <div class="form-group">
-      <label for="eventLocation">Event's Location Address:</label>
-      <input type="text" id="eventLocation" name="eventLocation" required>
+    <div class="user-info-section">
+        <p><strong>Address: </strong><?php echo $user['address']; ?></p>
     </div>
-
-    <div class="info-links">
-      <h4>
-        To help you choose a package, visit
-        <a href="mapcoverage.php">Map Coverage</a> to check signal strength in your area.
-      </h4>
-      <h4>
-        Or customize your own package:
-        <a href="booking_customization.php">Booking Customization</a>
-      </h4>
+    <div class="user-info-section">
+        <p><strong>Email: </strong><?php echo $user['email'] ?></p>
+    </div>
+    <div class="user-info-section">
+        <p><strong>Contact: </strong><?php echo $user['contactNumber'] ?></p>
     </div>
 
-    <div class="form-group">
-      <label>Choose a Package:</label>
-      <div class="package-selection">
-        <label class="package-option">
-          <input type="radio" name="packageId" value="1">
-          <img src="package1.png" alt="Package 1">
-          <div class="package-details">
-            <span>Package 1</span>
-            <p>₱1000/day</p>
-          </div>
-        </label>
+    <h3>Loan Period</h3>
+    <form id="bookingForm" method="POST">
+        <div class="form-group">
+            <label for="dateOfBooking">Start Date: </label>
+            <input type="date" id="dateOfBooking" name="dateOfBooking" required>
+        </div>
+        <div class="form-group">
+            <label for="dateOfReturn">Date of Return: </label>
+            <input type="date" id="dateOfReturn" name="dateOfReturn" required>
+        </div>
+        <div class="form-group">
+            <label for="eventLocation">Event's Location Address:</label>
+            <input type="text" id="eventLocation" name="eventLocation" required>
+        </div>
 
-        <label class="package-option">
-          <input type="radio" name="packageId" value="2">
-          <img src="package2.png" alt="Package 2">
-          <div class="package-details">
-            <span>Package 2</span>
-            <p>₱1500/day</p>
-          </div>
-        </label>
+        <h4>Not sure which package to choose? Check our <a href="mapcoverage.php">Map Coverage</a> to see signal strength at your event location.</h4>
+        <h4>Want something more personalized? Use our <a href="booking_customization.php">Booking Customization</a> to build a package that fits your needs.</h4>
+        <div class="form-group">
+            <label>Choose a Package:</label>
+            <div class="package-selection">
+                <label class="package-option">
+                    <input type="radio" name="packageId" value="1">
+                    <img src="package1.png" alt="Package 1" class="package-img">
+                    <span>Package 1</span>
+                    <p>Price: ₱1000 per day</p>
+                </label>
 
-        <label class="package-option">
-          <input type="radio" name="packageId" value="3">
-          <img src="package3.png" alt="Package 3">
-          <div class="package-details">
-            <span>Package 3</span>
-            <p>₱4000/day</p>
-          </div>
-        </label>
+                <label class="package-option">
+                    <input type="radio" name="packageId" value="2">
+                    <img src="package2.png" alt="Package 2" class="package-img">
+                    <span>Package 2</span>
+                    <p>Price: ₱1500 per day</p>
+                </label>
 
-        <label class="package-option">
-          <input type="radio" name="packageId" value="4">
-          <img src="package4.png" alt="Package 4">
-          <div class="package-details">
-            <span>Package 4</span>
-            <p>₱5000/day</p>
-          </div>
-        </label>
-      </div>
-    </div>
-  </form>
-</div>
+                <label class="package-option">
+                    <input type="radio" name="packageId" value="3">
+                    <img src="package3.png" alt="Package 3" class="package-img">
+                    <span>Package 3</span>
+                    <p>Price: ₱4000 per day</p>
+                </label>
+
+                <label class="package-option">
+                    <input type="radio" name="packageId" value="4">
+                    <img src="package4.png" alt="Package 4" class="package-img">
+                    <span>Package 4</span>
+                    <p>Price: ₱5000 per day</p>
+                </label>
+            </div>
+        </div>
 
         <div class="user-info-section">
         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#lending" required>View Lending Agreement</button>
