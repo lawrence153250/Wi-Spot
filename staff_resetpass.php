@@ -356,7 +356,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset'])) {
                     </div>
                     
                     <div class="form-group">
-                        <label for="confirm_new_password">s
+                        <label for="confirm_new_password">
                             <i class="bi bi-key-fill"></i> Confirm New Password
                         </label>
                         <input type="password" id="confirm_new_password" name="confirm_new_password" class="form-control" required placeholder="Confirm your new password">
