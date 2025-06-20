@@ -63,14 +63,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
 
     // Only check database if no validation errors
     if (empty($errors)) {
-        $stmt = $conn->prepare("SELECT * FROM customer WHERE username = ? OR email = ?");
-        $stmt->bind_param("ss", $username, $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        // Check for existing username, email, and contact number separately
+        $username_exists = false;
+        $email_exists = false;
+        $contactnumber_exists = false;
         
-        if ($result->num_rows > 0) {
-            $errors[] = "Username or email already exists";
-        } else {
+        // Check username
+        $stmt = $conn->prepare("SELECT username FROM customer WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows > 0) {
+            $errors[] = "Username already in use";
+            $username_exists = true;
+        }
+        $stmt->close();
+        
+        // Check email
+        $stmt = $conn->prepare("SELECT email FROM customer WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows > 0) {
+            $errors[] = "Email already in use";
+            $email_exists = true;
+        }
+        $stmt->close();
+        
+        // Check contact number
+        $stmt = $conn->prepare("SELECT contactnumber FROM customer WHERE contactnumber = ?");
+        $stmt->bind_param("s", $contactnumber);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows > 0) {
+            $errors[] = "Contact number already in use";
+            $contactnumber_exists = true;
+        }
+        $stmt->close();
+        
+        // Only proceed with registration if no duplicates found
+        if (!$username_exists && !$email_exists && !$contactnumber_exists) {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $conn->prepare("INSERT INTO customer (firstname, lastname, username, password, email, birthday, contactnumber, address, facebookProfile) 
                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -85,7 +117,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
                 $errors[] = "Database error: " . $stmt->error;
             }
         }
-        $stmt->close();
     }
 
     if (!empty($errors)) {

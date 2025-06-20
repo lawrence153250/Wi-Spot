@@ -1,12 +1,48 @@
 <?php 
 session_start(); 
-// Display validation errors
+
+// Initialize field-specific errors
+$fieldErrors = [
+    'firstname' => '',
+    'lastname' => '',
+    'username' => '',
+    'email' => '',
+    'password' => '',
+    'confirm_password' => '',
+    'birthday' => '',
+    'contactnumber' => '',
+    'address' => '',
+    'facebookProfile' => ''
+];
+
+// Process errors from session
 if (isset($_SESSION['errors'])) {
-    echo '<div class="alert alert-danger">';
     foreach ($_SESSION['errors'] as $error) {
-        echo htmlspecialchars($error) . '<br>';
+        // Map general errors to specific fields where possible
+        if (strpos($error, 'Username') !== false) {
+            $fieldErrors['username'] = $error;
+        } elseif (strpos($error, 'Email') !== false) {
+            $fieldErrors['email'] = $error;
+        } elseif (strpos($error, 'Contact number') !== false) {
+            $fieldErrors['contactnumber'] = $error;
+        } elseif (strpos($error, 'Password') !== false) {
+            if (strpos($error, 'Confirm') !== false) {
+                $fieldErrors['confirm_password'] = $error;
+            } else {
+                $fieldErrors['password'] = $error;
+            }
+        } elseif (strpos($error, 'First name') !== false) {
+            $fieldErrors['firstname'] = $error;
+        } elseif (strpos($error, 'Last name') !== false) {
+            $fieldErrors['lastname'] = $error;
+        } elseif (strpos($error, 'Birthday') !== false) {
+            $fieldErrors['birthday'] = $error;
+        } elseif (strpos($error, 'Address') !== false) {
+            $fieldErrors['address'] = $error;
+        } elseif (strpos($error, 'Facebook profile') !== false) {
+            $fieldErrors['facebookProfile'] = $error;
+        }
     }
-    echo '</div>';
     unset($_SESSION['errors']);
 }
 
@@ -33,6 +69,12 @@ unset($_SESSION['form_data']);
         }
         .is-invalid {
             border-color: #dc3545;
+        }
+        .alert-danger {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
         }
     </style>
 </head>
@@ -109,64 +151,124 @@ unset($_SESSION['form_data']);
             <form method="POST" action="register_code.php" id="registrationForm" novalidate>
                 <div class="form-group mb-3">
                     <label for="firstname">First name</label>
-                    <input type="text" id="firstname" name="firstname" class="form-control wi-input" 
-                           value="<?= htmlspecialchars($formData['firstname'] ?? '') ?>" required>
+                    <?php if (!empty($fieldErrors['firstname'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['firstname']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="text" id="firstname" name="firstname" class="form-control wi-input <?= !empty($fieldErrors['firstname']) ? 'is-invalid' : '' ?>" 
+                        value="<?= htmlspecialchars($formData['firstname'] ?? '') ?>" required>
                     <div class="error-message" id="firstnameError"></div>
                 </div>
+                
                 <div class="form-group mb-3">
                     <label for="lastname">Last name</label>
-                    <input type="text" id="lastname" name="lastname" class="form-control wi-input" 
-                           value="<?= htmlspecialchars($formData['lastname'] ?? '') ?>" required>
+                    <?php if (!empty($fieldErrors['lastname'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['lastname']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="text" id="lastname" name="lastname" class="form-control wi-input <?= !empty($fieldErrors['lastname']) ? 'is-invalid' : '' ?>" 
+                        value="<?= htmlspecialchars($formData['lastname'] ?? '') ?>" required>
                     <div class="error-message" id="lastnameError"></div>
                 </div>
+                
                 <div class="form-group mb-3">
                     <label for="username">Username</label>
-                    <input type="text" id="username" name="username" class="form-control wi-input" 
-                           value="<?= htmlspecialchars($formData['username'] ?? '') ?>" required>
+                    <?php if (!empty($fieldErrors['username'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['username']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="text" id="username" name="username" class="form-control wi-input <?= !empty($fieldErrors['username']) ? 'is-invalid' : '' ?>" 
+                        value="<?= htmlspecialchars($formData['username'] ?? '') ?>" required>
                     <div class="error-message" id="usernameError"></div>
                 </div>
+                
                 <div class="form-group mb-3">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-control wi-input" 
-                           value="<?= htmlspecialchars($formData['email'] ?? '') ?>" required>
+                    <?php if (!empty($fieldErrors['email'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['email']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="email" id="email" name="email" class="form-control wi-input <?= !empty($fieldErrors['email']) ? 'is-invalid' : '' ?>" 
+                        value="<?= htmlspecialchars($formData['email'] ?? '') ?>" required>
                     <div class="error-message" id="emailError"></div>
                 </div>
+                
                 <div class="form-group mb-3">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" class="form-control wi-input" required>
+                    <?php if (!empty($fieldErrors['password'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['password']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="password" id="password" name="password" class="form-control wi-input <?= !empty($fieldErrors['password']) ? 'is-invalid' : '' ?>" required>
                     <div class="error-message" id="passwordError"></div>
                     <small class="form-text text-muted">Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character.</small>
                 </div>
+                
                 <div class="form-group mb-3">
                     <label for="confirm_password">Confirm Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" class="form-control wi-input" required>
+                    <?php if (!empty($fieldErrors['confirm_password'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['confirm_password']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control wi-input <?= !empty($fieldErrors['confirm_password']) ? 'is-invalid' : '' ?>" required>
                     <div class="error-message" id="confirmPasswordError"></div>
                 </div>
+                
                 <div class="form-group mb-3">
                     <label for="birthday">Birthday</label>
-                    <input type="date" id="birthday" name="birthday" class="form-control wi-input" 
-                           value="<?= htmlspecialchars($formData['birthday'] ?? '') ?>" required>
+                    <?php if (!empty($fieldErrors['birthday'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['birthday']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="date" id="birthday" name="birthday" class="form-control wi-input <?= !empty($fieldErrors['birthday']) ? 'is-invalid' : '' ?>" 
+                        value="<?= htmlspecialchars($formData['birthday'] ?? '') ?>" required>
                     <div class="error-message" id="birthdayError"></div>
                 </div>
+                
                 <div class="form-group mb-3">
                     <label for="contactnumber">Contact Number</label>
-                    <input type="text" id="contactnumber" name="contactnumber" class="form-control wi-input" 
-                           value="<?= htmlspecialchars($formData['contactnumber'] ?? '') ?>" required>
+                    <?php if (!empty($fieldErrors['contactnumber'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['contactnumber']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="text" id="contactnumber" name="contactnumber" class="form-control wi-input <?= !empty($fieldErrors['contactnumber']) ? 'is-invalid' : '' ?>" 
+                        value="<?= htmlspecialchars($formData['contactnumber'] ?? '') ?>" required>
                     <div class="error-message" id="contactnumberError"></div>
                     <small class="form-text text-muted">Format: 09 followed by 9 digits (11 digits total, e.g., 09123456789)</small>
                 </div>
+                
                 <div class="form-group mb-3">
                     <label for="address">Address</label>
-                    <input type="text" id="address" name="address" class="form-control wi-input" 
-                           value="<?= htmlspecialchars($formData['address'] ?? '') ?>" required>
+                    <?php if (!empty($fieldErrors['address'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['address']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="text" id="address" name="address" class="form-control wi-input <?= !empty($fieldErrors['address']) ? 'is-invalid' : '' ?>" 
+                        value="<?= htmlspecialchars($formData['address'] ?? '') ?>" required>
                     <div class="error-message" id="addressError"></div>
                 </div>
+                
                 <div class="form-group mb-4">
                     <label for="facebookProfile">Facebook Profile Link</label>
-                    <input type="text" id="facebookProfile" name="facebookProfile" class="form-control wi-input" 
-                           value="<?= htmlspecialchars($formData['facebookProfile'] ?? '') ?>" required>
+                    <?php if (!empty($fieldErrors['facebookProfile'])): ?>
+                        <div class="alert alert-danger p-2 mb-2">
+                            <?= htmlspecialchars($fieldErrors['facebookProfile']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="text" id="facebookProfile" name="facebookProfile" class="form-control wi-input <?= !empty($fieldErrors['facebookProfile']) ? 'is-invalid' : '' ?>" 
+                        value="<?= htmlspecialchars($formData['facebookProfile'] ?? '') ?>" required>
                     <div class="error-message" id="facebookProfileError"></div>
                 </div>
+                
                 <div class="d-grid text-center">
                     <button type="submit" name="register" class="btn btn-primary" id="submitBtn">SUBMIT</button>
                 </div>
@@ -302,6 +404,66 @@ document.addEventListener('DOMContentLoaded', function() {
         return isValid;
     }
 });
+        // Add these functions to your existing script
+    function checkUsernameAvailability() {
+        const username = document.getElementById('username').value.trim();
+        if (username.length < 3) return; // Don't check for very short usernames
+        
+        fetch('check_availability.php?field=username&value=' + encodeURIComponent(username))
+            .then(response => response.json())
+            .then(data => {
+                const errorElement = document.getElementById('usernameError');
+                if (data.available) {
+                    errorElement.textContent = '';
+                    document.getElementById('username').classList.remove('is-invalid');
+                } else {
+                    errorElement.textContent = 'Username already taken';
+                    document.getElementById('username').classList.add('is-invalid');
+                }
+            });
+    }
+
+    function checkEmailAvailability() {
+        const email = document.getElementById('email').value.trim();
+        if (!email.includes('@')) return; // Basic email format check
+        
+        fetch('check_availability.php?field=email&value=' + encodeURIComponent(email))
+            .then(response => response.json())
+            .then(data => {
+                const errorElement = document.getElementById('emailError');
+                if (data.available) {
+                    errorElement.textContent = '';
+                    document.getElementById('email').classList.remove('is-invalid');
+                } else {
+                    errorElement.textContent = 'Email already registered';
+                    document.getElementById('email').classList.add('is-invalid');
+                }
+            });
+    }
+
+    function checkContactNumberAvailability() {
+        const contactnumber = document.getElementById('contactnumber').value.trim();
+        if (contactnumber.length < 11) return; // Don't check incomplete numbers
+        
+        fetch('check_availability.php?field=contactnumber&value=' + encodeURIComponent(contactnumber))
+            .then(response => response.json())
+            .then(data => {
+                const errorElement = document.getElementById('contactnumberError');
+                if (data.available) {
+                    errorElement.textContent = '';
+                    document.getElementById('contactnumber').classList.remove('is-invalid');
+                } else {
+                    errorElement.textContent = 'Contact number already registered';
+                    document.getElementById('contactnumber').classList.add('is-invalid');
+                }
+            });
+    }
+
+    // Add event listeners for the fields
+    document.getElementById('username').addEventListener('blur', checkUsernameAvailability);
+    document.getElementById('email').addEventListener('blur', checkEmailAvailability);
+    document.getElementById('contactnumber').addEventListener('blur', checkContactNumberAvailability);
+
 </script>
 </body>
 </html>

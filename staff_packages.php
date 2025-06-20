@@ -550,6 +550,7 @@ $conn->close();
                                 <option value="indoor">Indoor</option>
                                 <option value="outdoor">Outdoor</option>
                                 <option value="concert">Concert</option>
+                                <option value="any">Any</option>
                             </select>
                         </div>
                         <div class="col-md-4">
