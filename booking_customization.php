@@ -1,5 +1,6 @@
 <?php
 session_start();
+include 'chatbot-widget.html';
 require_once 'config.php'; // Database connection file
 
 // Initialize variables from calculator if they exist
@@ -444,7 +445,7 @@ if ($result) {
                             <?php foreach ($selectedEquipment as $item): ?>
                                 <input type="hidden" name="equipment[<?= $item['id'] ?>]" value="<?= $item['quantity'] ?>">
                             <?php endforeach; ?>
-                            <button type="submit" class="btn btn-success">Book This Package</button>
+                            <a class="nav-link" href="booking.php">Book This Package</a>
                         </form>
                     </div>
                 <?php endif; ?>

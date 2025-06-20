@@ -1,5 +1,6 @@
 <?php
 session_start();
+include 'chatbot-widget.html';
 // Define bandwidth requirements for different websites/services (in Mbps)
 $bandwidthRequirements = [
     // Social Media

@@ -470,7 +470,7 @@ $conn->close();
                                                 <div class="modal-item-list">
                                                     <?php
                                                     // Reconnect to database for package query
-                                                    require_once 'config.php';
+                                                    require 'config.php';
                                                     if ($conn->connect_error) {
                                                         die("Connection failed: " . $conn->connect_error);
                                                     }

@@ -309,6 +309,7 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
                         <th>Used Date</th>
                         <th>Customer ID</th>
                         <th>Booking ID</th>
+                        <th>Voucher Type</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+include 'chatbot-widget.html';
 // Check if customer is logged in
 if (!isset($_SESSION['username'])) {
     header("Location: login.php");

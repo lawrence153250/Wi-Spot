@@ -1,4 +1,7 @@
-
+<?php
+session_start();
+include 'chatbot-widget.html';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -178,7 +178,7 @@ if (!$email) {
         <span class="close" onclick="closeModal('successModal')">&times;</span>
         <h2>Verification Successful!</h2>
         <p>Your email has been successfully verified.</p>
-        <button onclick="window.location.href='profile.php'">Continue</button>
+        <a class="nav-link" href="profile.php">Continue</a>
     </div>
 </div>
 

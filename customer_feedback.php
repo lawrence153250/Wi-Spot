@@ -378,7 +378,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <!-- Photo Upload -->
                 <div class="mb-4">
-                  <label for="photo" class="form-label">Upload Photo (Optional)</label>
+                  <label for="photo" class="form-label">Upload Photo</label>
                   <input class="form-control" type="file" id="photo" name="photo" accept="image/*">
                   <img id="previewImage" src="#" alt="Preview" class="img-thumbnail">
                 </div>

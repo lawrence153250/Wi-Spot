@@ -1,7 +1,7 @@
 <?php
 // Start the session
 session_start();
-
+include 'chatbot-widget.html';
 // Set session timeout to 15 minutes (900 seconds)
 $inactive = 900; 
 

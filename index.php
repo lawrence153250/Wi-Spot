@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'track_visitor.php';
+include 'chatbot-widget.html';
 ?>
 
 <!DOCTYPE html>
@@ -136,6 +137,7 @@ require_once 'track_visitor.php';
     <img src="uploads/discount.png" alt="Discount" class="feature-voucher">
 </div>
     
+
 <div class="foot-container">
     <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
     <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
