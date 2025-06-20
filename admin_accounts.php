@@ -58,12 +58,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $sql = "UPDATE $table SET accountStatus = ? WHERE $id_field = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("si", $new_status, $account_id);
-        $stmt->execute();
-        $stmt->close();
         
-        // Refresh the page to show updated status
-        header("Location: ".$_SERVER['PHP_SELF']);
-        exit();
+        if ($stmt->execute()) {
+            $_SESSION['success_message'] = "Account status updated successfully!";
+            header("Location: ".$_SERVER['PHP_SELF']);
+            exit();
+        } else {
+            $_SESSION['error_message'] = "Error updating status: " . $conn->error;
+        }
+        $stmt->close();
     }
 }
 
@@ -90,16 +93,29 @@ if (!empty($search_username)) {
     $stmt->close();
 }
 
+// Build sorting clause
+$sort_clause = '';
+switch ($sort) {
+    case 'username':
+        $sort_clause = "ORDER BY userName $order";
+        break;
+    case 'accountStatus':
+        $sort_clause = "ORDER BY accountStatus $order";
+        break;
+    case 'fullName':
+        $sort_clause = "ORDER BY fullName $order";
+        break;
+    case 'registerDate':
+        $sort_clause = "ORDER BY registerDate $order";
+        break;
+    default:
+        $sort_clause = "ORDER BY userName $order";
+        break;
+}
+
 // Fetch all admins with sorting
 $admins = [];
-$sql = "SELECT adminId, email, fullName, registerDate, userName, accountStatus FROM admin";
-if ($sort === 'username') {
-    $sql .= " ORDER BY userName $order";
-} elseif ($sort === 'accountStatus') {
-    $sql .= " ORDER BY accountStatus $order";
-} elseif ($sort === 'fullName') {
-    $sql .= " ORDER BY fullName $order";
-}
+$sql = "SELECT adminId, email, fullName, registerDate, userName, accountStatus FROM admin $sort_clause";
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -107,16 +123,10 @@ if ($result->num_rows > 0) {
     }
 }
 
-// Fetch all customers with sorting
+// Fetch all customers with sorting  
 $customers = [];
-$sql = "SELECT customerId, email, firstName, lastName, contactNumber, address, birthday, registerDate, userName, accountStatus FROM customer";
-if ($sort === 'username') {
-    $sql .= " ORDER BY userName $order";
-} elseif ($sort === 'accountStatus') {
-    $sql .= " ORDER BY accountStatus $order";
-} elseif ($sort === 'fullName') {
-    $sql .= " ORDER BY CONCAT(firstName, ' ', lastName) $order";
-}
+$customer_sort = str_replace('fullName', 'CONCAT(firstName, \' \', lastName)', $sort_clause);
+$sql = "SELECT customerId, email, firstName, lastName, contactNumber, address, birthday, registerDate, userName, accountStatus FROM customer $customer_sort";
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -126,14 +136,7 @@ if ($result->num_rows > 0) {
 
 // Fetch all staff with sorting
 $staff = [];
-$sql = "SELECT staffId, email, fullName, position, registerDate, userName, accountStatus FROM staff";
-if ($sort === 'username') {
-    $sql .= " ORDER BY userName $order";
-} elseif ($sort === 'accountStatus') {
-    $sql .= " ORDER BY accountStatus $order";
-} elseif ($sort === 'fullName') {
-    $sql .= " ORDER BY fullName $order";
-}
+$sql = "SELECT staffId, email, fullName, position, registerDate, userName, accountStatus FROM staff $sort_clause";
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -156,10 +159,6 @@ $conn->close();
     <link rel="stylesheet" href="style.css">
     <style>
         /* Sidebar Styles */
-        .sidebar-menu li a.nav-link {
-        color: #FFFFFF;
-        }
-
         .sidebar {
             width: 250px;
             background-color: #2c3e50;
@@ -191,6 +190,10 @@ $conn->close();
             background-color: #34495e;
         }
         
+        .sidebar-menu li a.nav-link {
+            color: #FFFFFF;
+        }
+
         .sidebar-menu li.active {
             background-color: #34485f;
         }
@@ -214,7 +217,7 @@ $conn->close();
             font-size: 24px;
         }
         
-        /* Table Styles */
+        /* Table Styles - Matching vouchers table */
         .bookings-table {
             width: 100%;
             border-collapse: collapse;
@@ -241,11 +244,6 @@ $conn->close();
             background-color: #f9f9f9;
         }
         
-        .status-pending {
-            color: #f39c12;
-            font-weight: 600;
-        }
-        
         .account-section {
             margin-bottom: 40px;
             background-color: white;
@@ -265,12 +263,14 @@ $conn->close();
             background-color: #3498db;
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 10px 20px;
             border-radius: 4px;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
         }
         
         .add-account-btn:hover {
@@ -278,23 +278,30 @@ $conn->close();
             color: white;
         }
         
-        /* Status Badge Styles */
-        .status-active {
-            color: #28a745;
+        /* Status Badge Styles - Matching vouchers */
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
             font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: #D4EDDA;
+            color: #155724;
         }
         
         .status-locked {
-            color: #dc3545;
-            font-weight: 600;
+            background-color: #FFF3CD;
+            color: #856404;
         }
         
         .status-blocked {
-            color: #6c757d;
-            font-weight: 600;
+            background-color: #F8D7DA;
+            color: #721C24;
         }
         
-        /* Search and Sort Styles */
+        /* Search and Sort Styles - Matching vouchers */
         .search-sort-container {
             display: flex;
             gap: 10px;
@@ -309,12 +316,33 @@ $conn->close();
         .search-form {
             display: flex;
             gap: 5px;
+            flex-grow: 1;
         }
         
-        /* Status dropdown button styles */
-        .status-dropdown .btn {
+        /* Action buttons styling */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .action-buttons .btn {
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
+        }
+        
+        /* Account info styling */
+        .account-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .account-info strong {
+            font-weight: 600;
+        }
+        
+        .account-info .text-muted {
+            font-size: 0.85rem;
+            color: #6c757d;
         }
         
         /* Responsive adjustments */
@@ -340,6 +368,10 @@ $conn->close();
             }
             
             .search-sort-container {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
                 flex-direction: column;
             }
         }
@@ -374,6 +406,24 @@ $conn->close();
             </div>
         </div>
 
+        <!-- Success/Error Messages -->
+        <?php if (isset($_SESSION['success_message'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['success_message']; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <?php unset($_SESSION['success_message']); ?>
+        <?php endif; ?>
+        
+        <?php if (isset($_SESSION['error_message'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['error_message']; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <?php unset($_SESSION['error_message']); ?>
+        <?php endif; ?>
+
+        <!-- Search and Sort Controls -->
         <div class="search-sort-container">
             <!-- Sort Dropdown -->
             <div class="dropdown sort-dropdown">
@@ -381,14 +431,18 @@ $conn->close();
                     <i class="bi bi-sort-alpha-down"></i> Sort By
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                    <li><h6 class="dropdown-header">Sort Options</h6></li>
                     <li><a class="dropdown-item" href="?sort=username&order=asc">Username (A-Z)</a></li>
                     <li><a class="dropdown-item" href="?sort=username&order=desc">Username (Z-A)</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="?sort=accountStatus&order=asc">Account Status (A-Z)</a></li>
-                    <li><a class="dropdown-item" href="?sort=accountStatus&order=desc">Account Status (Z-A)</a></li>
+                    <li><a class="dropdown-item" href="?sort=accountStatus&order=asc">Status (A-Z)</a></li>
+                    <li><a class="dropdown-item" href="?sort=accountStatus&order=desc">Status (Z-A)</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="?sort=fullName&order=asc">Full Name (A-Z)</a></li>
                     <li><a class="dropdown-item" href="?sort=fullName&order=desc">Full Name (Z-A)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?sort=registerDate&order=desc">Newest First</a></li>
+                    <li><a class="dropdown-item" href="?sort=registerDate&order=asc">Oldest First</a></li>
                 </ul>
             </div>
             
@@ -397,13 +451,16 @@ $conn->close();
                 <div class="input-group">
                     <input type="text" class="form-control" name="search" placeholder="Search by username" value="<?php echo htmlspecialchars($search_username); ?>">
                     <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                    <?php if (!empty($search_username)): ?>
+                        <a href="admin_accounts.php" class="btn btn-outline-secondary">Clear</a>
+                    <?php endif; ?>
                 </div>
             </form>
         </div>
 
         <a href="create_account.php" class="add-account-btn">
             <i class="bi bi-plus-circle"></i> Add New Account
-        </a><br><br>
+        </a>
 
         <?php if (!empty($search_username)) : ?>
             <!-- Search Results Modal -->
@@ -417,7 +474,7 @@ $conn->close();
                         <div class="modal-body">
                             <?php if ($search_result && $search_result->num_rows > 0) : ?>
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-striped">
+                                    <table class="bookings-table">
                                         <thead>
                                             <tr>
                                                 <th>Account Type</th>
@@ -430,12 +487,14 @@ $conn->close();
                                         <tbody>
                                             <?php while ($row = $search_result->fetch_assoc()) : ?>
                                                 <tr>
-                                                    <td><?php echo ucfirst(htmlspecialchars($row['type'])); ?></td>
+                                                    <td><span class="badge bg-secondary"><?php echo ucfirst(htmlspecialchars($row['type'])); ?></span></td>
                                                     <td><?php echo htmlspecialchars($row['userName']); ?></td>
                                                     <td><?php echo htmlspecialchars($row['email']); ?></td>
                                                     <td><?php echo htmlspecialchars($row['fullName']); ?></td>
-                                                    <td class="<?php echo 'status-' . strtolower($row['accountStatus']); ?>">
-                                                        <?php echo htmlspecialchars($row['accountStatus']); ?>
+                                                    <td>
+                                                        <span class="status-badge status-<?php echo strtolower($row['accountStatus']); ?>">
+                                                            <?php echo htmlspecialchars($row['accountStatus']); ?>
+                                                        </span>
                                                     </td>
                                                 </tr>
                                             <?php endwhile; ?>
@@ -465,15 +524,15 @@ $conn->close();
         <!-- Admin Accounts Section -->
         <div class="account-section">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3>Admin Accounts</h3>
+                <h3><i class="bi bi-shield-check"></i> Admin Accounts</h3>
             </div>
             <div class="table-responsive">
-                <table class="table table-bordered table-striped">
+                <table class="bookings-table">
                     <thead>
                         <tr>
-                            <th>Username</th>
+                            <th>Account Info</th>
                             <th>Email</th>
-                            <th>Full Name</th>
+                            <th>Registration Date</th>
                             <th>Account Status</th>
                             <th>Actions</th>
                         </tr>
@@ -482,43 +541,45 @@ $conn->close();
                         <?php if (!empty($admins)): ?>
                             <?php foreach ($admins as $admin): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($admin['userName']); ?></td>
+                                    <td>
+                                        <div class="account-info">
+                                            <strong><?php echo htmlspecialchars($admin['userName']); ?></strong>
+                                            <div class="text-muted"><?php echo htmlspecialchars($admin['fullName']); ?></div>
+                                        </div>
+                                    </td>
                                     <td><?php echo htmlspecialchars($admin['email']); ?></td>
-                                    <td><?php echo htmlspecialchars($admin['fullName']); ?></td>
-                                    <td class="<?php echo 'status-' . strtolower($admin['accountStatus']); ?>">
-                                        <?php echo htmlspecialchars($admin['accountStatus']); ?>
+                                    <td><?php echo date("M j, Y", strtotime($admin['registerDate'])); ?></td>
+                                    <td>
+                                        <span class="status-badge status-<?php echo strtolower($admin['accountStatus']); ?>">
+                                            <?php echo htmlspecialchars($admin['accountStatus']); ?>
+                                        </span>
                                     </td>
                                     <td>
-                                        <div class="dropdown status-dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="adminStatusDropdown<?php echo $admin['adminId']; ?>" data-bs-toggle="dropdown" aria-expanded="false">
-                                                Change Status
-                                            </button>
-                                            <ul class="dropdown-menu" aria-labelledby="adminStatusDropdown<?php echo $admin['adminId']; ?>">
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="admin">
-                                                        <input type="hidden" name="account_id" value="<?php echo $admin['adminId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Active">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Active</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="admin">
-                                                        <input type="hidden" name="account_id" value="<?php echo $admin['adminId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Locked">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Locked</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="admin">
-                                                        <input type="hidden" name="account_id" value="<?php echo $admin['adminId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Blocked">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Blocked</button>
-                                                    </form>
-                                                </li>
-                                            </ul>
+                                        <div class="action-buttons">
+                                            <?php if ($admin['accountStatus'] !== 'Active'): ?>
+                                                <form method="post" class="d-inline">
+                                                    <input type="hidden" name="account_type" value="admin">
+                                                    <input type="hidden" name="account_id" value="<?php echo $admin['adminId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Active">
+                                                    <button type="submit" name="update_status" class="btn btn-success btn-sm">Activate</button>
+                                                </form>
+                                            <?php endif; ?>
+                                            <?php if ($admin['accountStatus'] !== 'Locked'): ?>
+                                                <form method="post" class="d-inline">
+                                                    <input type="hidden" name="account_type" value="admin">
+                                                    <input type="hidden" name="account_id" value="<?php echo $admin['adminId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Locked">
+                                                    <button type="submit" name="update_status" class="btn btn-warning btn-sm">Lock</button>
+                                                </form>
+                                            <?php endif; ?>
+                                            <?php if ($admin['accountStatus'] !== 'Blocked'): ?>
+                                                <form method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to block this account?');">
+                                                    <input type="hidden" name="account_type" value="admin">
+                                                    <input type="hidden" name="account_id" value="<?php echo $admin['adminId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Blocked">
+                                                    <button type="submit" name="update_status" class="btn btn-danger btn-sm">Block</button>
+                                                </form>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -536,16 +597,16 @@ $conn->close();
         <!-- Staff Accounts Section -->
         <div class="account-section">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3>Staff Accounts</h3>
+                <h3><i class="bi bi-people"></i> Staff Accounts</h3>
             </div>
             <div class="table-responsive">
-                <table class="table table-bordered table-striped">
+                <table class="bookings-table">
                     <thead>
                         <tr>
-                            <th>Username</th>
+                            <th>Account Info</th>
                             <th>Email</th>
-                            <th>Full Name</th>
                             <th>Position</th>
+                            <th>Registration Date</th>
                             <th>Account Status</th>
                             <th>Actions</th>
                         </tr>
@@ -554,44 +615,46 @@ $conn->close();
                         <?php if (!empty($staff)): ?>
                             <?php foreach ($staff as $staffMember): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($staffMember['userName']); ?></td>
+                                    <td>
+                                        <div class="account-info">
+                                            <strong><?php echo htmlspecialchars($staffMember['userName']); ?></strong>
+                                            <div class="text-muted"><?php echo htmlspecialchars($staffMember['fullName']); ?></div>
+                                        </div>
+                                    </td>
                                     <td><?php echo htmlspecialchars($staffMember['email']); ?></td>
-                                    <td><?php echo htmlspecialchars($staffMember['fullName']); ?></td>
-                                    <td><?php echo htmlspecialchars($staffMember['position']); ?></td>
-                                    <td class="<?php echo 'status-' . strtolower($staffMember['accountStatus']); ?>">
-                                        <?php echo htmlspecialchars($staffMember['accountStatus']); ?>
+                                    <td><span class="badge bg-info"><?php echo htmlspecialchars($staffMember['position']); ?></span></td>
+                                    <td><?php echo date("M j, Y", strtotime($staffMember['registerDate'])); ?></td>
+                                    <td>
+                                        <span class="status-badge status-<?php echo strtolower($staffMember['accountStatus']); ?>">
+                                            <?php echo htmlspecialchars($staffMember['accountStatus']); ?>
+                                        </span>
                                     </td>
                                     <td>
-                                        <div class="dropdown status-dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="staffStatusDropdown<?php echo $staffMember['staffId']; ?>" data-bs-toggle="dropdown" aria-expanded="false">
-                                                Change Status
-                                            </button>
-                                            <ul class="dropdown-menu" aria-labelledby="staffStatusDropdown<?php echo $staffMember['staffId']; ?>">
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="staff">
-                                                        <input type="hidden" name="account_id" value="<?php echo $staffMember['staffId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Active">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Active</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="staff">
-                                                        <input type="hidden" name="account_id" value="<?php echo $staffMember['staffId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Locked">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Locked</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="staff">
-                                                        <input type="hidden" name="account_id" value="<?php echo $staffMember['staffId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Blocked">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Blocked</button>
-                                                    </form>
-                                                </li>
-                                            </ul>
+                                        <div class="action-buttons">
+                                            <?php if ($staffMember['accountStatus'] !== 'Active'): ?>
+                                                <form method="post" class="d-inline">
+                                                    <input type="hidden" name="account_type" value="staff">
+                                                    <input type="hidden" name="account_id" value="<?php echo $staffMember['staffId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Active">
+                                                    <button type="submit" name="update_status" class="btn btn-success btn-sm">Activate</button>
+                                                </form>
+                                            <?php endif; ?>
+                                            <?php if ($staffMember['accountStatus'] !== 'Locked'): ?>
+                                                <form method="post" class="d-inline">
+                                                    <input type="hidden" name="account_type" value="staff">
+                                                    <input type="hidden" name="account_id" value="<?php echo $staffMember['staffId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Locked">
+                                                    <button type="submit" name="update_status" class="btn btn-warning btn-sm">Lock</button>
+                                                </form>
+                                            <?php endif; ?>
+                                            <?php if ($staffMember['accountStatus'] !== 'Blocked'): ?>
+                                                <form method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to block this account?');">
+                                                    <input type="hidden" name="account_type" value="staff">
+                                                    <input type="hidden" name="account_id" value="<?php echo $staffMember['staffId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Blocked">
+                                                    <button type="submit" name="update_status" class="btn btn-danger btn-sm">Block</button>
+                                                </form>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -609,17 +672,15 @@ $conn->close();
         <!-- Customer Accounts Section -->
         <div class="account-section">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3>Customer Accounts</h3>
+                <h3><i class="bi bi-person-check"></i> Customer Accounts</h3>
             </div>
             <div class="table-responsive">
-                <table class="table table-bordered table-striped">
+                <table class="bookings-table">
                     <thead>
                         <tr>
-                            <th>Username</th>
+                            <th>Account Info</th>
                             <th>Email</th>
-                            <th>Full Name</th>
-                            <th>Contact Number</th>
-                            <th>Address</th>
+                            <th>Contact & Address</th>
                             <th>Birthday</th>
                             <th>Account Status</th>
                             <th>Actions</th>
@@ -629,59 +690,61 @@ $conn->close();
                         <?php if (!empty($customers)): ?>
                             <?php foreach ($customers as $customer): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($customer['userName']); ?></td>
+                                    <td>
+                                        <div class="account-info">
+                                            <strong><?php echo htmlspecialchars($customer['userName']); ?></strong>
+                                            <div class="text-muted"><?php echo htmlspecialchars($customer['firstName'] . ' ' . $customer['lastName']); ?></div>
+                                        </div>
+                                    </td>
                                     <td><?php echo htmlspecialchars($customer['email']); ?></td>
-                                    <td><?php echo htmlspecialchars($customer['firstName'] . ' ' . $customer['lastName']); ?></td>
-                                    <td><?php echo htmlspecialchars($customer['contactNumber']); ?></td>
-                                    <td><?php echo htmlspecialchars($customer['address']); ?></td>
+                                    <td>
+                                        <div>
+                                            <strong><?php echo htmlspecialchars($customer['contactNumber']); ?></strong>
+                                            <div class="text-muted"><?php echo htmlspecialchars($customer['address']); ?></div>
+                                        </div>
+                                    </td>
                                     <td><?php echo htmlspecialchars($customer['birthday']); ?></td>
-                                    <td class="<?php echo 'status-' . strtolower($customer['accountStatus']); ?>">
-                                        <?php echo htmlspecialchars($customer['accountStatus']); ?>
+                                    <td>
+                                        <span class="status-badge status-<?php echo strtolower($customer['accountStatus']); ?>">
+                                            <?php echo htmlspecialchars($customer['accountStatus']); ?>
+                                        </span>
                                     </td>
                                     <td>
-                                        <div class="dropdown status-dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="customerStatusDropdown<?php echo $customer['customerId']; ?>" data-bs-toggle="dropdown" aria-expanded="false">
-                                                Change Status
-                                            </button>
-                                            <ul class="dropdown-menu" aria-labelledby="customerStatusDropdown<?php echo $customer['customerId']; ?>">
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="customer">
-                                                        <input type="hidden" name="account_id" value="<?php echo $customer['customerId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Active">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Active</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="customer">
-                                                        <input type="hidden" name="account_id" value="<?php echo $customer['customerId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Locked">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Locked</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form method="post" action="">
-                                                        <input type="hidden" name="account_type" value="customer">
-                                                        <input type="hidden" name="account_id" value="<?php echo $customer['customerId']; ?>">
-                                                        <input type="hidden" name="new_status" value="Blocked">
-                                                        <button type="submit" name="update_status" class="dropdown-item">Set to Blocked</button>
-                                                    </form>
-                                                </li>
-                                            </ul>
+                                        <div class="action-buttons">
+                                            <?php if ($customer['accountStatus'] !== 'Active'): ?>
+                                                <form method="post" class="d-inline">
+                                                    <input type="hidden" name="account_type" value="customer">
+                                                    <input type="hidden" name="account_id" value="<?php echo $customer['customerId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Active">
+                                                    <button type="submit" name="update_status" class="btn btn-success btn-sm">Activate</button>
+                                                </form>
+                                            <?php endif; ?>
+                                            <?php if ($customer['accountStatus'] !== 'Locked'): ?>
+                                                <form method="post" class="d-inline">
+                                                    <input type="hidden" name="account_type" value="customer">
+                                                    <input type="hidden" name="account_id" value="<?php echo $customer['customerId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Locked">
+                                                    <button type="submit" name="update_status" class="btn btn-warning btn-sm">Lock</button>
+                                                </form>
+                                            <?php endif; ?>
+                                            <?php if ($customer['accountStatus'] !== 'Blocked'): ?>
+                                                <form method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to block this account?');">
+                                                    <input type="hidden" name="account_type" value="customer">
+                                                    <input type="hidden" name="account_id" value="<?php echo $customer['customerId']; ?>">
+                                                    <input type="hidden" name="new_status" value="Blocked">
+                                                    <button type="submit" name="update_status" class="btn btn-danger btn-sm">Block</button>
+                                                </form>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" class="text-center">No customer accounts found.</td>
+                                <td colspan="6" class="text-center">No customer accounts found.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
-</body>
-</html>
