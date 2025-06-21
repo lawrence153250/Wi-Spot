@@ -77,7 +77,7 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
             padding: 20px 0;
             position: fixed;
         }
-        
+
         .sidebar-header {
             padding: 0 20px 20px;
             border-bottom: 1px solid #34495e;
@@ -100,8 +100,12 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
             background-color: #34495e;
         }
         
+        .sidebar-menu li a.nav-link {
+            color: #FFFFFF;
+        }
+
         .sidebar-menu li.active {
-            background-color: #3498db;
+            background-color: #34485f;
         }
         
         /* Main Content Styles */
@@ -123,7 +127,7 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
             font-size: 24px;
         }
         
-        /* Table Styles */
+        /* Table Styles - Updated to match staff booking */
         .bookings-table {
             width: 100%;
             border-collapse: collapse;
@@ -199,19 +203,6 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
             margin-bottom: 15px;
         }
         
-        .code-table th {
-            position: sticky;
-            top: 0;
-            background-color: #3498db;
-            z-index: 10;
-        }
-        
-        .code-table-container {
-            max-height: 500px;
-            overflow-y: auto;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
@@ -283,24 +274,26 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
         
         <!-- Batch Information -->
         <div class="batch-info">
-            <h4><?php echo htmlspecialchars($batchData['voucherName']); ?></h4>
-            <div class="batch-details">
-                <span class="batch-detail"><strong>Type:</strong> <?php echo htmlspecialchars($batchData['voucherType']); ?></span>
-                <span class="batch-detail"><strong>Discount:</strong> <?php echo htmlspecialchars($batchData['discountRate']); ?>%</span>
-                <span class="batch-detail"><strong>Valid:</strong> <?php echo date('M d, Y', strtotime($batchData['startDate'])); ?> to <?php echo date('M d, Y', strtotime($batchData['endDate'])); ?></span>
-                <span class="batch-detail"><strong>Status:</strong> <?php echo htmlspecialchars(ucfirst($batchData['approvalStatus'])); ?></span>
-                <span class="batch-detail"><strong>Total Codes:</strong> <?php echo count($voucherCodes); ?></span>
-            </div>
-            <p><?php echo htmlspecialchars($batchData['description']); ?></p>
-            <a href="<?php echo $backLink; ?>" class="btn btn-outline-primary">Back to Vouchers</a>
-            <button onclick="exportToCSV()" class="btn btn-success export-btn">
-                <i class="bi bi-download"></i> Export to CSV
-            </button>
-        </div>
+    <h4><?php echo htmlspecialchars($batchData['voucherName']); ?></h4>
+    <div class="batch-details">
+        <span class="batch-detail"><strong>Type:</strong> <?php echo htmlspecialchars($batchData['voucherType']); ?></span>
+        <span class="batch-detail"><strong>Discount:</strong> <?php echo htmlspecialchars($batchData['discountRate']); ?>%</span>
+        <span class="batch-detail"><strong>Valid:</strong> <?php echo date('M d, Y', strtotime($batchData['startDate'])); ?> to <?php echo date('M d, Y', strtotime($batchData['endDate'])); ?></span>
+        <span class="batch-detail"><strong>Status:</strong> <?php echo htmlspecialchars(ucfirst($batchData['approvalStatus'])); ?></span>
+        <span class="batch-detail"><strong>Total Codes:</strong> <?php echo count($voucherCodes); ?></span>
+    </div>
+    <p><?php echo htmlspecialchars($batchData['description']); ?></p>
+    <div class="d-flex gap-2">
+        <a href="<?php echo $backLink; ?>" class="btn btn-outline-primary">Back to Vouchers</a>
+        <button onclick="exportToCSV()" class="btn btn-success">
+            <i class="bi bi-download"></i> Export to CSV
+        </button>
+    </div>
+</div>
         
         <!-- Voucher Codes Table -->
-        <div class="code-table-container">
-            <table class="table table-striped code-table">
+        <div class="table-responsive">
+            <table class="bookings-table">
                 <thead>
                     <tr>
                         <th>Voucher Code</th>
