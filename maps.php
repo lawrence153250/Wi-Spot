@@ -340,77 +340,36 @@
     }
 
     function saveDataToSession() {
-    // First, ensure we have valid data to save
-    if (rectangleArea === 0 || pins.length === 0) {
-        alert("Please draw a square and place at least one pin before saving.");
-        return false;
+      // Create a form dynamically
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'save_coverage_data.php';
+      
+      // Add rectangle area
+      const areaInput = document.createElement('input');
+      areaInput.type = 'hidden';
+      areaInput.name = 'area_size';
+      areaInput.value = rectangleArea.toFixed(2);
+      form.appendChild(areaInput);
+      
+      // Add recommended package
+      const packageInput = document.createElement('input');
+      packageInput.type = 'hidden';
+      packageInput.name = 'recommended_package';
+      packageInput.value = recommendedPackage;
+      form.appendChild(packageInput);
+      
+      // Add additional EAPs if needed
+      const eapInput = document.createElement('input');
+      eapInput.type = 'hidden';
+      eapInput.name = 'additional_eaps';
+      eapInput.value = additionalEAPs;
+      form.appendChild(eapInput);
+      
+      // Submit the form
+      document.body.appendChild(form);
+      form.submit();
     }
-
-    // Count device types
-    const deviceCounts = {
-        "Starlink Router": 0,
-        "EAP110-Outdoor V3": 0
-    };
-    
-    pins.forEach(pin => {
-        deviceCounts[pin.deviceType]++;
-    });
-
-    // Calculate total coverage
-    const totalCoverage = deviceCounts["Starlink Router"] * 297 + 
-                         deviceCounts["EAP110-Outdoor V3"] * 200;
-    const coverageFills = totalCoverage >= rectangleArea * 0.9;
-
-    // Determine package recommendation and additional routers needed
-    let recommendedPackage = '';
-    let additionalEAPs = 0;
-    
-    const eapCount = deviceCounts["EAP110-Outdoor V3"];
-    if (!coverageFills) {
-        const neededCoverage = rectangleArea * 0.9 - totalCoverage;
-        additionalEAPs = Math.ceil(neededCoverage / 200);
-        recommendedPackage = 'Advance Kit'; // Default to Advance Kit when additional routers are needed
-    } else {
-        if (eapCount === 0) {
-            recommendedPackage = 'Basic Kit';
-        } else if (eapCount === 1) {
-            recommendedPackage = 'Boost Kit';
-        } else if (eapCount >= 2 && eapCount <= 3) {
-            recommendedPackage = 'Robust Kit';
-        } else if (eapCount >= 4) {
-            recommendedPackage = 'Advance Kit';
-            additionalEAPs = Math.max(0, eapCount - 5);
-        }
-    }
-
-    // Create a form to submit the data
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'save_coverage_data.php';
-    
-    // Add all data as hidden inputs
-    const addHiddenInput = (name, value) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value;
-        form.appendChild(input);
-    };
-
-    addHiddenInput('area_size', rectangleArea.toFixed(2));
-    addHiddenInput('recommended_package', recommendedPackage);
-    addHiddenInput('additional_eaps', additionalEAPs);
-    addHiddenInput('starlink_count', deviceCounts["Starlink Router"]);
-    addHiddenInput('eap_count', deviceCounts["EAP110-Outdoor V3"]);
-    addHiddenInput('coverage_status', coverageFills ? 'adequate' : 'insufficient');
-    addHiddenInput('from_booking', fromBooking ? '1' : '0');
-
-    // Submit the form
-    document.body.appendChild(form);
-    form.submit();
-    
-    return true;
-}
 
     function addPinWithRadius(position, radius, areaLabel, color, deviceType) {
       const marker = new google.maps.Marker({
@@ -551,79 +510,6 @@
         }
       }
       
-       function saveDataToSession() {
-      // First, ensure we have valid data to save
-      if (rectangleArea === 0 || pins.length === 0) {
-        alert("Please draw a square and place at least one pin before saving.");
-        return false;
-      }
-
-      // Count device types
-      const deviceCounts = {
-        "Starlink Router": 0,
-        "EAP110-Outdoor V3": 0
-      };
-      
-      pins.forEach(pin => {
-        deviceCounts[pin.deviceType]++;
-      });
-
-      // Calculate total coverage
-      const totalCoverage = deviceCounts["Starlink Router"] * 297 + 
-                           deviceCounts["EAP110-Outdoor V3"] * 200;
-      const coverageFills = totalCoverage >= rectangleArea * 0.9;
-
-      // Determine package recommendation
-      let recommendedPackage = '';
-      let additionalEAPs = 0;
-      
-      const eapCount = deviceCounts["EAP110-Outdoor V3"];
-      if (eapCount === 0) {
-        recommendedPackage = 'Basic Kit';
-      } else if (eapCount === 1) {
-        recommendedPackage = 'Boost Kit';
-      } else if (eapCount >= 2 && eapCount <= 3) {
-        recommendedPackage = 'Robust Kit';
-      } else if (eapCount >= 4) {
-        recommendedPackage = 'Advance Kit';
-        additionalEAPs = Math.max(0, eapCount - 5);
-      }
-
-      // Create a form to submit the data
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = 'save_coverage_data.php';
-      
-      // Add all data as hidden inputs
-      const addHiddenInput = (name, value) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value;
-        form.appendChild(input);
-      };
-
-      addHiddenInput('area_size', rectangleArea.toFixed(2));
-      addHiddenInput('recommended_package', recommendedPackage);
-      addHiddenInput('additional_eaps', additionalEAPs);
-      addHiddenInput('starlink_count', deviceCounts["Starlink Router"]);
-      addHiddenInput('eap_count', deviceCounts["EAP110-Outdoor V3"]);
-      addHiddenInput('coverage_status', coverageFills ? 'adequate' : 'insufficient');
-      addHiddenInput('from_booking', fromBooking ? '1' : '0');
-
-      // Submit the form
-      document.body.appendChild(form);
-      form.submit();
-      
-      return true;
-    }
-
-    // Back to booking button handler - modified to prevent default
-    document.getElementById("backToBookingBtn").addEventListener("click", (e) => {
-      e.preventDefault();
-      saveDataToSession();
-    });
-
       // Add device summary
       recommendation = `
         <div class="mb-3">

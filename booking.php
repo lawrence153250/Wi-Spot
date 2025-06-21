@@ -1,15 +1,14 @@
 <?php
-session_start();
-include 'chatbot-widget.html';
-// Set session timeout to 15 minutes (900 seconds)
-$inactive = 900; 
+// Start output buffering to catch accidental output
+ob_start();
 
-// Check if timeout variable is set
+// Start session and handle timeouts
+session_start();
+$inactive = 900; // 15 minutes
+
 if (isset($_SESSION['timeout'])) {
-    // Calculate the session's lifetime
     $session_life = time() - $_SESSION['timeout'];
     if ($session_life > $inactive) {
-        // Logout and redirect to login page
         session_unset();
         session_destroy();
         header("Location: login.php?timeout=1");
@@ -17,17 +16,19 @@ if (isset($_SESSION['timeout'])) {
     }
 }
 
-// Update timeout with current time
 $_SESSION['timeout'] = time();
 
+// Redirect if not logged in
 if (!isset($_SESSION['username'])) {
-    echo '<div class="alert">You need to log in first. Redirecting to login page...</div>';
-    header("Refresh: 3; url=login.php");
+    header("Location: login.php");
     exit();
 }
 
-$username = $_SESSION['username'];
+// Now include HTML/other output
+include 'chatbot-widget.html';
 
+// Rest of your code...
+$username = $_SESSION['username'];
 require_once 'config.php';
 
 // Fetch user information safely using prepared statements
@@ -219,7 +220,6 @@ $conn->close();
             <input type="text" id="eventLocation" name="eventLocation" required>
         </div>
 
-        <h4>Not sure which package to choose? Check our <a href="mapcoverage.php">Map Coverage</a> to see signal strength at your event location.</h4>
         <h4>Want something more personalized? Use our <a href="booking_customization.php">Booking Customization</a> to build a package that fits your needs.</h4>
         <div class="form-group">
             <label>Choose a Package:</label>

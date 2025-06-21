@@ -1,7 +1,12 @@
 <?php
+// Start output buffering to catch accidental output
+ob_start();
+
 session_start();
+
+// Then include your other files
 include 'chatbot-widget.html';
-require_once 'config.php'; // Database connection file
+require_once 'config.php';
 
 // Initialize variables from calculator if they exist
 $calculated_speed = $_POST['speed'] ?? null;
@@ -15,12 +20,29 @@ $recommendation = '';
 $package = null;
 $showEquipmentForm = false;
 
+// Check for coverage data from mapcoverage.php
+if (isset($_SESSION['coverage_data'])) {
+    $area_size = $_SESSION['coverage_data']['area_size'] ?? '';
+    
+    // Check if recommendation is for Advance Kit with additional EAPs
+    if (($_SESSION['coverage_data']['recommended_package'] ?? '') === 'Advance Kit' && 
+        ($_SESSION['coverage_data']['additional_eaps'] ?? 0) > 0) {
+        $showEquipmentForm = true;
+        $recommendation = "Based on your coverage analysis, we recommend the Advance Kit plus " . 
+                         $_SESSION['coverage_data']['additional_eaps'] . " additional EAP110-Outdoor V3 routers.";
+    }
+    
+    // Clear the coverage data after use
+    unset($_SESSION['coverage_data']);
+}
+
 // Equipment pricing rules
 $equipmentPrices = [
     'Wifi Router' => 300,
     'Wifi Extender' => 100,
     'Ethernet Cable' => 50,
-    'Network Switch' => 500
+    'Network Switch' => 500,
+    'EAP110-Outdoor V3' => 250 // Added EAP110 pricing
 ];
 $defaultPrice = 300;
 
@@ -106,7 +128,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $needs[] = "additional equipment for more users (needed: {$users}, package: {$package['numberOfUsers']})";
                 }
                 if ($area_size > $package['eventAreaSize']) {
-                    $needs[] = "extra coverage for larger area (needed: {$area_size}sqm, package: {$package['eventAreaSize']}sqm)";
+                    // Calculate additional routers needed (1 router covers 200sqm)
+                    $additionalRouters = ceil(($area_size - $package['eventAreaSize']) / 200);
+                    $needs[] = "extra coverage for larger area (needed: {$area_size}sqm, package: {$package['eventAreaSize']}sqm) - requires {$additionalRouters} additional EAP110-Outdoor V3 routers";
                 }
                 if ($event_type != $package['eventType']) {
                     $needs[] = "different event type setup (needed: {$event_type}, package: {$package['eventType']})";
@@ -117,6 +141,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 $recommendation .= "Please contact our team for customization options.";
+                
+                // Check if the recommendation is for Advanced Kit with larger area needed
+                if (strpos($package['packageName'], 'Advanced Kit') !== false && 
+                    $area_size > $package['eventAreaSize']) {
+                    $showEquipmentForm = true;
+                }
             } else {
                 $recommendation = "No suitable package found. Our team can create a custom solution for your event.";
                 $showEquipmentForm = true;
@@ -156,13 +186,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Store equipment data in session and redirect
         $_SESSION['custom_equipment'] = $equipmentData;
-        echo '<pre>Equipment data to be stored: ';
-        print_r($equipmentData);
-        echo '</pre>';
-
-        echo '<pre>Session will contain: ';
-        print_r($_SESSION);
-        echo '</pre>';
         header("Location: booking.php");
         exit();
     }
@@ -175,6 +198,24 @@ $result = mysqli_query($conn, $query);
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         $availableEquipment[] = $row;
+    }
+}
+
+// If we have additional EAPs from coverage data, pre-select them
+if (isset($_SESSION['coverage_data']['additional_eaps'])) {
+    $eap110s = array_filter($availableEquipment, function($item) {
+        return $item['itemType'] === 'EAP110-Outdoor V3';
+    });
+    
+    if (!empty($eap110s)) {
+        $eap110 = reset($eap110s);
+        $selectedEquipment[] = [
+            'id' => $eap110['itemId'],
+            'name' => $eap110['itemName'],
+            'type' => $eap110['itemType'],
+            'price' => $equipmentPrices['EAP110-Outdoor V3'],
+            'quantity' => $_SESSION['coverage_data']['additional_eaps']
+        ];
     }
 }
 ?>
@@ -276,20 +317,40 @@ if ($result) {
             margin-top: 10px;
         }
         .add-equipment-form {
-            border: 1px dashed #ccc;
-            padding: 10px;
-            border-radius: 5px;
+        border: 1px solid #e0e0e0;
+        padding: 8px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
         }
-        .debug-info {
-            margin: 20px;
-            padding: 15px;
-            border: 2px solid #ddd;
-            background-color: #f8f9fa;
-            border-radius: 5px;
+        .equipment-select {
+            font-size: 0.9rem;
+            padding: 0.375rem 0.75rem;
         }
-        .debug-info pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
+
+        .quantity-input {
+            font-size: 0.9rem;
+            padding: 0.375rem;
+        }
+
+        .remove-equipment {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .equipment-form-row {
+            align-items: center;
+        }
+
+        .equipment-form-col {
+            padding-right: 5px;
+            padding-left: 5px;
+        }
+
+        #addMoreEquipment {
+            font-size: 0.9rem;
+            padding: 0.375rem 0.75rem;
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -369,10 +430,20 @@ if ($result) {
                 </div>
             </div>
             
-            <div class="mb-3">
+             <div class="mb-3">
                 <label for="area_size" class="form-label">Area Size (square meters)</label>
-                <input type="number" class="form-control" id="area_size" name="area_size" 
-                       value="<?= htmlspecialchars($area_size) ?>" step="0.01" required>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="area_size" name="area_size" 
+                           value="<?= htmlspecialchars($area_size) ?>" step="0.01" required>
+                    <?php if (isset($_GET['fromBooking'])): ?>
+                        <button type="button" class="btn btn-outline-secondary" 
+                                onclick="window.location.href='mapcoverage.php?fromBooking=1'">
+                            <i class="bi bi-map"></i> Calculate Area
+                        </button>
+                    <?php endif; ?>
+                </div>
+                <i class="bi bi-info-circle"></i> Need help determining your area size? 
+                <a href="mapcoverage.php?fromBooking=1" class="alert-link">Use our Coverage Visualization Tool</a>
             </div>
             
             <button type="submit" name="submit_booking" class="btn btn-primary">Find Packages</button>
@@ -437,37 +508,55 @@ if ($result) {
                     </div>
                 <?php endif; ?>
                 
-                <?php if ($package): ?>
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="booking.php" class="btn btn-secondary">Back to Packages</a>
-                        <form action="booking_confirmation.php" method="post" style="display: inline;">
-                            <input type="hidden" name="packageId" value="<?= $package['packageId'] ?>">
-                            <?php foreach ($selectedEquipment as $item): ?>
-                                <input type="hidden" name="equipment[<?= $item['id'] ?>]" value="<?= $item['quantity'] ?>">
-                            <?php endforeach; ?>
-                            <a class="nav-link" href="booking.php">Book This Package</a>
-                        </form>
-                    </div>
-                <?php endif; ?>
-                
                 <?php if ($showEquipmentForm): ?>
-                    <div class="mt-4">
-                        <h3>Add Custom Equipment</h3>
-                        <form method="post" id="equipmentForm">
-                            <div id="equipmentForms" class="mb-3">
-                                <div class="add-equipment-form card p-3 mb-3">
-                                    <div class="row g-2">
-                                        <div class="col-md-6">
-                                            <select class="form-select equipment-select" name="equipment[<?= $equip['itemId'] ?>]" required>
+                   <div class="mt-4">
+                    <h3>Additional Equipment Needed</h3>
+                    <form method="post" id="equipmentForm">
+                        <div id="equipmentForms" class="mb-2"> <!-- Changed mb-3 to mb-2 -->
+                            <?php if (!empty($selectedEquipment)): ?>
+                                <?php foreach ($selectedEquipment as $item): ?>
+                                    <div class="add-equipment-form">
+                                        <div class="row equipment-form-row">
+                                            <div class="col-md-6 equipment-form-col">
+                                                <select class="form-select equipment-select" name="equipment[<?= $item['id'] ?>]" required>
+                                                    <option value="">Select Equipment</option>
+                                                    <?php foreach ($availableEquipment as $equip): ?>
+                                                        <option value="<?= $equip['itemId'] ?>" 
+                                                                <?= $equip['itemId'] == $item['id'] ? 'selected' : '' ?>
+                                                                data-type="<?= htmlspecialchars($equip['itemType']) ?>"
+                                                                data-price="<?= 
+                                                                    $equipmentPrices[$equip['itemType']] ?? $defaultPrice
+                                                                ?>">
+                                                            <?= htmlspecialchars($equip['itemName']) ?> 
+                                                            (<?= htmlspecialchars($equip['itemType']) ?>)
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 equipment-form-col">
+                                                <input type="number" class="form-control quantity-input" 
+                                                    name="equipment[<?= $item['id'] ?>]" 
+                                                    min="1" value="<?= $item['quantity'] ?>" required>
+                                            </div>
+                                            <div class="col-md-3 equipment-form-col">
+                                                <button type="button" class="btn btn-outline-danger remove-equipment w-100">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="add-equipment-form">
+                                    <div class="row equipment-form-row">
+                                        <div class="col-md-6 equipment-form-col">
+                                            <select class="form-select equipment-select" name="equipment[]" required>
                                                 <option value="">Select Equipment</option>
                                                 <?php foreach ($availableEquipment as $equip): ?>
                                                     <option value="<?= $equip['itemId'] ?>" 
                                                             data-type="<?= htmlspecialchars($equip['itemType']) ?>"
                                                             data-price="<?= 
-                                                                $equip['itemType'] == 'Wifi Router' ? 300 :
-                                                                ($equip['itemType'] == 'Wifi Extender' ? 100 :
-                                                                ($equip['itemType'] == 'Ethernet Cable' ? 50 :
-                                                                ($equip['itemType'] == 'Network Switch' ? 500 : 300)))
+                                                                $equipmentPrices[$equip['itemType']] ?? $defaultPrice
                                                             ?>">
                                                         <?= htmlspecialchars($equip['itemName']) ?> 
                                                         (<?= htmlspecialchars($equip['itemType']) ?>)
@@ -475,35 +564,35 @@ if ($result) {
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
-                                        <div class="col-md-3">
-                                            <input type="number" class="form-control quantity-input" name="equipment[<?= $equip['itemId'] ?>]" min="1" value="1" required>
+                                        <div class="col-md-3 equipment-form-col">
+                                            <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-3 equipment-form-col">
                                             <button type="button" class="btn btn-outline-danger remove-equipment w-100" style="display: none;">
                                                 Remove
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <?php if (count($availableEquipment) > 0): ?>
-                                <button type="button" id="addMoreEquipment" class="btn btn-outline-primary">
-                                    <i class="bi bi-plus-circle"></i> Add Equipment
-                                </button>
                             <?php endif; ?>
-                            
-                            <div class="mt-3">
-                                <button type="submit" name="add_equipment" class="btn btn-primary">Save Equipment and Return to Booking</button>
-                                <a href="booking.php" class="btn btn-secondary">Cancel</a>
-                            </div>
-                        </form>
-                    </div>
+                        </div>
+
+                        <?php if (count($availableEquipment) > 0): ?>
+                            <button type="button" id="addMoreEquipment" class="btn btn-outline-primary mb-2"> <!-- Added mb-2 -->
+                                <i class="bi bi-plus-circle"></i> Add Equipment
+                            </button>
+                        <?php endif; ?>
+                        
+                        <div class="mt-2"> <!-- Changed mt-3 to mt-2 -->
+                            <button type="submit" name="add_equipment" class="btn btn-primary">Save Equipment and Return to Booking</button>
+                            <a href="booking.php" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>
-    
 
      <div class="foot-container" id="grad">
         <div class="foot-icons">
@@ -541,81 +630,82 @@ if ($result) {
         </div>
     </div>
     
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const equipmentForms = document.getElementById('equipmentForms');
-    const addMoreBtn = document.getElementById('addMoreEquipment');
-    const availableEquipment = <?= json_encode($availableEquipment) ?>;
-    const selectedEquipment = <?= json_encode($selectedEquipment ?? []) ?>;
-    
-    // Add more equipment form
-    if (addMoreBtn) {
-        addMoreBtn.addEventListener('click', function() {
-            const newForm = document.createElement('div');
-            newForm.className = 'add-equipment-form card p-3 mb-3';
-            newForm.innerHTML = `
-                <div class="row g-2">
-                    <div class="col-md-6">
-                        <select class="form-select equipment-select" name="itemId[]" required>
-                            <option value="">Select Equipment</option>
-                            ${availableEquipment.map(equip => {
-                                // Only show equipment that hasn't been selected yet
-                                let isSelected = selectedEquipment.some(sel => sel.id == equip.itemId);
-                                if (!isSelected) {
-                                    return `<option value="${equip.itemId}" 
-                                            data-type="${equip.itemType}"
-                                            data-price="${
-                                                equip.itemType == 'Wifi Router' ? 300 :
-                                                (equip.itemType == 'Wifi Extender' ? 100 :
-                                                (equip.itemType == 'Ethernet Cable' ? 50 :
-                                                (equip.itemType == 'Network Switch' ? 500 : 300)))
-                                            }">
-                                        ${equip.itemName} (${equip.itemType})
-                                    </option>`;
-                                }
-                                return '';
-                            }).join('')}
-                        </select>
+   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const equipmentForms = document.getElementById('equipmentForms');
+        const addMoreBtn = document.getElementById('addMoreEquipment');
+        const availableEquipment = <?= json_encode($availableEquipment) ?>;
+        const selectedEquipment = <?= json_encode($selectedEquipment ?? []) ?>;
+        
+        // Add more equipment form
+        if (addMoreBtn) {
+            addMoreBtn.addEventListener('click', function() {
+                const newForm = document.createElement('div');
+                newForm.className = 'add-equipment-form'; // Use the same compact class
+                newForm.innerHTML = `
+                    <div class="row equipment-form-row">
+                        <div class="col-md-6 equipment-form-col">
+                            <select class="form-select equipment-select" name="equipment[]" required>
+                                <option value="">Select Equipment</option>
+                                ${availableEquipment.map(equip => {
+                                    // Only show equipment that hasn't been selected yet
+                                    let isSelected = selectedEquipment.some(sel => sel.id == equip.itemId);
+                                    if (!isSelected) {
+                                        return `<option value="${equip.itemId}" 
+                                                data-type="${equip.itemType}"
+                                                data-price="${
+                                                    equip.itemType == 'Wifi Router' ? 300 :
+                                                    (equip.itemType == 'Wifi Extender' ? 100 :
+                                                    (equip.itemType == 'Ethernet Cable' ? 50 :
+                                                    (equip.itemType ==  'EAP110-Outdoor V3' ? 250 :
+                                                    (equip.itemType == 'Network Switch' ? 500 : 300))))
+                                                }">
+                                            ${equip.itemName} (${equip.itemType})
+                                        </option>`;
+                                    }
+                                    return '';
+                                }).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-3 equipment-form-col">
+                            <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-3 equipment-form-col">
+                            <button type="button" class="btn btn-outline-danger remove-equipment w-100">Remove</button>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="button" class="btn btn-outline-danger remove-equipment w-100">Remove</button>
-                    </div>
-                </div>
-            `;
-            
-            equipmentForms.appendChild(newForm);
-            updateRemoveButtons();
-        });
-    }
-    
-    // Remove equipment form
-    if (equipmentForms) {
-        equipmentForms.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-equipment')) {
-                e.target.closest('.add-equipment-form').remove();
+                `;
+                
+                equipmentForms.appendChild(newForm);
                 updateRemoveButtons();
-            }
-        });
-    }
-    
-    function updateRemoveButtons() {
-        const forms = document.querySelectorAll('.add-equipment-form');
-        forms.forEach((form, index) => {
-            const removeBtn = form.querySelector('.remove-equipment');
-            if (forms.length > 1) {
-                removeBtn.style.display = 'block';
-            } else {
-                removeBtn.style.display = 'none';
-            }
-        });
-    }
+            });
+        }
+        
+        // Remove equipment form
+        if (equipmentForms) {
+            equipmentForms.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-equipment')) {
+                    e.target.closest('.add-equipment-form').remove();
+                    updateRemoveButtons();
+                }
+            });
+        }
+        
+        function updateRemoveButtons() {
+            const forms = document.querySelectorAll('.add-equipment-form');
+            forms.forEach((form, index) => {
+                const removeBtn = form.querySelector('.remove-equipment');
+                if (forms.length > 1) {
+                    removeBtn.style.display = 'block';
+                } else {
+                    removeBtn.style.display = 'none';
+                }
+            });
+        }
 
-    // Initialize the first form's remove button
-    updateRemoveButtons();
-});
+        // Initialize the first form's remove button
+        updateRemoveButtons();
+    });
 </script>
 </body>
 </html>
