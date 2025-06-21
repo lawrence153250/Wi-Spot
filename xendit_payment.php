@@ -46,34 +46,45 @@ $booking = $result->fetch_assoc();
 $stmt->close();
 
 $totalPrice = $booking['price'];
+$paymentBalance = $booking['paymentBalance'];
 $paymentStatus = $booking['paymentStatus'];
-$paymentType = 'downpayment'; // Default to downpayment
 
-// Determine payment type and amount
-if ($paymentStatus === 'Unpaid' || $paymentStatus === null) {
-    $amountToPay = ceil($totalPrice / 2); // Downpayment is half, rounded up
-    $paymentType = 'downpayment';
-} elseif ($paymentStatus === 'partially paid') {
-    $amountToPay = $totalPrice - $booking['amountPaid']; // Remaining balance
-    $paymentType = 'fullpayment';
-} else {
-    die("This booking is already fully paid");
+// Initialize variables
+$amountToPay = 0;
+$paymentType = '';
+
+// Handle form submission for payment choice
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['paymentChoice'])) {
+    $paymentChoice = $_POST['paymentChoice'];
+    
+    if ($paymentChoice === 'full') {
+        $amountToPay = $paymentBalance;
+        $paymentType = 'fullpayment';
+    } elseif ($paymentChoice === 'half') {
+        $amountToPay = ceil($paymentBalance / 2);
+        $paymentType = 'partialpayment';
+    }
+    
+    // Store in session for the next step
+    $_SESSION['payment_amount'] = $amountToPay;
+    $_SESSION['payment_type'] = $paymentType;
 }
 
-// Replace with your actual Xendit API key
-$xenditSecretKey = 'xnd_development_Cbav1oJEw2TZJjRg4y3Cu2PmJyeJ6VIo4psrih1UaieTgLlmsZ3XUbwBS5WGAXa';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// If we're processing the payment details form
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
     $name = $_POST['name'];
     $email = $_POST['email'];
     $amount = $_POST['amount'];
     $paymentType = $_POST['paymentType'];
 
+    // Replace with your actual Xendit API key
+    $xenditSecretKey = 'xnd_development_Cbav1oJEw2TZJjRg4y3Cu2PmJyeJ6VIo4psrih1UaieTgLlmsZ3XUbwBS5WGAXa';
+
     // Create invoice data
     $data = [
         'external_id' => 'invoice-' . time() . '-' . $bookingId,
         'payer_email' => $email,
-        'description' => 'Wi-Spot Service Payment (' . ($paymentType === 'downpayment' ? 'Downpayment' : 'Full Payment') . ')',
+        'description' => 'Wi-Spot Service Payment (' . ($paymentType === 'fullpayment' ? 'Full Payment' : 'Partial Payment') . ')',
         'amount' => (int)$amount,
         'currency' => 'PHP',
         'customer' => [
@@ -106,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ' . $responseData['invoice_url']);
         exit();
     } else {
-        $error = 'Failed to create invoice: ' . (isset($responseData['message'])) ? $responseData['message'] : 'Unknown error';
+        $error = 'Failed to create invoice: ' . (isset($responseData['message']) ? $responseData['message'] : 'Unknown error');
     }
 }
 ?>
@@ -117,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <title>Wi-Spot Payment</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -160,6 +172,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-align: center;
             margin-top: 15px;
         }
+        .payment-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .payment-option {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .payment-option.selected {
+            border-color: #1E88E5;
+            background-color: #f0f7ff;
+        }
+        .payment-option input[type="radio"] {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -170,44 +202,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h4>Booking Details</h4>
             <p><strong>Package:</strong> <?php echo htmlspecialchars($booking['packageName']); ?></p>
             <p><strong>Total Price:</strong> ₱<?php echo number_format($totalPrice, 2); ?></p>
-            <p><strong>Current Payment Status:</strong> <?php echo htmlspecialchars(ucfirst($paymentStatus ?? 'pending')); ?></p>
+            <p><strong>Current Balance:</strong> ₱<?php echo number_format($paymentBalance, 2); ?></p>
+            <p><strong>Payment Status:</strong> <?php echo htmlspecialchars(ucfirst($paymentStatus ?? 'pending')); ?></p>
         </div>
         
-        <div class="payment-info">
-            <h4>Payment Information</h4>
-            <?php if ($paymentType === 'downpayment'): ?>
-                <p>You're making a downpayment (50% of total price).</p>
-            <?php else: ?>
-                <p>You're paying the remaining balance.</p>
-            <?php endif; ?>
-            
-            <div class="payment-amount">
-                Amount to Pay: ₱<?php echo number_format($amountToPay, 2); ?>
-            </div>
-        </div>
-        
-        <form method="post">
-            <input type="hidden" name="amount" value="<?php echo $amountToPay; ?>">
-            <input type="hidden" name="paymentType" value="<?php echo $paymentType; ?>">
-            
-            <div class="mb-3">
-                <label for="name" class="form-label">Full Name</label>
-                <input type="text" class="form-control" id="name" name="name" required>
-            </div>
-            
-            <div class="mb-3">
-                <label for="email" class="form-label">Email Address</label>
-                <input type="email" class="form-control" id="email" name="email" required>
+        <?php if (!isset($_SESSION['payment_amount'])): ?>
+            <form method="post">
+                <h4>Select Payment Option</h4>
+                <div class="payment-options">
+                    <label class="payment-option <?php echo ($paymentBalance == $totalPrice) ? 'selected' : ''; ?>">
+                        <input type="radio" name="paymentChoice" value="full" <?php echo ($paymentBalance == $totalPrice) ? 'checked' : ''; ?> required>
+                        Pay Full Balance (₱<?php echo number_format($paymentBalance, 2); ?>)
+                    </label>
+                    <label class="payment-option <?php echo ($paymentBalance != $totalPrice) ? 'selected' : ''; ?>">
+                        <input type="radio" name="paymentChoice" value="half" <?php echo ($paymentBalance != $totalPrice) ? 'checked' : ''; ?>>
+                        Pay 50% (₱<?php echo number_format(ceil($paymentBalance / 2), 2); ?>)
+                    </label>
+                </div>
+                <button type="submit" class="btn-pay">Continue to Payment</button>
+            </form>
+        <?php else: ?>
+            <div class="payment-info">
+                <h4>Payment Information</h4>
+                <p>You're making a <?php echo ($_SESSION['payment_type'] === 'fullpayment' ? 'full' : 'partial'); ?> payment.</p>
+                
+                <div class="payment-amount">
+                    Amount to Pay: ₱<?php echo number_format($_SESSION['payment_amount'], 2); ?>
+                </div>
             </div>
             
-            <button type="submit" class="btn-pay">Pay Now with Xendit</button>
-            
-            <?php if (isset($error)): ?>
-                <div class="error mt-3"><?php echo htmlspecialchars($error); ?></div>
-            <?php endif; ?>
-        </form>
+            <form method="post">
+                <input type="hidden" name="amount" value="<?php echo $_SESSION['payment_amount']; ?>">
+                <input type="hidden" name="paymentType" value="<?php echo $_SESSION['payment_type']; ?>">
+                
+                <div class="mb-3">
+                    <label for="name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                
+                <button type="submit" class="btn-pay">Pay Now with Xendit</button>
+                
+                <?php if (isset($error)): ?>
+                    <div class="error mt-3"><?php echo htmlspecialchars($error); ?></div>
+                <?php endif; ?>
+            </form>
+        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add interactive selection for payment options
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.payment-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+    </script>
 </body>
 </html>

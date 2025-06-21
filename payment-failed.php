@@ -47,9 +47,13 @@ $booking = $result->fetch_assoc();
 $stmt->close();
 $conn->close();
 
-// Determine if this was a downpayment or full payment attempt
+// Determine if this was a partial or full payment attempt
 $paymentType = isset($_GET['paymentType']) ? $_GET['paymentType'] : 'unknown';
 $attemptedAmount = isset($_GET['amount']) ? floatval($_GET['amount']) : 0;
+
+// Calculate payment progress
+$paidAmount = $booking['price'] - $booking['paymentBalance'];
+$paidPercentage = ($paidAmount / $booking['price']) * 100;
 ?>
 
 <!DOCTYPE html>
@@ -58,6 +62,7 @@ $attemptedAmount = isset($_GET['amount']) ? floatval($_GET['amount']) : 0;
     <meta charset="UTF-8">
     <title>Payment Failed</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body {
             background-color: #f8f9fa;
@@ -89,6 +94,13 @@ $attemptedAmount = isset($_GET['amount']) ? floatval($_GET['amount']) : 0;
             background-color: #bb2d3b;
             color: white;
         }
+        .progress {
+            height: 20px;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            background-color: #28a745;
+        }
     </style>
 </head>
 <body>
@@ -105,10 +117,23 @@ $attemptedAmount = isset($_GET['amount']) ? floatval($_GET['amount']) : 0;
                 <p><strong>Booking ID:</strong> <?php echo htmlspecialchars($bookingId); ?></p>
                 <p><strong>Package:</strong> <?php echo htmlspecialchars($booking['packageName']); ?></p>
                 <p><strong>Total Price:</strong> ₱<?php echo number_format($booking['price'], 2); ?></p>
+                <p><strong>Remaining Balance:</strong> ₱<?php echo number_format($booking['paymentBalance'], 2); ?></p>
+                
+                <!-- Payment progress bar -->
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: <?php echo $paidPercentage; ?>%" 
+                         aria-valuenow="<?php echo $paidPercentage; ?>" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        <?php echo round($paidPercentage); ?>% Paid
+                    </div>
+                </div>
+                
                 <p><strong>Payment Attempt:</strong> 
                     <?php 
-                    if ($paymentType === 'downpayment') {
-                        echo "Downpayment (₱" . number_format($attemptedAmount, 2) . ")";
+                    if ($paymentType === 'partialpayment') {
+                        echo "Partial Payment (₱" . number_format($attemptedAmount, 2) . ")";
                     } elseif ($paymentType === 'fullpayment') {
                         echo "Full Payment (₱" . number_format($attemptedAmount, 2) . ")";
                     } else {
@@ -116,12 +141,12 @@ $attemptedAmount = isset($_GET['amount']) ? floatval($_GET['amount']) : 0;
                     }
                     ?>
                 </p>
-                <p><strong>Current Status:</strong> <?php echo htmlspecialchars(ucfirst($booking['paymentStatus'] ?? 'pending')); ?></p>
+                <p><strong>Current Status:</strong> <?php echo htmlspecialchars($booking['paymentStatus']); ?></p>
             </div>
             
             <div class="d-grid gap-2 d-md-block mt-4">
-                <?php if ($paymentType === 'downpayment' || $paymentType === 'fullpayment'): ?>
-                    <a href="xendit_payment.php?bookingId=<?php echo $bookingId; ?>" class="btn btn-retry btn-lg me-md-2">
+                <?php if ($paymentType === 'partialpayment' || $paymentType === 'fullpayment'): ?>
+                    <a href="payment.php?bookingId=<?php echo $bookingId; ?>" class="btn btn-retry btn-lg me-md-2">
                         <i class="bi bi-arrow-repeat"></i> Try Again
                     </a>
                 <?php endif; ?>
@@ -140,6 +165,5 @@ $attemptedAmount = isset($_GET['amount']) ? floatval($_GET['amount']) : 0;
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </body>
 </html>
