@@ -17,7 +17,8 @@ include 'chatbot-widget.html';
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+<body style="background-color: #f0f3fa;"> 
+<nav class="navbar navbar-expand-lg navbar-dark" id="grad">
     <div class="container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
