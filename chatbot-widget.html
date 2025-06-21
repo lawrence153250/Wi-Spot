@@ -114,17 +114,11 @@ Main pages:
 - /voucher: List out promos and existing vouchers customers can claim
 `;
 
-
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  // Create elements if they don't exist
-  if (!document.getElementById('chatbot-container')) {
-    document.body.insertAdjacentHTML('beforeend', document.getElementById('chatbot-container').outerHTML);
-  }
-  if (!document.getElementById('chatbot-toggle')) {
-    document.body.insertAdjacentHTML('beforeend', document.getElementById('chatbot-toggle').outerHTML);
-  }
-
+  // Initialize conversation history
+  let conversationHistory = JSON.parse(sessionStorage.getItem('chatbotHistory')) || [];
+  
   // DOM Elements
   const chatbotContainer = document.getElementById('chatbot-container');
   const chatbotToggle = document.getElementById('chatbot-toggle');
@@ -135,14 +129,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const quickQuestions = document.getElementById('chatbot-quick-questions');
 
   // Re-render old conversation
-	if (conversationHistory.length > 0) {
-	conversationHistory.forEach(exchange => {
-		addUserMessage(exchange.user);
-		addBotMessage(exchange.bot);
-	});
-	}
-  
-  let conversationHistory = [];
+  if (conversationHistory.length > 0) {
+    conversationHistory.forEach(exchange => {
+      addUserMessage(exchange.user);
+      addBotMessage(exchange.bot);
+    });
+  }
   
   // Add welcome message
   setTimeout(() => {
@@ -180,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   function toggleChatbot() {
-    if (chatbotContainer.style.display === 'none') {
+    if (chatbotContainer.style.display === 'none' || !chatbotContainer.style.display) {
       chatbotContainer.style.display = 'block';
       chatbotInput.focus();
     } else {
@@ -221,7 +213,6 @@ document.addEventListener('DOMContentLoaded', function() {
     addMessage('user', content);
   }
   
-  // Updated checkFAQ function to match your faqDatabase
   function checkFAQ(userMessage) {
     const lowerMessage = userMessage.toLowerCase();
     
@@ -357,14 +348,13 @@ document.addEventListener('DOMContentLoaded', function() {
       // Update conversation history (keep last 3 exchanges)
       conversationHistory.push({ user: message, bot: botReply });
 
-	  // Optional: limit history to last 20 messages
-	  if (conversationHistory.length > 20) {
-	  conversationHistory.shift();
-	  }
+      // Optional: limit history to last 20 messages
+      if (conversationHistory.length > 20) {
+        conversationHistory.shift();
+      }
 
-	// Save to sessionStorage
-	sessionStorage.setItem('chatbotHistory', JSON.stringify(conversationHistory));
-
+      // Save to sessionStorage
+      sessionStorage.setItem('chatbotHistory', JSON.stringify(conversationHistory));
       
     } catch (error) {
       console.error('Chatbot error:', error);
