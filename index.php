@@ -2,6 +2,8 @@
 session_start();
 require_once 'track_visitor.php';
 include 'chatbot-widget.html';
+// Include config file for database connection
+require_once 'config.php';
 ?>
 
 <!DOCTYPE html>
@@ -15,8 +17,75 @@ include 'chatbot-widget.html';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Feedback Carousel Styles */
+        .feedback-container {
+            padding: 4rem 0;
+            background-color: #ffffff;
+        }
+        
+        .feedback-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #2a3f54;
+        }
+        
+        .feedback-carousel {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .feedback-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 0 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            min-height: 300px;
+        }
+        
+        .feedback-user {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feedback-user img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 1rem;
+        }
+        
+        .user-info h5 {
+            margin-bottom: 0.2rem;
+            color: #2a3f54;
+        }
+        
+        .user-info p {
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+        
+        .feedback-text {
+            font-style: italic;
+            color: #495057;
+            line-height: 1.6;
+        }
+        
+        .carousel-control-prev, .carousel-control-next {
+            width: 5%;
+            color: #2a3f54;
+        }
+        
+        .carousel-control-prev-icon, .carousel-control-next-icon {
+            background-color: #2a3f54;
+            border-radius: 50%;
+            padding: 10px;
+        }
+    </style>
 </head>
-<body>
 <body style="background-color: #f0f3fa;"> 
 <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
     <div class="container">
@@ -137,7 +206,138 @@ include 'chatbot-widget.html';
     </div>
     <img src="uploads/discount.png" alt="Discount" class="feature-voucher">
 </div>
+
+<!-- Feedback Section -->
+<div class="feedback-container">
+    <h1 class="feedback-title">WHAT OUR CUSTOMERS SAY</h1>
     
+    <div id="feedbackCarousel" class="carousel slide feedback-carousel" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <?php
+            try {
+                // Fetch feedback from database
+                $sql = "SELECT f.*, c.firstName, c.lastName 
+                        FROM feedback f 
+                        JOIN customer c ON f.customerId = c.customerId 
+                        WHERE f.displayStatus = 'display'
+                        ORDER BY f.timestamp DESC
+                        LIMIT 5";
+                
+                $result = $conn->query($sql);
+                
+                if (!$result) {
+                    throw new Exception("Database error: " . $conn->error);
+                }
+                
+                if ($result->num_rows > 0) {
+                    $active = true;
+                    while ($row = $result->fetch_assoc()) {
+                        // Calculate average rating
+                        $ratings = array_filter([
+                            $row['internet_speed'] ?? 0,
+                            $row['reliability'] ?? 0,
+                            $row['signal_strength'] ?? 0,
+                            $row['customer_service'] ?? 0,
+                            $row['installation_service'] ?? 0,
+                            $row['equipment_quality'] ?? 0
+                        ]);
+
+                        $average_rating = !empty($ratings) ? round(array_sum($ratings) / count($ratings), 1) : 0;
+
+                        // Process image - assume photo contains the path (e.g., "uploads/feedback/img123.jpg")
+                        $imageDisplay = '';
+                        if (!empty($row['photo'])) {
+                            $imagePath = trim($row['photo']);
+                            if (file_exists($imagePath)) {
+                                $imageDisplay = '<div class="text-center mt-3">
+                                    <img src="' . htmlspecialchars($imagePath) . '" 
+                                         alt="Feedback Photo" class="img-fluid rounded" style="max-height: 200px;">
+                                </div>';
+                            } else {
+                                $imageDisplay = '<div class="text-center mt-3 text-muted">
+                                    <small>Photo not found.</small>
+                                </div>';
+                            }
+                        }
+                        ?>
+                        <div class="carousel-item <?php echo $active ? 'active' : ''; ?>">
+                            <div class="feedback-card">
+                                <div class="feedback-user">
+                                    <div class="user-avatar">
+                                        <i class="bi bi-person-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                                    </div>
+                                    <div class="user-info">
+                                        <h5><?php echo htmlspecialchars(($row['firstName'] ?? '') . ' ' . ($row['lastName'] ?? '')); ?></h5>
+                                        <div class="rating">
+                                            <?php 
+                                            $full_stars = floor($average_rating);
+                                            $half_star = ($average_rating - $full_stars) >= 0.5;
+
+                                            for ($i = 1; $i <= 5; $i++) {
+                                                if ($i <= $full_stars) {
+                                                    echo '<i class="bi bi-star-fill text-warning"></i>';
+                                                } elseif ($half_star && $i == $full_stars + 1) {
+                                                    echo '<i class="bi bi-star-half text-warning"></i>';
+                                                } else {
+                                                    echo '<i class="bi bi-star text-warning"></i>';
+                                                }
+                                            }
+                                            ?>
+                                            <span class="ms-2"><?php echo $average_rating; ?>/5</span>
+                                        </div>
+                                        <p><?php echo isset($row['timestamp']) ? date('F j, Y', strtotime($row['timestamp'])) : ''; ?></p>
+                                    </div>
+                                </div>
+                                <div class="feedback-text">
+                                    <p><?php echo !empty($row['comment']) ? nl2br(htmlspecialchars($row['comment'])) : 'No comment provided'; ?></p>
+                                </div>
+                                <?php echo $imageDisplay; ?>
+                            </div>
+                        </div>
+                        <?php
+                        $active = false;
+                    }
+                } else {
+                    ?>
+                    <div class="carousel-item active">
+                        <div class="feedback-card">
+                            <div class="feedback-text">
+                                <p>No feedback available yet. Be the first to share your experience!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
+                }
+            } catch (Exception $e) {
+                ?>
+                <div class="carousel-item active">
+                    <div class="feedback-card">
+                        <div class="feedback-text">
+                            <p>We're having trouble loading feedback.</p>
+                            <div class="alert alert-danger">
+                                <strong>Error:</strong> <?php echo htmlspecialchars($e->getMessage()); ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php
+            }
+            ?>
+        </div>
+
+        <?php if (isset($result) && $result->num_rows > 1): ?>
+        <button class="carousel-control-prev" type="button" data-bs-target="#feedbackCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#feedbackCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+        <?php endif; ?>
+    </div>
+</div>
+
 
 <div class="foot-container">
     <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">

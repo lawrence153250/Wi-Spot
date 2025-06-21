@@ -30,7 +30,7 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
 // Database connection
 require_once 'config.php';
 
-// 1. FIRST GET THE STAFF ID PROPERLY
+// Get current staff ID
 $username = $_SESSION['username'];
 $staffQuery = $conn->prepare("SELECT staffId FROM staff WHERE username = ?");
 $staffQuery->bind_param("s", $username);
@@ -52,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_equipment'])) {
     $quantity = (int)$_POST['quantity'];
     $description = $conn->real_escape_string($_POST['description']);
     
-    // 2. FIXED INSERT STATEMENT WITH PROPER COLUMNS
     $stmt = $conn->prepare("INSERT INTO inventory 
                           (itemName, itemType, quantity, description, staffId, status, dateAdded) 
                           VALUES (?, ?, ?, ?, ?, 'pending', NOW())");
@@ -66,31 +65,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_equipment'])) {
     $stmt->close();
 }
 
-// 3. FIXED FETCH QUERY TO INCLUDE ALL NEEDED COLUMNS
-$query = $conn->prepare("SELECT 
-                        itemId, itemName, itemType, quantity, 
-                        status, description, dateAdded 
-                        FROM inventory 
-                        WHERE staffId = ? 
-                        ORDER BY 
-                          CASE status 
-                            WHEN 'pending' THEN 1
-                            WHEN 'available' THEN 2
-                            WHEN 'rejected' THEN 3
-                            ELSE 4
-                          END, 
-                        dateAdded DESC");
-$query->bind_param("i", $staffId);
-$query->execute();
-$result = $query->get_result();
-
+// Fetch ALL inventory items (not just current staff's items)
 $inventoryItems = [];
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
+$query = $conn->query("SELECT 
+                      i.itemId, i.itemName, i.itemType, i.quantity, 
+                      i.status, i.description, i.dateAdded,
+                      s.username AS staffUsername
+                      FROM inventory i
+                      LEFT JOIN staff s ON i.staffId = s.staffId
+                      ORDER BY 
+                        CASE i.status 
+                          WHEN 'pending' THEN 1
+                          WHEN 'available' THEN 2
+                          WHEN 'rejected' THEN 3
+                          ELSE 4
+                        END, 
+                      i.dateAdded DESC");
+
+if ($query->num_rows > 0) {
+    while ($row = $query->fetch_assoc()) {
         $inventoryItems[] = $row;
     }
 }
-$query->close();
 $conn->close();
 ?>
 
@@ -542,7 +538,7 @@ $conn->close();
         
         <!-- Enhanced Equipment Cards Section -->
         <div class="equipment-cards-section">
-            <h4><i class="bi bi-collection"></i> My Equipment Submissions</h4>
+            <h4><i class="bi bi-collection"></i> All Inventory Items</h4>
             <?php if (empty($inventoryItems)): ?>
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i> No equipment submissions found. Submit your first equipment above.

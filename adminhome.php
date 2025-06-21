@@ -2,8 +2,6 @@
 // Start the session
 session_start();
 
-require_once 'track_visitor.php';
-
 // Set session timeout to 15 minutes (900 seconds)
 $inactive = 900; 
 

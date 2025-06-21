@@ -100,35 +100,33 @@ if ($inventoryQuery->num_rows > 0) {
     }
 }
 
-// Fetch packages created by this staff with proper date fields
+// Fetch ALL packages with proper date fields (not just current staff's packages)
 $packages = [];
-$packageQuery = $conn->prepare("SELECT 
-                                p.packageId, p.packageName, p.description, p.price, 
-                                p.equipmentsIncluded, p.status, p.dateCreated, p.approvalDate,
-                                p.numberOfUsers, p.eventType, p.eventAreaSize, p.expectedBandwidth,
-                                GROUP_CONCAT(i.itemName SEPARATOR ', ') AS equipmentNames
-                                FROM package p
-                                LEFT JOIN inventory i ON FIND_IN_SET(i.itemId, p.equipmentsIncluded)
-                                WHERE p.staffId = ?
-                                GROUP BY p.packageId
-                                ORDER BY 
-                                  CASE p.status 
-                                    WHEN 'pending' THEN 1
-                                    WHEN 'available' THEN 2
-                                    WHEN 'rejected' THEN 3
-                                    ELSE 4
-                                  END, 
-                                p.dateCreated DESC");
-$packageQuery->bind_param("i", $staffId);
-$packageQuery->execute();
-$result = $packageQuery->get_result();
+$packageQuery = $conn->query("SELECT 
+                            p.packageId, p.packageName, p.description, p.price, 
+                            p.equipmentsIncluded, p.status, p.dateCreated, p.approvalDate,
+                            p.numberOfUsers, p.eventType, p.eventAreaSize, p.expectedBandwidth,
+                            s.username AS staffUsername,
+                            GROUP_CONCAT(i.itemName SEPARATOR ', ') AS equipmentNames
+                            FROM package p
+                            LEFT JOIN inventory i ON FIND_IN_SET(i.itemId, p.equipmentsIncluded)
+                            LEFT JOIN staff s ON p.staffId = s.staffId
+                            GROUP BY p.packageId
+                            ORDER BY 
+                              CASE p.status 
+                                WHEN 'pending' THEN 1
+                                WHEN 'available' THEN 2
+                                WHEN 'rejected' THEN 3
+                                ELSE 4
+                              END, 
+                            p.dateCreated DESC");
 
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
+if ($packageQuery->num_rows > 0) {
+    while ($row = $packageQuery->fetch_assoc()) {
         $packages[] = $row;
     }
 }
-$packageQuery->close();
+
 $conn->close();
 ?>
 
@@ -612,10 +610,10 @@ $conn->close();
         
         <!-- Enhanced Packages Table -->
         <div class="table-section">
-            <h4><i class="bi bi-list-check"></i> My Packages</h4>
+            <h4><i class="bi bi-list-check"></i> All Packages</h4>
             <div class="table-responsive">
                 <table class="packages-table">
-                    <thead>
+                   <thead>
                         <tr>
                             <th>Name</th>
                             <th>Description</th>
