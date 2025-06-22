@@ -99,6 +99,118 @@ $conn->close();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+    /* Container and heading styles */
+    .transaction-container {
+        margin-top: 5rem;
+        padding: 0 15px;
+    }
+    
+    .transaction-heading {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+    
+    /* Table container */
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Table styles */
+    .transaction-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .transaction-table thead {
+        background-color: #f8f9fa;
+    }
+    
+    .transaction-table th {
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .transaction-table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    /* Status badges */
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-paid {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-unpaid {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    /* Button styles */
+    .action-btn {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .transaction-table thead {
+            display: none;
+        }
+        
+        .transaction-table tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        
+        .transaction-table td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: none;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .transaction-table td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            margin-right: 1rem;
+            color: #495057;
+        }
+        
+        .transaction-table td:last-child {
+            border-bottom: none;
+        }
+    }
+    </style>
 </head>
 <body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
     <div class="container">
