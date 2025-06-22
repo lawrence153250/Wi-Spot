@@ -148,7 +148,7 @@ $conn->close();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="bookingstyles.css">
+    <link rel="stylesheet" href="bookingstyle.css">
     <!-- Include Signature Pad library -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 </head>
@@ -188,24 +188,16 @@ $conn->close();
       <h1>BOOKING RESERVATION FORM</h1>
   </div>
 
-    <h3>Clients Basic Information</h3>
-    <div class="user-info-section">
-        <p><strong>First Name: </strong> <?php echo $user['firstName']; ?></p>
-    </div>
-    <div class="user-info-section">
-        <p><strong>Last Name: </strong> <?php echo $user['lastName']; ?></p>
-    </div>
-    <div class="user-info-section">
-        <p><strong>Address: </strong><?php echo $user['address']; ?></p>
-    </div>
-    <div class="user-info-section">
-        <p><strong>Email: </strong><?php echo $user['email'] ?></p>
-    </div>
-    <div class="user-info-section">
-        <p><strong>Contact: </strong><?php echo $user['contactNumber'] ?></p>
-    </div>
+ <h3>CLIENTS BASIC INFORMATION</h3>
+<div class="user-info-section">
+    <p><strong>First Name:</strong> <span><?php echo $user['firstName']; ?></span></p>
+    <p><strong>Last Name:</strong> <span><?php echo $user['lastName']; ?></span></p>
+    <p><strong>Email Address:</strong> <span><?php echo $user['email']; ?></span></p>
+    <p><strong>Phone Number:</strong> <span><?php echo $user['contactNumber']; ?></span></p>
+    <p><strong>User Role:</strong> <span><?php echo $user['role'] ?? 'User'; ?></span></p>
+</div>
 
-    <h3>Loan Period</h3>
+    <h3>LOAN PERIOD</h3>
     <form id="bookingForm" method="POST">
         <div class="form-group">
             <label for="dateOfBooking">Start Date: </label>
