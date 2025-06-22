@@ -1,46 +1,38 @@
 <?php
+ob_start(); 
 // Start the session
 session_start();
-include 'chatbot-widget.html';
-// Set session timeout to 15 minutes (900 seconds)
-$inactive = 900; 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// Check if timeout variable is set
+// Set session timeout to 15 minutes (900 seconds)
+$inactive = 900;
+
 if (isset($_SESSION['timeout'])) {
-    // Calculate the session's lifetime
     $session_life = time() - $_SESSION['timeout'];
     if ($session_life > $inactive) {
-        // Logout and redirect to login page
         session_unset();
         session_destroy();
         header("Location: login.php?timeout=1");
         exit();
     }
 }
-
-// Update timeout with current time
 $_SESSION['timeout'] = time();
 
 require_once 'config.php';
 
-// Get booking ID from URL parameter
+// Get booking ID
 $bookingId = isset($_GET['bookingId']) ? intval($_GET['bookingId']) : 0;
+if ($bookingId <= 0) die("Invalid booking ID");
 
-if ($bookingId <= 0) {
-    die("Invalid booking ID");
-}
-
-// Fetch booking details from database
+// Fetch booking
 $stmt = $conn->prepare("SELECT b.*, p.packageName FROM booking b 
                        JOIN package p ON b.packageId = p.packageId 
                        WHERE b.bookingId = ?");
 $stmt->bind_param("i", $bookingId);
 $stmt->execute();
 $result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
-    die("Booking not found");
-}
+if ($result->num_rows === 0) die("Booking not found");
 
 $booking = $result->fetch_assoc();
 $stmt->close();
@@ -49,77 +41,108 @@ $totalPrice = $booking['price'];
 $paymentBalance = $booking['paymentBalance'];
 $paymentStatus = $booking['paymentStatus'];
 
-// Initialize variables
+// Variables
+$error = '';
 $amountToPay = 0;
 $paymentType = '';
 
-// Handle form submission for payment choice
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['paymentChoice'])) {
-    $paymentChoice = $_POST['paymentChoice'];
-    
-    if ($paymentChoice === 'full') {
-        $amountToPay = $paymentBalance;
-        $paymentType = 'fullpayment';
-    } elseif ($paymentChoice === 'half') {
-        $amountToPay = ceil($paymentBalance / 2);
-        $paymentType = 'partialpayment';
-    }
-    
-    // Store in session for the next step
-    $_SESSION['payment_amount'] = $amountToPay;
-    $_SESSION['payment_type'] = $paymentType;
+// Reset payment step
+if (!isset($_POST['paymentChoice']) && !isset($_POST['name'])) {
+    unset($_SESSION['payment_step']);
 }
 
-// If we're processing the payment details form
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
-    $name = $_POST['name'];
-    $email = $_POST['email'];
-    $amount = $_POST['amount'];
-    $paymentType = $_POST['paymentType'];
+// Handle form
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['paymentChoice'])) {
+        // Payment option selected
+        $paymentChoice = $_POST['paymentChoice'];
 
-    // Replace with your actual Xendit API key
-    $xenditSecretKey = 'xnd_development_Cbav1oJEw2TZJjRg4y3Cu2PmJyeJ6VIo4psrih1UaieTgLlmsZ3XUbwBS5WGAXa';
+        // If status is partially paid, force full payment
+        if (strtolower($paymentStatus) === 'partially paid') {
+            $paymentChoice = 'full';
+        }
 
-    // Create invoice data
-    $data = [
-        'external_id' => 'invoice-' . time() . '-' . $bookingId,
-        'payer_email' => $email,
-        'description' => 'Wi-Spot Service Payment (' . ($paymentType === 'fullpayment' ? 'Full Payment' : 'Partial Payment') . ')',
-        'amount' => (int)$amount,
-        'currency' => 'PHP',
-        'customer' => [
-            'given_names' => $name,
-            'email' => $email
-        ],
-        'success_redirect_url' => 'C:\xampp\htdocs\Wi-Spot\payment-success.php?bookingId=' . $bookingId . '&paymentType=' . $paymentType . '&amount=' . $amount,
-        'failure_redirect_url' => 'C:\xampp\htdocs\Wi-Spot\payment-failed.php?bookingId=' . $bookingId
-    ];
+        if ($paymentChoice === 'full') {
+            $amountToPay = $paymentBalance;
+            $paymentType = 'fullpayment';
+        } elseif ($paymentChoice === 'half') {
+            $amountToPay = max(ceil($paymentBalance / 2), 100); // Minimum ₱100
+            $paymentType = 'partialpayment';
+        }
 
-    // Call Xendit API
-    $ch = curl_init('https://api.xendit.co/v2/invoices');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_USERPWD, $xenditSecretKey . ":");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        $_SESSION['payment_amount'] = $amountToPay;
+        $_SESSION['payment_type'] = $paymentType;
+        $_SESSION['payment_step'] = 2;
 
-    $response = curl_exec($ch);
-    $responseData = json_decode($response, true);
+    }elseif (isset($_POST['name'])) {
+        // Payment submission
+        $name = $_POST['name'];
+        $email = $_POST['email'];
+        $paymentType = $_POST['paymentType'];
 
-    if (isset($responseData['invoice_url'])) {
-        // Store payment information in session for verification later
-        $_SESSION['payment_info'] = [
-            'bookingId' => $bookingId,
-            'amount' => $amount,
-            'paymentType' => $paymentType,
-            'invoice_id' => $responseData['id']
-        ];
-        
-        header('Location: ' . $responseData['invoice_url']);
-        exit();
-    } else {
-        $error = 'Failed to create invoice: ' . (isset($responseData['message']) ? $responseData['message'] : 'Unknown error');
+        $rawAmount = $_SESSION['payment_amount'] ?? 0;
+        $amount = (float) filter_var($rawAmount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+
+        if ($amount < 100) {
+            $error = 'Amount must be at least ₱100.00';
+        } elseif ($amount > $paymentBalance) {
+            $error = 'Amount exceeds current balance.';
+        } else {
+            // Xendit Payment
+            $xenditSecretKey = 'xnd_development_Cbav1oJEw2TZJjRg4y3Cu2PmJyeJ6VIo4psrih1UaieTgLlmsZ3XUbwBS5WGAXa';
+
+            $data = [
+                'external_id' => 'invoice-' . time() . '-' . $bookingId,
+                'payer_email' => $email,
+                'description' => 'Wi-Spot Service Payment (' . ($paymentType === 'fullpayment' ? 'Full Payment' : 'Partial Payment') . ')',
+                'amount' => $amount,
+                'currency' => 'PHP',
+                'customer' => [
+                    'given_names' => $name,
+                    'email' => $email,
+                    'mobile_number' => '+639171234567',
+                    'addresses' => [[
+                        'city' => 'Manila',
+                        'country' => 'Philippines',
+                        'postal_code' => '1000',
+                        'state' => 'Metro Manila',
+                        'street_line1' => 'Sample Street'
+                    ]]
+                ],
+                'success_redirect_url' => 'https://wispotservices.great-site.net/payment-success.php?bookingId=' . $bookingId . '&paymentType=' . $paymentType . '&amount=' . $amount,
+                'failure_redirect_url' => 'https://wispotservices.great-site.net/payment-failed.php?bookingId=' . $bookingId
+            ];
+
+            $ch = curl_init('https://api.xendit.co/v2/invoices');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_USERPWD, $xenditSecretKey . ":");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Accept: application/json'
+            ]);
+
+            $response = curl_exec($ch);
+            $responseData = json_decode($response, true);
+
+            if (isset($responseData['invoice_url'])) {
+                $_SESSION['payment_info'] = [
+                    'bookingId' => $bookingId,
+                    'amount' => $amount,
+                    'paymentType' => $paymentType,
+                    'invoice_id' => $responseData['id']
+                ];
+                header('Location: ' . $responseData['invoice_url']);
+                exit();
+            } else {
+                $error = 'Failed to create invoice: ' . ($responseData['message'] ?? 'Unknown error');
+            }
+        }
     }
 }
+
+$showPaymentForm = isset($_SESSION['payment_step']) && $_SESSION['payment_step'] == 2;
+ob_end_flush(); 
 ?>
 
 <!DOCTYPE html>
@@ -195,6 +218,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         .payment-option input[type="radio"] {
             display: none;
         }
+        .payment-option:hover {
+            background-color: #f5f5f5;
+        }
     </style>
 </head>
 <body>
@@ -229,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             </div>
         </div>
     </nav>
-    <div class="payment-container">
+        <div class="payment-container">
         <h2 class="text-center mb-4">Wi-Spot Payment</h2>
         
         <div class="booking-details">
@@ -240,29 +266,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             <p><strong>Payment Status:</strong> <?php echo htmlspecialchars(ucfirst($paymentStatus ?? 'pending')); ?></p>
         </div>
         
-        <?php if (!isset($_SESSION['payment_amount'])): ?>
+        <?php if (!$showPaymentForm): ?>
+            <!-- Payment Choice Form -->
             <form method="post">
                 <h4>Select Payment Option</h4>
                 <div class="payment-options">
-                    <label class="payment-option <?php echo ($paymentBalance == $totalPrice) ? 'selected' : ''; ?>">
-                        <input type="radio" name="paymentChoice" value="full" <?php echo ($paymentBalance == $totalPrice) ? 'checked' : ''; ?> required>
-                        Pay Full Balance (₱<?php echo number_format($paymentBalance, 2); ?>)
-                    </label>
-                    <label class="payment-option <?php echo ($paymentBalance != $totalPrice) ? 'selected' : ''; ?>">
-                        <input type="radio" name="paymentChoice" value="half" <?php echo ($paymentBalance != $totalPrice) ? 'checked' : ''; ?>>
-                        Pay 50% (₱<?php echo number_format(ceil($paymentBalance / 2), 2); ?>)
-                    </label>
+                    <?php if (strtolower($paymentStatus) === 'partially paid'): ?>
+                        <!-- Only show full payment option if status is partially paid -->
+                        <label class="payment-option selected">
+                            <input type="radio" name="paymentChoice" value="full" checked required>
+                            Pay Full Balance (₱<?php echo number_format($paymentBalance, 2); ?>)
+                        </label>
+                    <?php else: ?>
+                        <!-- Show both options for other statuses -->
+                        <label class="payment-option <?php echo ($paymentBalance == $totalPrice) ? 'selected' : ''; ?>">
+                            <input type="radio" name="paymentChoice" value="full" <?php echo ($paymentBalance == $totalPrice) ? 'checked' : ''; ?> required>
+                            Pay Full Balance (₱<?php echo number_format($paymentBalance, 2); ?>)
+                        </label>
+                        <label class="payment-option <?php echo ($paymentBalance != $totalPrice) ? 'selected' : ''; ?>">
+                            <input type="radio" name="paymentChoice" value="half" <?php echo ($paymentBalance != $totalPrice) ? 'checked' : ''; ?>>
+                            Pay 50% (₱<?php echo number_format(ceil($paymentBalance / 2), 2); ?>)
+                        </label>
+                    <?php endif; ?>
                 </div>
                 <button type="submit" class="btn-pay">Continue to Payment</button>
             </form>
         <?php else: ?>
+            <!-- Payment Details Form -->
             <div class="payment-info">
                 <h4>Payment Information</h4>
                 <p>You're making a <?php echo ($_SESSION['payment_type'] === 'fullpayment' ? 'full' : 'partial'); ?> payment.</p>
                 
                 <div class="payment-amount">
-                    Amount to Pay: ₱<?php echo number_format($_SESSION['payment_amount'], 2); ?>
+                    Amount to Pay: ₱<?= number_format($_SESSION['payment_amount'] ?? 0, 2) ?>
                 </div>
+
+                <!-- Remove this input: <input type="hidden" name="amount" ...> -->
+
+                <!-- Also make sure to keep error display -->
+                <?php if (!empty($error)): ?>
+                    <div class="error mt-3"><?= htmlspecialchars($error) ?></div>
+                <?php endif; ?>
             </div>
             
             <form method="post">
@@ -327,5 +371,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             });
         });
     </script>
+    <?php include 'chatbot-widget.html'; ?>
 </body>
 </html>

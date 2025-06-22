@@ -81,9 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     if (new DateTime($dateOfBooking) >= new DateTime($dateOfReturn)) {
         echo '<div class="alert alert-danger">Error: Return date must be after the booking date.</div>';
     } else {
-        // Insert booking with the total price
-        $stmt = $conn->prepare("INSERT INTO booking (customerId, packageId, dateOfBooking, dateOfReturn, eventLocation, price, lendingAgreement) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iisssds", $customerId, $packageId, $dateOfBooking, $dateOfReturn, $eventLocation, $totalPrice, $lendingAgreement);
+        // Insert booking with the total price and payment balance
+        $stmt = $conn->prepare("INSERT INTO booking (customerId, packageId, dateOfBooking, dateOfReturn, eventLocation, price, lendingAgreement, paymentBalance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("iisssdsd", $customerId, $packageId, $dateOfBooking, $dateOfReturn, $eventLocation, $totalPrice, $lendingAgreement, $totalPrice);
 
         if ($stmt->execute()) {
             // Clear the custom equipment from session after successful booking
