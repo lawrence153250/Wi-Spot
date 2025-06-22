@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
 
         if ($stmt->execute()) {
             // Clear the custom equipment from session after successful booking
-            unset($_SESSION['custom_equipment']);
+            unset($_SESSION['selected_equipment']);
             echo '<div class="alert alert-success">Booking successfully created!</div>';
         } else {
             echo '<div class="alert alert-danger">Error: ' . $stmt->error . '</div>';
@@ -369,38 +369,40 @@ $conn->close();
     </div>
 
     <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="confirmationModalLabel">Confirm Booking</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Customer Name:</strong> <span id="modalCustomerName"></span></p>
-                    <p><strong>Start Date:</strong> <span id="modalDateOfBooking"></span></p>
-                    <p><strong>Return Date:</strong> <span id="modalDateOfReturn"></span></p>
-                    <p><strong>Event Location:</strong> <span id="modalEventLocation"></span></p>
-                    <p><strong>Package Chosen:</strong> <span id="modalPackageChosen"></span></p>
-                    
-                    <!-- Added Equipment Section -->
-                    <div class="equipment-summary mt-3">
-                        <h6><strong>Additional Equipment:</strong></h6>
-                        <div id="modalEquipmentList" class="mb-2">
-                            <!-- Equipment items will be inserted here by JavaScript -->
-                        </div>
-                        <p class="text-end"><strong>Equipment Total: </strong><span id="modalEquipmentTotal">₱0.00</span></p>
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Confirm Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Customer Name:</strong> <span id="modalCustomerName"></span></p>
+                <p><strong>Start Date:</strong> <span id="modalDateOfBooking"></span></p>
+                <p><strong>Return Date:</strong> <span id="modalDateOfReturn"></span></p>
+                <p><strong>Event Location:</strong> <span id="modalEventLocation"></span></p>
+                <p><strong>Package Chosen:</strong> <span id="modalPackageChosen"></span></p>
+                
+                <!-- Updated Equipment Section -->
+                <div class="equipment-summary mt-3">
+                    <h6><strong>Additional Equipment:</strong></h6>
+                    <div id="modalEquipmentList" class="mb-2">
+                        <!-- Equipment items will be inserted here by JavaScript -->
                     </div>
-                    
-                    <p class="mt-3"><strong>Total Price:</strong> <span id="modalTotalPrice"></span></p>
+                    <p class="text-end"><strong>Equipment Total: </strong><span id="modalEquipmentTotal">₱0.00</span></p>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Back</button>
-                    <button type="submit" form="bookingForm" name="register" class="btn btn-primary">Confirm Booking</button>
-                </div>
+                
+                <p class="mt-3"><strong>Total Price:</strong> <span id="modalTotalPrice"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Back</button>
+                <button type="submit" form="bookingForm" name="register" class="btn btn-primary">Confirm Booking</button>
             </div>
         </div>
     </div>
+</div>
+
+    
     <!-- Signature Pad Script -->
     <script>
    document.addEventListener('DOMContentLoaded', function () {
@@ -442,7 +444,7 @@ $conn->close();
             const packagePrice = computePrice(packageId, document.getElementById('dateOfBooking').value, document.getElementById('dateOfReturn').value);
             
             // Get custom equipment data from PHP session
-            const customEquipment = <?php echo isset($_SESSION['custom_equipment']) ? json_encode($_SESSION['custom_equipment']) : '[]'; ?>;
+            const customEquipment = <?php echo isset($_SESSION['selected_equipment']) ? json_encode($_SESSION['selected_equipment']) : '[]'; ?>;
             let equipmentTotal = 0;
             let equipmentHTML = '';
             

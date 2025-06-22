@@ -1,6 +1,9 @@
 <?php
 session_start();
 include 'chatbot-widget.html';
+if (isset($_SESSION['selected_equipment'])) {
+    unset($_SESSION['selected_equipment']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

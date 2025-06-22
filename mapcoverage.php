@@ -1,3 +1,32 @@
+<?php
+// Start output buffering to catch accidental output
+ob_start();
+
+// Start session and handle timeouts
+session_start();
+$inactive = 900; // 15 minutes
+
+if (isset($_SESSION['timeout'])) {
+    $session_life = time() - $_SESSION['timeout'];
+    if ($session_life > $inactive) {
+        session_unset();
+        session_destroy();
+        header("Location: login.php?timeout=1");
+        exit();
+    }
+}
+
+$_SESSION['timeout'] = time();
+
+// Now include HTML/other output
+include 'chatbot-widget.html';
+
+$username = $_SESSION['username'];
+
+if (isset($_SESSION['selected_equipment'])) {
+    unset($_SESSION['selected_equipment']);
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

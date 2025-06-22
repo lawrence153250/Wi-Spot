@@ -45,6 +45,70 @@ $paymentStatus = $booking['paymentStatus'];
 $error = '';
 $amountToPay = 0;
 $paymentType = '';
+$voucherError = '';
+$voucherApplied = false;
+$discountRate = 0;
+$originalBalance = $paymentBalance;
+
+// Handle voucher code submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['applyVoucher'])) {
+    $voucherCode = trim($_POST['voucherCode']);
+    
+    if (!empty($voucherCode)) {
+        // Check voucher code in database
+        $stmt = $conn->prepare("SELECT vc.*, vb.discountRate 
+                               FROM voucher_code vc
+                               JOIN voucher_batch vb ON vc.batchId = vb.batchId
+                               WHERE vc.code = ?");
+        $stmt->bind_param("s", $voucherCode);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $voucher = $result->fetch_assoc();
+            
+            if ($voucher['isUsed']) {
+                $voucherError = "This voucher has already been used.";
+            } else {
+                // Voucher is valid - calculate discount but don't update database yet
+                $discountRate = $voucher['discountRate'];
+                $discountAmount = $paymentBalance * ($discountRate / 100);
+                $paymentBalance = $paymentBalance - $discountAmount;
+                $voucherApplied = true;
+                
+                // Store voucher info in session
+                $_SESSION['voucher_code'] = $voucherCode;
+                $_SESSION['discount_rate'] = $discountRate;
+                $_SESSION['discount_amount'] = $discountAmount;
+                $_SESSION['original_balance'] = $originalBalance;
+            }
+        } else {
+            $voucherError = "Invalid voucher code.";
+        }
+        $stmt->close();
+    } else {
+        $voucherError = "Please enter a voucher code.";
+    }
+}
+
+// Also update the remove voucher section:
+if (isset($_POST['removeVoucher'])) {
+    // Simply restore original values without touching database
+    $paymentBalance = $_SESSION['original_balance'];
+    $voucherApplied = false;
+    $discountRate = 0;
+    unset($_SESSION['voucher_code']);
+    unset($_SESSION['discount_rate']);
+    unset($_SESSION['discount_amount']);
+    unset($_SESSION['original_balance']);
+}
+
+// Check if voucher is already applied from session
+if (isset($_SESSION['voucher_code'])) {
+    $voucherApplied = true;
+    $discountRate = $_SESSION['discount_rate'];
+    $paymentBalance = $_SESSION['original_balance'] - $_SESSION['discount_amount'];
+}
 
 // Reset payment step
 if (!isset($_POST['paymentChoice']) && !isset($_POST['name'])) {
@@ -74,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['payment_type'] = $paymentType;
         $_SESSION['payment_step'] = 2;
 
-    }elseif (isset($_POST['name'])) {
+    } elseif (isset($_POST['name'])) {
         // Payment submission
         $name = $_POST['name'];
         $email = $_POST['email'];
@@ -88,6 +152,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($amount > $paymentBalance) {
             $error = 'Amount exceeds current balance.';
         } else {
+            // Mark voucher as used if applied
+            if (isset($_SESSION['voucher_code'])) {
+                $voucherCode = $_SESSION['voucher_code'];
+                $customerId = $_SESSION['customerId'] ?? null;
+                
+                $stmt = $conn->prepare("UPDATE voucher_code 
+                                       SET isUsed = TRUE, usedDate = NOW(), customerId = ?, bookingId = ?
+                                       WHERE code = ?");
+                $stmt->bind_param("iis", $customerId, $bookingId, $voucherCode);
+                $stmt->execute();
+                $stmt->close();
+                
+                // Clear voucher session after use
+                unset($_SESSION['voucher_code']);
+                unset($_SESSION['discount_rate']);
+                unset($_SESSION['discount_amount']);
+            }
+
             // Xendit Payment
             $xenditSecretKey = 'xnd_development_Cbav1oJEw2TZJjRg4y3Cu2PmJyeJ6VIo4psrih1UaieTgLlmsZ3XUbwBS5WGAXa';
 
@@ -221,6 +303,25 @@ ob_end_flush();
         .payment-option:hover {
             background-color: #f5f5f5;
         }
+        .voucher-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .voucher-applied {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .discount-info {
+            color: #2e7d32;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -255,15 +356,44 @@ ob_end_flush();
             </div>
         </div>
     </nav>
-        <div class="payment-container">
+    <div class="payment-container">
         <h2 class="text-center mb-4">Wi-Spot Payment</h2>
         
         <div class="booking-details">
             <h4>Booking Details</h4>
             <p><strong>Package:</strong> <?php echo htmlspecialchars($booking['packageName']); ?></p>
             <p><strong>Total Price:</strong> ₱<?php echo number_format($totalPrice, 2); ?></p>
-            <p><strong>Current Balance:</strong> ₱<?php echo number_format($paymentBalance, 2); ?></p>
+            <p><strong>Current Balance:</strong> ₱<?php echo number_format($originalBalance, 2); ?></p>
             <p><strong>Payment Status:</strong> <?php echo htmlspecialchars(ucfirst($paymentStatus ?? 'pending')); ?></p>
+        </div>
+        
+        <!-- Voucher Code Section -->
+        <div class="voucher-section">
+            <?php if ($voucherApplied): ?>
+                <div class="voucher-applied">
+                    <div>
+                        <strong>Voucher Applied:</strong> <?php echo htmlspecialchars($_SESSION['voucher_code']); ?>
+                        <span class="discount-info">(<?php echo $discountRate; ?>% discount applied)</span>
+                    </div>
+                    <form method="post">
+                        <button type="submit" name="removeVoucher" class="btn btn-sm btn-outline-danger">Remove</button>
+                    </form>
+                </div>
+                <p><strong>New Balance After Discount:</strong> ₱<?php echo number_format($paymentBalance, 2); ?></p>
+            <?php else: ?>
+                <h5>Apply Voucher Code</h5>
+                <form method="post" class="row g-2">
+                    <div class="col-md-8">
+                        <input type="text" name="voucherCode" class="form-control" placeholder="Enter voucher code" value="<?php echo isset($_POST['voucherCode']) ? htmlspecialchars($_POST['voucherCode']) : ''; ?>">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" name="applyVoucher" class="btn btn-primary w-100">Apply</button>
+                    </div>
+                </form>
+                <?php if (!empty($voucherError)): ?>
+                    <div class="error mt-2"><?php echo htmlspecialchars($voucherError); ?></div>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
         
         <?php if (!$showPaymentForm): ?>
@@ -279,12 +409,12 @@ ob_end_flush();
                         </label>
                     <?php else: ?>
                         <!-- Show both options for other statuses -->
-                        <label class="payment-option <?php echo ($paymentBalance == $totalPrice) ? 'selected' : ''; ?>">
-                            <input type="radio" name="paymentChoice" value="full" <?php echo ($paymentBalance == $totalPrice) ? 'checked' : ''; ?> required>
+                        <label class="payment-option <?php echo ($paymentBalance == $originalBalance) ? 'selected' : ''; ?>">
+                            <input type="radio" name="paymentChoice" value="full" <?php echo ($paymentBalance == $originalBalance) ? 'checked' : ''; ?> required>
                             Pay Full Balance (₱<?php echo number_format($paymentBalance, 2); ?>)
                         </label>
-                        <label class="payment-option <?php echo ($paymentBalance != $totalPrice) ? 'selected' : ''; ?>">
-                            <input type="radio" name="paymentChoice" value="half" <?php echo ($paymentBalance != $totalPrice) ? 'checked' : ''; ?>>
+                        <label class="payment-option <?php echo ($paymentBalance != $originalBalance) ? 'selected' : ''; ?>">
+                            <input type="radio" name="paymentChoice" value="half" <?php echo ($paymentBalance != $originalBalance) ? 'checked' : ''; ?>>
                             Pay 50% (₱<?php echo number_format(ceil($paymentBalance / 2), 2); ?>)
                         </label>
                     <?php endif; ?>
@@ -297,16 +427,15 @@ ob_end_flush();
                 <h4>Payment Information</h4>
                 <p>You're making a <?php echo ($_SESSION['payment_type'] === 'fullpayment' ? 'full' : 'partial'); ?> payment.</p>
                 
+                <?php if ($voucherApplied): ?>
+                    <div class="discount-info">
+                        <p>Voucher Discount: <?php echo $discountRate; ?>% (₱<?php echo number_format($_SESSION['discount_amount'], 2); ?>)</p>
+                    </div>
+                <?php endif; ?>
+                
                 <div class="payment-amount">
                     Amount to Pay: ₱<?= number_format($_SESSION['payment_amount'] ?? 0, 2) ?>
                 </div>
-
-                <!-- Remove this input: <input type="hidden" name="amount" ...> -->
-
-                <!-- Also make sure to keep error display -->
-                <?php if (!empty($error)): ?>
-                    <div class="error mt-3"><?= htmlspecialchars($error) ?></div>
-                <?php endif; ?>
             </div>
             
             <form method="post">

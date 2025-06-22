@@ -1,5 +1,8 @@
 <?php
 session_start();
+if (isset($_SESSION['selected_equipment'])) {
+    unset($_SESSION['selected_equipment']);
+}
 require_once 'track_visitor.php';
 include 'chatbot-widget.html';
 // Include config file for database connection

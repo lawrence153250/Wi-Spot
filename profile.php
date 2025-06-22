@@ -2,6 +2,9 @@
 // Start the session
 session_start();
 
+if (isset($_SESSION['selected_equipment'])) {
+    unset($_SESSION['selected_equipment']);
+}
 // Set session timeout to 15 minutes (900 seconds)
 $inactive = 900; 
 
