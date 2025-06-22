@@ -185,7 +185,6 @@ $conn->close();
 </nav>
     
   <div class="booking-header">
-    <pre><?php print_r($_SESSION['selected_equipment']); ?></pre>
       <h1>BOOKING RESERVATION FORM</h1>
   </div>
 

@@ -45,25 +45,88 @@ $stmt->bind_result($currentBalance, $totalPrice);
 $stmt->fetch();
 $stmt->close();
 
-// Calculate new balance
-$newBalance = $currentBalance - $amountPaid;
+// Check if a voucher was applied in the session
+$voucherApplied = isset($_SESSION['voucher_code']);
+$discountAmount = 0;
+$originalBalance = $currentBalance; // Store the original balance before any changes
 
-// Determine new payment status
-if ($newBalance <= 0) {
-    $newStatus = 'Paid';
-    $newBalance = 0; // Ensure balance doesn't go negative
+
+// Calculate new balance after payment
+if ($paymentType === 'fullpayment') {
+    $newBalance = 0; // Full payment clears the balance
+    if ($voucherApplied) {
+    
+    // Calculate the discounted balance
+    $discountedBalance = $amountPaid;
+    
+    // Mark voucher as used
+    $voucherCode = $_SESSION['voucher_code'];
+    $customerId = $_SESSION['customerId'] ?? null;
+    
+    $stmt = $conn->prepare("UPDATE voucher_code 
+                           SET isUsed = TRUE, usedDate = NOW(), customerId = ?, bookingId = ?
+                           WHERE code = ?");
+    $stmt->bind_param("iis", $customerId, $bookingId, $voucherCode);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Clear voucher session
+    unset($_SESSION['voucher_code']);
+    unset($_SESSION['discount_rate']);
+    unset($_SESSION['discount_amount']);
+    unset($_SESSION['original_balance']);
+    } else {
+        $discountedBalance = $totalPrice; // No discount applied
+    }
 } else {
-    $newStatus = 'Partially Paid';
+    // For partial payment, subtract paid amount from discounted balance
+    $newBalance = $amountPaid;
+    if ($voucherApplied) {
+    
+    // Calculate the discounted balance
+    $discountedBalance = $amountPaid * 2;
+    
+    // Mark voucher as used
+    $voucherCode = $_SESSION['voucher_code'];
+    $customerId = $_SESSION['customerId'] ?? null;
+    
+    $stmt = $conn->prepare("UPDATE voucher_code 
+                           SET isUsed = TRUE, usedDate = NOW(), customerId = ?, bookingId = ?
+                           WHERE code = ?");
+    $stmt->bind_param("iis", $customerId, $bookingId, $voucherCode);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Clear voucher session
+    unset($_SESSION['voucher_code']);
+    unset($_SESSION['discount_rate']);
+    unset($_SESSION['discount_amount']);
+    unset($_SESSION['original_balance']);
+    } else {
+        $discountedBalance = $totalPrice; // No discount applied
+    }
 }
 
-// Update database (only using paymentBalance now)
+// Ensure balance doesn't go negative
+if ($newBalance < 0) {
+    $newBalance = 0;
+}
+
+// Determine new payment status
+$newStatus = ($newBalance <= 0) ? 'Paid' : 'Partially Paid';
+
+// Update database with the new balance
 $updateSql = "UPDATE booking SET 
               paymentStatus = ?, 
-              paymentBalance = ?
+              paymentBalance = ?,
+              voucherCode = ?,
+              lastPaymentAmount = ?,
+              lastPaymentDate = NOW()
               WHERE bookingId = ?";
 
 $stmt = $conn->prepare($updateSql);
-$stmt->bind_param("sdi", $newStatus, $newBalance, $bookingId);
+$voucherCodeToStore = $voucherApplied ? $voucherCode : null;
+$stmt->bind_param("sddsi", $newStatus, $newBalance, $voucherCodeToStore, $amountPaid, $bookingId);
 
 if ($stmt->execute()) {
     // Payment successfully recorded
@@ -162,17 +225,19 @@ $conn->close();
                     <p><strong>Remaining Balance:</strong> ₱<?php echo number_format($newBalance, 2); ?></p>
                     
                     <!-- Payment progress bar -->
-                    <?php $paidPercentage = (($totalPrice - $newBalance) / $totalPrice) * 100; ?>
+                    <?php 
+                    $paidAmount = $discountedBalance - $newBalance;
+                    $paidPercentage = ($paidAmount / $discountedBalance) * 100; 
+                    ?>
                     <div class="progress">
                         <div class="progress-bar" role="progressbar" 
-                             style="width: <?php echo $paidPercentage; ?>%" 
-                             aria-valuenow="<?php echo $paidPercentage; ?>" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100">
+                            style="width: <?php echo $paidPercentage; ?>%" 
+                            aria-valuenow="<?php echo $paidPercentage; ?>" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
                             <?php echo round($paidPercentage); ?>% Paid
                         </div>
                     </div>
-                </div>
                 <div class="d-grid gap-2">
                     <a href="profile.php" class="btn btn-primary">Return to Profile</a>
                     <?php if ($newBalance > 0): ?>
