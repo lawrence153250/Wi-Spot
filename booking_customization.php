@@ -59,9 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Process equipment selection if any
         $selectedEquipment = [];
         $totalAdditionalPrice = 0;
-        
-        if (!empty($_POST['equipment'])) {
-            foreach ($_POST['equipment'] as $itemId => $quantity) {
+
+        if (!empty($_POST['equipment_ids']) && !empty($_POST['quantities'])) {
+            foreach ($_POST['equipment_ids'] as $index => $itemId) {
+                $quantity = $_POST['quantities'][$index] ?? 1;
+                
                 // Get equipment details from inventory
                 $query = "SELECT itemId, itemName, itemType FROM inventory WHERE itemId = '$itemId' AND status = 'available'";
                 $result = mysqli_query($conn, $query);
@@ -152,43 +154,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $showEquipmentForm = true;
             }
         }
-    } elseif (isset($_POST['add_equipment'])) {
-        // Handle adding equipment and returning to booking.php
-        $equipmentData = [];
-        if (!empty($_POST['equipment'])) {
-            foreach ($_POST['equipment'] as $itemId => $quantity) {
-                // Get equipment details from inventory
-                $query = "SELECT itemId, itemName, itemType FROM inventory WHERE itemId = '$itemId' AND status = 'available'";
-                $result = mysqli_query($conn, $query);
-                
-                if ($result && mysqli_num_rows($result) > 0) {
-                    $equipment = mysqli_fetch_assoc($result);
+        } elseif (isset($_POST['add_equipment'])) {
+            // Handle adding equipment and returning to booking.php
+            $equipmentData = [];
+            if (!empty($_POST['equipment_ids']) && !empty($_POST['quantities'])) {
+                foreach ($_POST['equipment_ids'] as $index => $itemId) {
+                    $quantity = $_POST['quantities'][$index] ?? 1;
                     
-                    // Determine price based on itemType
-                    $price = $defaultPrice;
-                    foreach ($equipmentPrices as $type => $typePrice) {
-                        if (strcasecmp(trim($equipment['itemType']), $type) === 0) {
-                            $price = $typePrice;
-                            break;
+                    // Get equipment details from inventory
+                    $query = "SELECT itemId, itemName, itemType FROM inventory WHERE itemId = '$itemId' AND status = 'available'";
+                    $result = mysqli_query($conn, $query);
+                    
+                    if ($result && mysqli_num_rows($result) > 0) {
+                        $equipment = mysqli_fetch_assoc($result);
+                        
+                        // Determine price based on itemType
+                        $price = $defaultPrice;
+                        foreach ($equipmentPrices as $type => $typePrice) {
+                            if (strcasecmp(trim($equipment['itemType']), $type) === 0) {
+                                $price = $typePrice;
+                                break;
+                            }
                         }
+                        
+                        $equipmentData[] = [
+                            'id' => $equipment['itemId'],
+                            'name' => $equipment['itemName'],
+                            'type' => $equipment['itemType'],
+                            'price' => $price,
+                            'quantity' => $quantity
+                        ];
                     }
-                    
-                    $equipmentData[] = [
-                        'id' => $equipment['itemId'],
-                        'name' => $equipment['itemName'],
-                        'type' => $equipment['itemType'],
-                        'price' => $price,
-                        'quantity' => $quantity
-                    ];
                 }
             }
+            
+            // Store equipment data in session and redirect
+            $_SESSION['selected_equipment'] = $equipmentData;
+            header("Location: booking.php");
+            exit();
         }
-        
-        // Store equipment data in session and redirect
-        $_SESSION['custom_equipment'] = $equipmentData;
-        header("Location: booking.php");
-        exit();
-    }
 }
 
 // Get available equipment for the form
@@ -512,21 +516,17 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                    <div class="mt-4">
                     <h3>Additional Equipment Needed</h3>
                     <form method="post" id="equipmentForm">
-                        <div id="equipmentForms" class="mb-2"> <!-- Changed mb-3 to mb-2 -->
+                        <div id="equipmentForms" class="mb-2">
                             <?php if (!empty($selectedEquipment)): ?>
                                 <?php foreach ($selectedEquipment as $item): ?>
                                     <div class="add-equipment-form">
                                         <div class="row equipment-form-row">
                                             <div class="col-md-6 equipment-form-col">
-                                                <select class="form-select equipment-select" name="equipment[<?= $item['id'] ?>]" required>
+                                                <select class="form-select equipment-select" name="equipment_ids[]" required>
                                                     <option value="">Select Equipment</option>
                                                     <?php foreach ($availableEquipment as $equip): ?>
                                                         <option value="<?= $equip['itemId'] ?>" 
-                                                                <?= $equip['itemId'] == $item['id'] ? 'selected' : '' ?>
-                                                                data-type="<?= htmlspecialchars($equip['itemType']) ?>"
-                                                                data-price="<?= 
-                                                                    $equipmentPrices[$equip['itemType']] ?? $defaultPrice
-                                                                ?>">
+                                                            <?= $equip['itemId'] == $item['id'] ? 'selected' : '' ?>>
                                                             <?= htmlspecialchars($equip['itemName']) ?> 
                                                             (<?= htmlspecialchars($equip['itemType']) ?>)
                                                         </option>
@@ -535,7 +535,7 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                                             </div>
                                             <div class="col-md-3 equipment-form-col">
                                                 <input type="number" class="form-control quantity-input" 
-                                                    name="equipment[<?= $item['id'] ?>]" 
+                                                    name="quantities[]" 
                                                     min="1" value="<?= $item['quantity'] ?>" required>
                                             </div>
                                             <div class="col-md-3 equipment-form-col">
@@ -550,14 +550,10 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                                 <div class="add-equipment-form">
                                     <div class="row equipment-form-row">
                                         <div class="col-md-6 equipment-form-col">
-                                            <select class="form-select equipment-select" name="equipment[]" required>
+                                            <select class="form-select equipment-select" name="equipment_ids[]" required>
                                                 <option value="">Select Equipment</option>
                                                 <?php foreach ($availableEquipment as $equip): ?>
-                                                    <option value="<?= $equip['itemId'] ?>" 
-                                                            data-type="<?= htmlspecialchars($equip['itemType']) ?>"
-                                                            data-price="<?= 
-                                                                $equipmentPrices[$equip['itemType']] ?? $defaultPrice
-                                                            ?>">
+                                                    <option value="<?= $equip['itemId'] ?>">
                                                         <?= htmlspecialchars($equip['itemName']) ?> 
                                                         (<?= htmlspecialchars($equip['itemType']) ?>)
                                                     </option>
@@ -565,7 +561,7 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                                             </select>
                                         </div>
                                         <div class="col-md-3 equipment-form-col">
-                                            <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
+                                            <input type="number" class="form-control quantity-input" name="quantities[]" min="1" value="1" required>
                                         </div>
                                         <div class="col-md-3 equipment-form-col">
                                             <button type="button" class="btn btn-outline-danger remove-equipment w-100" style="display: none;">
@@ -577,13 +573,7 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                             <?php endif; ?>
                         </div>
 
-                        <?php if (count($availableEquipment) > 0): ?>
-                            <button type="button" id="addMoreEquipment" class="btn btn-outline-primary mb-2"> <!-- Added mb-2 -->
-                                <i class="bi bi-plus-circle"></i> Add Equipment
-                            </button>
-                        <?php endif; ?>
-                        
-                        <div class="mt-2"> <!-- Changed mt-3 to mt-2 -->
+                        <div class="mt-2">
                             <button type="submit" name="add_equipment" class="btn btn-primary">Save Equipment and Return to Booking</button>
                             <a href="booking.php" class="btn btn-secondary">Cancel</a>
                         </div>
@@ -645,21 +635,13 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                 newForm.innerHTML = `
                     <div class="row equipment-form-row">
                         <div class="col-md-6 equipment-form-col">
-                            <select class="form-select equipment-select" name="equipment[]" required>
+                            <select class="form-select equipment-select" name="equipment_ids[]" required>
                                 <option value="">Select Equipment</option>
                                 ${availableEquipment.map(equip => {
                                     // Only show equipment that hasn't been selected yet
                                     let isSelected = selectedEquipment.some(sel => sel.id == equip.itemId);
                                     if (!isSelected) {
-                                        return `<option value="${equip.itemId}" 
-                                                data-type="${equip.itemType}"
-                                                data-price="${
-                                                    equip.itemType == 'Wifi Router' ? 300 :
-                                                    (equip.itemType == 'Wifi Extender' ? 100 :
-                                                    (equip.itemType == 'Ethernet Cable' ? 50 :
-                                                    (equip.itemType ==  'EAP110-Outdoor V3' ? 250 :
-                                                    (equip.itemType == 'Network Switch' ? 500 : 300))))
-                                                }">
+                                        return `<option value="${equip.itemId}">
                                             ${equip.itemName} (${equip.itemType})
                                         </option>`;
                                     }
@@ -668,7 +650,7 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                             </select>
                         </div>
                         <div class="col-md-3 equipment-form-col">
-                            <input type="number" class="form-control quantity-input" name="quantity[]" min="1" value="1" required>
+                            <input type="number" class="form-control quantity-input" name="quantities[]" min="1" value="1" required>
                         </div>
                         <div class="col-md-3 equipment-form-col">
                             <button type="button" class="btn btn-outline-danger remove-equipment w-100">Remove</button>

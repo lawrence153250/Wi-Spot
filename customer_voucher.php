@@ -1,5 +1,8 @@
 <?php
 session_start();
+if (isset($_SESSION['selected_equipment'])) {
+    unset($_SESSION['selected_equipment']);
+}
 include 'chatbot-widget.html';
 // Check if customer is logged in
 if (!isset($_SESSION['username'])) {
