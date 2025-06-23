@@ -130,7 +130,8 @@
     transition: 0.5s;
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-secondary:hover {
     border-top-right-radius: 30px;
 }
 
@@ -303,7 +304,8 @@
 }
 
 /* ===== Button Styles ===== */
-.btn-primary {
+.btn-primary,
+.btn-secondary {
     background: linear-gradient(45deg, #1847D0, #0f0790);
     border: none;
     margin-top: 2rem;
@@ -314,7 +316,8 @@
     box-shadow: 0 4px 8px rgba(24, 71, 208, 0.2);
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-secondary:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(24, 71, 208, 0.3);
 }
@@ -330,9 +333,6 @@
     color: white;
 }
 
-.btn-secondary {
-    transition: all 0.3s ease;
-}
 
 /* ===== Responsive Design ===== */
 @media (max-width: 768px) {
