@@ -55,14 +55,14 @@ if (isset($_SESSION['selected_equipment'])) {
                 <div class="col-sm-8 text-center">
                     <br>
                     <br>
-                    <h1 class="section-title">About Wi-spot</h1>
+                    <h1 class="section-title">ABOUT WI-SPOT</h1>
                     <div class="title-underline"></div>
                 </div>
             </div>
             <div class="row align-items-stretch">
                 <div class="col-lg-6 mb-4">
                     <div class="info-card">
-                        <h3>Our Story</h3>
+                        <h3>OUR STORY</h3>
                         <p>Wi-spot began as a single piso net hotspot - a coin-operated internet station created by our founder to serve local connectivity needs. What started as a neighborhood service quickly gained popularity for its reliability and fair pricing.
                         </p>
                         <p>
@@ -72,7 +72,7 @@ if (isset($_SESSION['selected_equipment'])) {
                 </div>
                 <div class="col-lg-6 mb-4">
             <div class="info-card">
-                <h3>Connect With Us</h3>
+                <h3>CONNECT WITH US</h3>
                 <p>We'd love to hear from you! Connect with us on social media or contact us directly.</p>
                 <div class="social-links mt-4 d-flex align-items-center"> <a href="https://www.facebook.com/WiSpotServices" class="social-icon me-3" target="_blank" aria-label="Facebook"> <i class="bi bi-facebook fs-1"></i> </a>
 
@@ -90,7 +90,7 @@ if (isset($_SESSION['selected_equipment'])) {
         <div class="container">
             <div class="row justify-content-center mb-5">
                 <div class="col-sm-8 text-center">
-                    <h2 class="section-title" style="font-size: 48px;">Our Services</h2>
+                    <h2 class="section-title" style="font-size: 48px;">OUR SERVICES</h2>
                     <div class="title-underline"></div>
                 </div>
             </div>
@@ -98,21 +98,21 @@ if (isset($_SESSION['selected_equipment'])) {
                 <div class="col-lg-4 mb-4">
                     <div class="info-card">
                         <img src="img\imgAbout\43879514_1898695700223196_4750494246128058368_n.jpg" alt="Piso Net Hotspot Service" class="service-image mb-3">
-                        <h5>Piso Net Hotspot</h5>
+                        <h5>PISO-NET HOTSPOT</h5>
                         <p>Our coin-operated internet stations serving local communities with reliable connectivity.</p>
                     </div>
                 </div>
                 <div class="col-lg-4 mb-4">
                     <div class="info-card">
                         <img src="img\imgAbout\482346809_1153865653107873_2072301733285116936_n.jpg" alt="Satellite Internet Installation" class="service-image mb-3">
-                        <h5>Satellite Internet</h5>
+                        <h5>SATELLITE INTERNET</h5>
                         <p>Professional installation of satellite internet for homes and businesses across the region.</p>
                     </div>
                 </div>
                 <div class="col-lg-4 mb-4">
                     <div class="info-card">
                         <img src="img\imgAbout\481044633_1147189410442164_3886537667126314387_n.jpg" alt="Network Services" class="service-image mb-3">
-                        <h5>Network Solutions</h5>
+                        <h5>NETWORK SOLUTIONS</h5>
                         <p>Comprehensive network services and technical support for all your connectivity needs.</p>
                     </div>
                 </div>

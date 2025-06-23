@@ -152,11 +152,11 @@ body {
 }
 
 .voucher-card.yours {
-    border-left: 4px solid #10b981;
+    border-left: 4px solid #1021b9;
 }
 
 .voucher-card.available {
-    border-left: 4px solid #3b82f6;
+    border-left: 4px solid #1021b9;
 }
 
 .voucher-header {

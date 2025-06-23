@@ -8,92 +8,29 @@ include 'chatbot-widget.html';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Copyright Policy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style.css">
-    <style>
-     
-        body {
-            background-color: #E6F2F4;
-            font-family: Arial, sans-serif;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-
-        .nav-link {
-            color: #ffffff; 
-        }
-
-        .navbar-brand img {
-            max-height: 40px; 
-        }
-
-      
-        .container {
-            width: 80%;
-            margin: 150px auto;
-            padding: 50px;
-            background-color: #ffffff; 
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            border-radius: 20px;
-        }
-
-        h1, h2 {
-            text-align: left;
-            color: #F6D110; 
-            font-family: 'Garet', sans-serif;
-            margin-bottom: 20px;
-        }
-
-        p {
-            font-family: Arial, sans-serif;
-            color: #333;
-            font-size: 20px;
-            line-height: 1.6;
-        }
-
-       
-        .foot-container {
-            background-color: #E6F2F4; 
-            padding: 100px;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-
-        .foot-icons a {
-            color: #333; 
-            font-size: 24px;
-            margin-right: 10px;
-        }
-
-        .foot-policy .foot-policy {
-            color: #333;
-        }
-
-        .foot_text {
-            color: #333; 
-            font-size: 14px;
-            line-height: 1.6;
-        }
-    </style>
+    <link rel="stylesheet" href="TOSstyle.css">
 </head>
-<body>
+<body style="background-color: #f0f3fa;"> 
 <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-    <div class="nav-container">
+    <div class="container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
-            <ul class="navbar-nav">
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
                 <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
                 <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
                 <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
             </ul>
+
             <?php if (isset($_SESSION['username'])): ?>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -101,7 +38,7 @@ include 'chatbot-widget.html';
                     </li>
                 </ul>
             <?php else: ?>
-                <div class="auth-buttons ms-auto">
+                <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
                     <a class="btn btn-primary" href="login.php">LOGIN</a>
                     <a class="nav-link" href="register.php">SIGN UP</a>
                 </div>
@@ -109,53 +46,63 @@ include 'chatbot-widget.html';
         </div>
     </div>
 </nav>
-<div class="container">
-    <h1>Copyright Policy</h1>
+<div class="tos-container">
+    <h1 class="tos-header">
+        <i class="bi bi-satellite satellite-icon"></i>
+        COPYRIGHT POLICY
+    </h1>
     <p>All content on this website, including text, graphics, logos, and images, is the property of Wi-Spot services or its content suppliers and protected by international copyright laws.</p>
     
-    <h2>Use of Content</h2>
+    <div class="tos-section">
+        <h2><i class="bi bi-arrow-right-circle-fill"></i><b>USE OF CONTENT</b></h2>
     <p>You may not reproduce, distribute, or create derivative works from any content on this website without express written permission from Wi-Spot services.</p>
-    
-    <h2>Reporting Infringement</h2>
+    </div>
+
+    <div class="tos-section">
+        <h2><i class="bi bi-arrow-right-circle-fill"></i><b>REPORTING INFRINGEMENT</b></h2>
     <p>If you believe that any content on our website infringes your copyright, please contact us with details of the infringement and we will address the issue promptly.</p>
-    
-    <h2>Contact Us</h2>
-    <p>For any questions, concern or clarification please contact us through our email [wispot.servicesph@gmail.com] or through our phone number +639123456789.</p>
-</div>
-<div class="foot-container" id="grad">
-        <div class="foot-icons">
-            <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target=”_blank”></a>
-            <a href="https://web.facebook.com/" class="bi bi-facebook text-altlight" target=”_blank”></a>
-            <a href="https://www.instagram.com/" class="bi bi-instagram text-altlight" target=”_blank”></a>
-            <a href="https://www.tiktok.com/" class="bi bi-tiktok text-altlight" target=”_blank”></a>
-        </div>
-        <hr>
-        <div class="foot-policy">
-            <div class="row">
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="termsofservice.php" target="_blank">Terms of Service</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="copyrightpolicy.php" target="_blank">Copyright Policy</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="privacypolicy.php" target="_blank">Privacy Policy</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="contactus.php" target=”_blank”>Contact Us</a>
-                </div>
+    </div>
+    <div class="tos-section tos-contact">
+        <h2><i class="bi bi-headset"></i><b>CONTACT US</b></h2>
+        <p>For any copyright-related inquiries:</p>
+        
+        <div class="contact-methods">
+            <div class="contact-method">
+                <i class="bi bi-envelope"></i>
+                <span>wispot.servicesph@gmail.com</span>
+            </div>
+            <div class="contact-method">
+                <i class="bi bi-phone"></i>
+                <span>+63-912-345-6789</span>
             </div>
         </div>
-        <hr>
-        <div class="foot_text text-altlight">
-            <p>Wi-spot is available in English, French, German, Italian, Spanish, and more.</p><br>
-            <p>
-                &copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.
-            </p><br>
-            <p>
-                This webpage is for educational purposes only and no copyright infringement is intended.
-            </p>
-        </div>
     </div>
+</div>
+<div class="foot-container">
+    <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
+    <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
+  </div>
+  <div class="foot-icons">
+    <a href="https://www.facebook.com/WiSpotServices" class="bi bi-facebook" target="_blank"></a>
+  </div>
+
+  <hr>
+
+  <div class="foot-policy">
+    <div class="policy-links">
+      <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
+      <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
+      <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
+      <a href="contactus.php" target="_blank">CONTACT US</a>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="foot_text">
+    <br>
+    <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
+  </div>
+</div>
 </body>
 </html>

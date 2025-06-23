@@ -20,74 +20,6 @@ require_once 'config.php';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Feedback Carousel Styles */
-        .feedback-container {
-            padding: 4rem 0;
-            background-color: #ffffff;
-        }
-        
-        .feedback-title {
-            text-align: center;
-            margin-bottom: 3rem;
-            color: #2a3f54;
-        }
-        
-        .feedback-carousel {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .feedback-card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 2rem;
-            margin: 0 1rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            min-height: 300px;
-        }
-        
-        .feedback-user {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        .feedback-user img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 1rem;
-        }
-        
-        .user-info h5 {
-            margin-bottom: 0.2rem;
-            color: #2a3f54;
-        }
-        
-        .user-info p {
-            color: #6c757d;
-            margin-bottom: 0;
-        }
-        
-        .feedback-text {
-            font-style: italic;
-            color: #495057;
-            line-height: 1.6;
-        }
-        
-        .carousel-control-prev, .carousel-control-next {
-            width: 5%;
-            color: #2a3f54;
-        }
-        
-        .carousel-control-prev-icon, .carousel-control-next-icon {
-            background-color: #2a3f54;
-            border-radius: 50%;
-            padding: 10px;
-        }
-    </style>
 </head>
 <body style="background-color: #f0f3fa;"> 
 <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
@@ -154,7 +86,7 @@ require_once 'config.php';
     <div class="row">
         <!-- LEFT SIDE: Text -->
         <div class="col-sm-6">
-            <h1>Made for people on the move.</h1>
+            <h1> MADE FOR PEOPLE ON THE MOVE</h1>
             <p>
                 Wi-Spot offers fast, reliable WiFi rental solutions for events, travels, short-term setups, and on-the-go lifestyles. No long-term contracts—just seamless connectivity, anytime, anywhere.
             </p>
@@ -197,7 +129,7 @@ require_once 'config.php';
                 <div class="map-content">
                     <h1>REAL-TIME COVERAGE VISUALIZATION</h1>
                     <p>Visualize and monitor the satellite signal strength at your location in real-time, ensuring reliable connectivity wherever you are.</p>
-                <a href="mapcoverage.php" class="btn btn-primary">MAP COVERAGE</a>
+                <a href="mapcoverage.php" class="btn btn-primary">CHECK COVERAGE</a>
                 </div>
             </div>
 

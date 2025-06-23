@@ -230,149 +230,29 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking Customization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            background-color: #E6F2F4;
-            font-family: Arial, sans-serif;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            width: 80%;
-            margin: 50px auto;
-            padding: 30px;
-            background-color: #ffffff; 
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            border-radius: 20px;
-        }
-
-        h1, h2 {
-            text-align: left;
-            color: #F6D110; 
-            font-family: 'Garet', sans-serif;
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            font-weight: bold;
-        }
-
-        .readonly-field {
-            background-color: #f8f9fa;
-            cursor: not-allowed;
-        }
-
-        .package-card {
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            background-color: #f9f9f9;
-        }
-
-        .package-name {
-            color: #F6D110;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        .recommendation {
-            padding: 15px;
-            background-color: #e8f4fd;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .foot-container {
-            background-color: #E6F2F4; 
-            padding: 100px;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-        .package-features {
-            margin-top: 15px;
-        }
-        .feature-item {
-            display: flex;
-            margin-bottom: 8px;
-        }
-        .feature-icon {
-            margin-right: 10px;
-            color: #F6D110;
-        }
-        
-        /* Equipment selection styles */
-        .selected-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-        }
-        .total-additional {
-            padding: 8px;
-            text-align: right;
-            font-size: 1.1em;
-            margin-top: 10px;
-        }
-        .add-equipment-form {
-        border: 1px solid #e0e0e0;
-        padding: 8px;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        background-color: #f8f9fa;
-        }
-        .equipment-select {
-            font-size: 0.9rem;
-            padding: 0.375rem 0.75rem;
-        }
-
-        .quantity-input {
-            font-size: 0.9rem;
-            padding: 0.375rem;
-        }
-
-        .remove-equipment {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.5rem;
-        }
-
-        .equipment-form-row {
-            align-items: center;
-        }
-
-        .equipment-form-col {
-            padding-right: 5px;
-            padding-left: 5px;
-        }
-
-        #addMoreEquipment {
-            font-size: 0.9rem;
-            padding: 0.375rem 0.75rem;
-            margin-bottom: 15px;
-        }
-    </style>
+    <link rel="stylesheet" href="bookingcustomstyle.css">
 </head>
-<body>
+<body style="background-color: #f0f3fa;"> 
 <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-    <div class="nav-container">
+    <div class="container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
-            <ul class="navbar-nav">
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
                 <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
                 <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
                 <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
             </ul>
+
             <?php if (isset($_SESSION['username'])): ?>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -380,7 +260,7 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                     </li>
                 </ul>
             <?php else: ?>
-                <div class="auth-buttons ms-auto">
+                <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
                     <a class="btn btn-primary" href="login.php">LOGIN</a>
                     <a class="nav-link" href="register.php">SIGN UP</a>
                 </div>
@@ -392,7 +272,7 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
     <div class="container">
         <h1>Customize Your Booking</h1>
         
-        <form method="post">
+        <form method="post" style="margin-top: 80px;">
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="speed" class="form-label">Required Bandwidth (Mbps)</label>
@@ -584,42 +464,33 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
         <?php endif; ?>
     </div>
 
-     <div class="foot-container" id="grad">
-        <div class="foot-icons">
-            <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target="_blank"></a>
-            <a href="https://web.facebook.com/" class="bi bi-facebook text-altlight" target="_blank"></a>
-            <a href="https://www.instagram.com/" class="bi bi-instagram text-altlight" target="_blank"></a>
-            <a href="https://www.tiktok.com/" class="bi bi-tiktok text-altlight" target="_blank"></a>
-        </div>
-        <hr>
-        <div class="foot-policy">
-            <div class="row">
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="termsofservice.php" target="_blank">Terms of Service</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="copyrightpolicy.php" target="_blank">Copyright Policy</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="privacypolicy.php" target="_blank">Privacy Policy</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="contactus.php" target="_blank">Contact Us</a>
-                </div>
-            </div>
-        </div>
-        <hr>
-        <div class="foot_text text-altlight">
-            <p>Wi-spot is available in English, French, German, Italian, Spanish, and more.</p><br>
-            <p>
-                &copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.
-            </p><br>
-            <p>
-                This webpage is for educational purposes only and no copyright infringement is intended.
-            </p>
-        </div>
+      <div class="foot-container">
+    <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
+    <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
+  </div>
+  <div class="foot-icons">
+    <a href="https://www.facebook.com/WiSpotServices" class="bi bi-facebook" target="_blank"></a>
+  </div>
+
+  <hr>
+
+  <div class="foot-policy">
+    <div class="policy-links">
+      <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
+      <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
+      <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
+      <a href="contactus.php" target="_blank">CONTACT US</a>
     </div>
-    
+  </div>
+
+  <hr>
+
+  <div class="foot_text">
+    <br>
+    <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
+  </div>
+</div>
+
    <script>
     document.addEventListener('DOMContentLoaded', function() {
         const equipmentForms = document.getElementById('equipmentForms');
