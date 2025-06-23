@@ -3,7 +3,7 @@ session_start();
 if (isset($_SESSION['selected_equipment'])) {
     unset($_SESSION['selected_equipment']);
 }
-include 'chatbot-widget.html';
+
 // Check if customer is logged in
 if (!isset($_SESSION['username'])) {
     header("Location: login.php");
@@ -220,6 +220,6 @@ $customerVouchers = $result->fetch_all(MYSQLI_ASSOC);
         <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
     </div>
 </div>
-
+    <?php include 'chatbot-widget.html'; ?>
 </body>
 </html>
