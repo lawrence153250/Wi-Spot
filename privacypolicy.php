@@ -73,11 +73,11 @@ include 'chatbot-widget.html';
         <div class="contact-methods">
             <div class="contact-method">
                 <i class="bi bi-envelope"></i>
-                <span>wispot.servicesph@gmail.com</span>
+                <span>Joshua.napila@gmail.com</span>
             </div>
             <div class="contact-method">
                 <i class="bi bi-phone"></i>
-                <span>+63-912-345-6789</span>
+                <span>0905 458 5366</span>
             </div>
         </div>
     </div>

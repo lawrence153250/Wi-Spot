@@ -183,9 +183,9 @@ include 'chatbot-widget.html';
 
         <div class="contact-info">
         <h3>OTHER WAYS TO REACH US</h3>
-        <p><i class="bi bi-envelope contact-icon"></i> wispot.servicesph@gmail.com</p>
-        <p><i class="bi bi-telephone contact-icon"></i> +63-912-345-6789</p>
-        <p><i class="bi bi-geo-alt contact-icon"></i> 123 Tech Street, Silicon Valley, CA 94025</p>
+        <p><i class="bi bi-envelope contact-icon"></i> Joshua.napila@gmail.com</p>
+        <p><i class="bi bi-telephone contact-icon"></i> 0905 458 5366</p>
+        <p><i class="bi bi-geo-alt contact-icon"></i> Rizal</p>
         <p><i class="bi bi-clock contact-icon"></i> Customer Support Hours: Mon-Fri, 9AM-5PM PST</p>
     </div>
 </div>
