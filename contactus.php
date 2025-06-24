@@ -185,7 +185,7 @@ include 'chatbot-widget.html';
         <h3>OTHER WAYS TO REACH US</h3>
         <p><i class="bi bi-envelope contact-icon"></i> Joshua.napila@gmail.com</p>
         <p><i class="bi bi-telephone contact-icon"></i> 0905 458 5366</p>
-        <p><i class="bi bi-geo-alt contact-icon"></i> Rizal</p>
+        <p><i class="bi bi-geo-alt contact-icon"></i> Cainta, Rizal</p>
         <p><i class="bi bi-clock contact-icon"></i> Customer Support Hours: Mon-Fri, 9AM-5PM PST</p>
     </div>
 </div>
