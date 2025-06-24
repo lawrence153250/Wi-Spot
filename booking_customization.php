@@ -270,8 +270,10 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
 </nav>
 
     <div class="container">
-        <h1>Customize Your Booking</h1>
+       
         
+    <div class="custom-container">
+         <h1>CUSTOMIZE YOUR BOOKING</h1>
         <form method="post" style="margin-top: 80px;">
             <div class="row mb-3">
                 <div class="col-md-6">
@@ -326,8 +328,11 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                         </button>
                     <?php endif; ?>
                 </div>
-                <i class="bi bi-info-circle"></i> Need help determining your area size? 
-                <a href="mapcoverage.php?fromBooking=1" class="alert-link">Use our Coverage Visualization Tool</a>
+
+                <div class="mt-3"> 
+                    <i class="bi bi-info-circle"></i> Need help determining your area size? 
+                    <a href="mapcoverage.php?fromBooking=1" class="alert-link">Use our Coverage Visualization Tool</a>
+                </div>
             </div>
             
             <button type="submit" name="submit_booking" class="btn btn-primary">Find Packages</button>
@@ -462,8 +467,8 @@ if (isset($_SESSION['coverage_data']['additional_eaps'])) {
                 <?php endif; ?>
             </div>
         <?php endif; ?>
+        </div>
     </div>
-
       <div class="foot-container">
     <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
     <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
