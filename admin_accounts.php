@@ -390,6 +390,7 @@ $conn->close();
             <li><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
             <li><a class="nav-link" href="admin_inventory.php">INVENTORY</a></li>
             <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
+            <li><a class="nav-link" href="admin_agreementView.php">AGREEMENTS</a></li>
             <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>
             <li><a class="nav-link" href="admin_resetpass.php">RESET PASSWORD</a></li>

@@ -56,6 +56,33 @@ function formatDate($dateString) {
     return date("F j, Y", strtotime($dateString));
 }
 
+// Function to generate the agreement content
+function generateAgreementContent($user, $effectiveDate, $signatureData) {
+    $agreementContent = "Starlink Device Lending Agreement\n\n";
+    $agreementContent .= "This Device Lending Agreement (\"Agreement\") is entered into on this day $effectiveDate between:\n\n";
+    $agreementContent .= "Lender: Joshua Ed Napila, an individual residing at 52 Eagle Street, Don Mariano Subdivision, Cainta, Rizal (\"Lender\").\n\n";
+    $agreementContent .= "Borrower: {$user['firstName']} {$user['lastName']}, an individual residing at {$user['address']}.\n\n";
+    $agreementContent .= "Terms and Conditions:\n\n";
+    $agreementContent .= "1. Device Description:\n";
+    $agreementContent .= "   - Model: KIT303105607/Gen 2\n";
+    $agreementContent .= "   - Serial Number: 2DWC235000042417\n";
+    $agreementContent .= "   - Router ID: 01000000000000000044E2CD\n\n";
+    $agreementContent .= "2. Loan Period: The Borrower acknowledges and agrees that the Device is being loaned for a period commencing on the Start Date and ending on the agreed-upon return date.\n\n";
+    $agreementContent .= "3. Purpose: The Borrower agrees to use the Device solely for personal use and not for any commercial purposes.\n\n";
+    $agreementContent .= "4. Care and Maintenance: The Borrower shall use the Device in a careful and proper manner.\n\n";
+    $agreementContent .= "5. Return Condition: The Borrower shall return the Device to the Lender in the same condition as it was received.\n\n";
+    $agreementContent .= "6. Loss or Damage: The Borrower shall be liable for any loss, theft, or damage to the Device.\n\n";
+    $agreementContent .= "7. Indemnification: The Borrower agrees to indemnify and hold harmless the Lender from any claims.\n\n";
+    $agreementContent .= "8. Ownership: The Borrower acknowledges that the Device is and shall remain the property of the Lender.\n\n";
+    $agreementContent .= "9. Termination: The Lender reserves the right to terminate this Agreement.\n\n";
+    $agreementContent .= "10. Entire Agreement: This Agreement constitutes the entire agreement between the parties.\n\n";
+    $agreementContent .= "Borrower's Signature:\n\n";
+    $agreementContent .= "[Signature Image Data: $signatureData]\n\n";
+    $agreementContent .= "Borrower's Name: {$user['firstName']} {$user['lastName']}\n";
+    $agreementContent .= "Date: $effectiveDate\n";
+    
+    return $agreementContent;
+}
 
 // Function to compute price based on package and number of days
 function computePrice($packageId, $dateOfBooking, $dateOfReturn) {
@@ -68,22 +95,37 @@ function computePrice($packageId, $dateOfBooking, $dateOfReturn) {
 
     return $packagePrices[$packageId] * $numberOfDays;
 }
+
 // Handle booking submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     $packageId = $_POST['packageId'];
     $dateOfBooking = $_POST['dateOfBooking'];
     $dateOfReturn = $_POST['dateOfReturn'];
     $eventLocation = $_POST['eventLocation'];
-    $lendingAgreement = $_POST['lendingAgreement'];
-    $totalPrice = $_POST['totalPrice']; // Get the total price from the form
+    $signatureData = $_POST['lendingAgreement'];
+    $totalPrice = $_POST['totalPrice'];
 
     // Validate date range
     if (new DateTime($dateOfBooking) >= new DateTime($dateOfReturn)) {
         echo '<div class="alert alert-danger">Error: Return date must be after the booking date.</div>';
     } else {
-        // Insert booking with the total price and payment balance
+        // Generate the agreement content
+        $agreementContent = generateAgreementContent($user, $effectiveDate, $signatureData);
+        
+        // Create a unique filename
+        $filename = "agreement_" . $customerId . "_" . time() . ".txt";
+        $filepath = "agreements/" . $filename;
+        
+        // Save the agreement to a file
+        if (!is_dir("agreements")) {
+            mkdir("agreements", 0755, true);
+        }
+        
+        file_put_contents($filepath, $agreementContent);
+        
+        // Insert booking with the total price, payment balance, and agreement file path
         $stmt = $conn->prepare("INSERT INTO booking (customerId, packageId, dateOfBooking, dateOfReturn, eventLocation, price, lendingAgreement, paymentBalance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iisssdsd", $customerId, $packageId, $dateOfBooking, $dateOfReturn, $eventLocation, $totalPrice, $lendingAgreement, $totalPrice);
+        $stmt->bind_param("iisssdsd", $customerId, $packageId, $dateOfBooking, $dateOfReturn, $eventLocation, $totalPrice, $filepath, $totalPrice);
 
         if ($stmt->execute()) {
             // Clear the custom equipment from session after successful booking
@@ -357,10 +399,12 @@ $conn->close();
 
                     <p>Please sign if you agree</p>
                     <div id="signature-pad" class="signature-pad">
-                        <canvas id="signature-canvas"></canvas>
+                        <canvas id="signature-canvas"></canvas><br>
+                        <strong><?php echo $user['firstName'] .' '. $user['lastName']; ?></strong>
                     </div>
                     <button type="button" id="clear-signature" class="btn btn-danger mt-2">Clear Signature</button>
                 </div>
+                    
                 <div class="modal-footer">
                     <button type="button" id="save-signature" class="btn btn-primary" data-bs-dismiss="modal">Agree</button>
                 </div>
@@ -511,6 +555,8 @@ function formatDate(dateString) {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString('en-US', options);
 }
+
+
 </script>
 
 </body>
