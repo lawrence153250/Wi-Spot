@@ -142,6 +142,11 @@
     animation-delay: 1s;
 }
 
+h1.text-center {
+   color: rgba(24, 71, 208, 1);
+    padding-bottom: 8px;
+    font-weight: 600;
+}
  .feedback-card {
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
