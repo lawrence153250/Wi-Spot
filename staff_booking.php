@@ -46,6 +46,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $_SESSION['message'] = "Booking status updated successfully!";
         } 
+        elseif ($action === 'update_connection' && isset($_POST['new_connection_status'])) {
+            // Update connection status to the selected value
+            $newStatus = $_POST['new_connection_status'];
+            $stmt = $conn->prepare("UPDATE booking SET connectionStatus = ? WHERE bookingId = ?");
+            $stmt->bind_param("si", $newStatus, $bookingId);
+            $stmt->execute();
+            $stmt->close();
+            
+            $_SESSION['message'] = "Connection status updated successfully!";
+        }
         elseif ($action === 'cancel_booking' && isset($_POST['cancel_reason'])) {
             // Handle cancellation with reason
             $reason = $_POST['cancel_reason'];
@@ -87,6 +97,7 @@ $sql = "SELECT
             p.packageName AS package_chosen,
             b.price AS total_price,
             b.bookingStatus AS booking_status,
+            b.connectionStatus AS connection_status,
             b.paymentStatus AS payment_status,
             b.cancelReason,
             c.username AS customer_username,
@@ -328,6 +339,42 @@ $conn->close();
                 overflow-x: auto;
             }
         }
+        /* Connection Status Styles */
+        .connection-connecting {
+            color: #ffc107; /* Yellow for connecting */
+            font-weight: bold;
+        }
+        .connection-connected {
+            color: #28a745; /* Green for connected */
+            font-weight: bold;
+        }
+        .connection-connection-error {
+            color: #dc3545; /* Red for error */
+            font-weight: bold;
+        }
+        
+        /* Connection Option Styles in Modal */
+        .connection-option.connecting {
+            display: block;
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #fff3cd;
+            border-radius: 4px;
+        }
+        .connection-option.connected {
+            display: block;
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #d4edda;
+            border-radius: 4px;
+        }
+        .connection-option.connection-error {
+            display: block;
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #f8d7da;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -397,7 +444,7 @@ $conn->close();
         
         <div class="table-responsive">
             <table class="bookings-table">
-                <thead>
+               <thead>
                     <tr>
                         <th>Customer</th>
                         <th>Contact</th>
@@ -407,6 +454,7 @@ $conn->close();
                         <th>Package</th>
                         <th>Price</th>
                         <th>Booking Status</th>
+                        <th>Connection Status</th>
                         <th>Payment Status</th>
                         <th>Actions</th>
                     </tr>
@@ -456,6 +504,9 @@ $conn->close();
                                 <td class="<?php echo 'status-' . strtolower(str_replace(' ', '-', $booking['booking_status'])); ?>">
                                     <?php echo htmlspecialchars($booking['booking_status']); ?>
                                 </td>
+                                <td class="<?php echo 'connection-' . strtolower(str_replace(' ', '-', $booking['connection_status'])); ?>">
+                                    <?php echo htmlspecialchars($booking['connection_status']); ?>
+                                </td>
                                 <td><?php echo htmlspecialchars($booking['payment_status']); ?></td>
                                 <td>
                                     <?php if (strtolower($booking['booking_status']) == 'pending'): ?>
@@ -472,6 +523,9 @@ $conn->close();
                                         <div class="action-buttons">
                                             <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#updateStatusModal<?php echo $booking['bookingId']; ?>">
                                                 Update Status
+                                            </button>
+                                            <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#updateConnectionModal<?php echo $booking['bookingId']; ?>">
+                                                Update Connection
                                             </button>
                                             <?php if (strtolower($booking['booking_status']) != 'cancelled'): ?>
                                                 <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" 
@@ -631,6 +685,59 @@ $conn->close();
                                     </div>
                                 </div>
                             </div>
+
+
+                            <!-- Update Connection Status Modal -->
+                            <div class="modal fade" id="updateConnectionModal<?php echo $booking['bookingId']; ?>" tabindex="-1" aria-labelledby="updateConnectionModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="post">
+                                            <input type="hidden" name="booking_id" value="<?php echo $booking['bookingId']; ?>">
+                                            <input type="hidden" name="action" value="update_connection">
+                                            
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="updateConnectionModalLabel">Update Connection Status #<?php echo $booking['bookingId']; ?></h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>
+                                                    <strong>Customer:</strong> <?php echo htmlspecialchars($booking['customer_firstname'] . ' ' . $booking['customer_lastname']); ?><br>
+                                                    <strong>Current Status:</strong> <span class="<?php echo 'connection-' . strtolower(str_replace(' ', '-', $booking['connection_status'])); ?>"><?php echo htmlspecialchars($booking['connection_status']); ?></span><br>
+                                                    <strong>Event Dates:</strong> <?php echo htmlspecialchars($booking['date_of_start']); ?> to <?php echo htmlspecialchars($booking['date_of_return']); ?>
+                                                </p>
+                                                
+                                                <hr>
+                                                
+                                                <h6>Select New Connection Status:</h6>
+                                                <div class="status-selector">
+                                                    <label class="connection-option connecting">
+                                                        <input type="radio" name="new_connection_status" value="Connecting" <?php echo ($booking['connection_status'] == 'Connecting') ? 'checked' : ''; ?>>
+                                                        Connecting
+                                                    </label>
+                                                    <label class="connection-option connected">
+                                                        <input type="radio" name="new_connection_status" value="Connected" <?php echo ($booking['connection_status'] == 'Connected') ? 'checked' : ''; ?>>
+                                                        Connected
+                                                    </label>
+                                                    <label class="connection-option connection-error">
+                                                        <input type="radio" name="new_connection_status" value="Connection error" <?php echo ($booking['connection_status'] == 'Connection error') ? 'checked' : ''; ?>>
+                                                        Connection error
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="mt-3">
+                                                    <label for="connectionNotes" class="form-label">Connection Update Notes:</label>
+                                                    <textarea class="form-control" id="connectionNotes" name="connection_notes" rows="3" 
+                                                            placeholder="Add any notes about this connection status change"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Update Connection Status</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
@@ -641,6 +748,8 @@ $conn->close();
             </table>
         </div>
     </div>
+
+<!-- Inside your foreach loop, after the Update Status Modal -->
 
     <!-- Cancel Booking Confirmation Modal -->
 <div class="modal fade" id="cancelBookingModal" tabindex="-1" aria-labelledby="cancelBookingModalLabel" aria-hidden="true">
