@@ -1,12 +1,12 @@
 <!-- chatbot-widget.html -->
 <div id="chatbot-toggle" style="position:fixed; bottom:20px; right:20px; z-index:1000;">
-  <button style="background:#4a6fa5; color:white; border:none; border-radius:50%; width:60px; height:60px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; font-size:24px;">
+  <button style="background: linear-gradient(90deg, #256eff, #1c39bb, #162447); color:white; border:none; border-radius:50%; width:60px; height:60px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; font-size:24px;">
     <i class="fas fa-comment-alt"></i>
   </button>
 </div>
 
 <div id="chatbot-container" style="display:none; position:fixed; bottom:80px; right:20px; width:350px; max-width:90vw; background:white; border-radius:10px; box-shadow:0 0 20px rgba(0,0,0,0.2); z-index:1000; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <div style="padding:15px; background:#4a6fa5; color:white; border-top-left-radius:10px; border-top-right-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+  <div style="padding:15px; background:#1c39bb; color:white; border-top-left-radius:10px; border-top-right-radius:10px; display:flex; justify-content:space-between; align-items:center;">
     <h3 style="margin:0; font-size:1.1rem;">Support Assistant</h3>
     <button id="chatbot-close" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">&times;</button>
   </div>
@@ -26,7 +26,7 @@
   <div id="chatbot-messages" style="flex-grow:1; padding:15px; overflow-y:auto; max-height:300px; min-height:100px;"></div>
   <div style="padding:10px; border-top:1px solid #eee; display:flex;">
     <input type="text" id="chatbot-input" placeholder="Type your message..." style="flex-grow:1; padding:10px; border:1px solid #ddd; border-radius:20px; margin-right:10px; outline:none;">
-    <button id="chatbot-send" style="padding:10px 15px; background:#4a6fa5; color:white; border:none; border-radius:20px; cursor:pointer;">
+    <button id="chatbot-send" style="padding:10px 15px; background:#1c39bb; color:white; border:none; border-radius:20px; cursor:pointer;">
       <i class="fas fa-paper-plane"></i>
     </button>
   </div>

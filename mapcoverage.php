@@ -73,7 +73,7 @@ if (isset($_SESSION['selected_equipment'])) {
 </nav>
 
   <div class="container mt-4">
-    <h1 style="margin-top: 100px;">Network Coverage Visualization</h1>
+    <h1 style="margin-top: 100px;">NETWORK COVERAGE VISUALIZATION</h1>
     <div class="main-container">
       <div class="controls-container">
         <input id="searchBox" type="text" class="form-control mb-3" placeholder="Search location...">

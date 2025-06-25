@@ -77,34 +77,6 @@
     left: 0;
   }
 
-
-  .hero {
-    width: 100%;
-    min-height: 100vh;
-    background-image: url('bglogo1.PNG');
-    background-position: center;
-    background-size: cover;
-    padding: 40px 10%;
-    overflow: hidden;
-    position: relative;
-}
-
-.headcontainer {
-    margin-top: 10%;
-    max-width: 600px;
-}
-
-.headcontainer h1 {
-    font-weight: 600;
-    font-size: 3.75rem; /* 60px */
-    color: rgb(255, 255, 255);
-}
-
-.headcontainer p {
-    margin: 10px 0 40px;
-    font-size: 1.25rem;
-    color: #ffffff;
-}
 .auth-buttons {
   display: flex;
   gap: 1rem;
@@ -169,6 +141,34 @@
     padding: 15px 80px;
     font-size: 15px;
     animation-delay: 1s;
+}
+
+  .hero {
+    width: 100%;
+    min-height: 100vh;
+    background-image: url('bglogo1.PNG');
+    background-position: center;
+    background-size: cover;
+    padding: 40px 10%;
+    overflow: hidden;
+    position: relative;
+}
+
+.headcontainer {
+    margin-top: 10%;
+    max-width: 600px;
+}
+
+.headcontainer h1 {
+    font-weight: 600;
+    font-size: 3.75rem; /* 60px */
+    color: rgb(255, 255, 255);
+}
+
+.headcontainer p {
+    margin: 10px 0 40px;
+    font-size: 1.25rem;
+    color: #ffffff;
 }
 
 .feature-img {
