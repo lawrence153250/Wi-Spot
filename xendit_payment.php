@@ -236,128 +236,41 @@ ob_end_flush();
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #f4f4f4;
-            padding: 40px;
-        }
-        .payment-container {
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        .booking-details {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .payment-amount {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1E88E5;
-            margin: 15px 0;
-        }
-        .btn-pay {
-            background: #1E88E5;
-            color: white;
-            padding: 12px;
-            width: 100%;
-            border: none;
-            margin-top: 20px;
-            cursor: pointer;
-        }
-        .btn-pay:hover {
-            background: #1565C0;
-        }
-        .error {
-            color: red;
-            text-align: center;
-            margin-top: 15px;
-        }
-        .payment-options {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .payment-option {
-            flex: 1;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: center;
-        }
-        .payment-option.selected {
-            border-color: #1E88E5;
-            background-color: #f0f7ff;
-        }
-        .payment-option input[type="radio"] {
-            display: none;
-        }
-        .payment-option:hover {
-            background-color: #f5f5f5;
-        }
-        .voucher-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        .voucher-applied {
-            background: #e8f5e9;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .discount-info {
-            color: #2e7d32;
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="paymentstyle.css">
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-        <div class="container">
-            <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="container">
+        <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
-                    <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
-                    <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
-                    <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
-                    <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
+                <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
+                <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
+                <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
+                <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
+            </ul>
+
+            <?php if (isset($_SESSION['username'])): ?>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.php"><?= htmlspecialchars($_SESSION['username']) ?> <i class="bi bi-person-circle"></i></a>
+                    </li>
                 </ul>
-
-                <?php if (isset($_SESSION['username'])): ?>
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="profile.php"><?= htmlspecialchars($_SESSION['username']) ?> <i class="bi bi-person-circle"></i></a>
-                        </li>
-                    </ul>
-                <?php else: ?>
-                    <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
-                        <a class="btn btn-primary" href="login.php">LOGIN</a>
-                        <a class="nav-link" href="register.php">SIGN UP</a>
-                    </div>
-                <?php endif; ?>
-            </div>
+            <?php else: ?>
+                <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
+                    <a class="btn btn-primary" href="login.php">LOGIN</a>
+                    <a class="nav-link" href="register.php">SIGN UP</a>
+                </div>
+            <?php endif; ?>
         </div>
-    </nav>
+    </div>
+</nav>
     <div class="payment-container">
-        <h2 class="text-center mb-4">Wi-Spot Payment</h2>
+        <h2 class="text-center mb-4">WI-SPOT PAYMENT</h2>
         
         <div class="booking-details">
             <h4>Booking Details</h4>
@@ -461,31 +374,31 @@ ob_end_flush();
         <?php endif; ?>
     </div>
     
-    <div class="foot-container">
-        <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
-        <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
-    </div>
-    <div class="foot-icons">
-        <a href="https://www.facebook.com/WiSpotServices" class="bi bi-facebook" target="_blank"></a>
-    </div>
-
-    <hr>
-
-    <div class="foot-policy">
-        <div class="policy-links">
-        <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
-        <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
-        <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
-        <a href="contactus.php" target="_blank">CONTACT US</a>
+     <div class="foot-container">
+            <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
+            <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
         </div>
-    </div>
+        <div class="foot-icons">
+            <a href="https://www.facebook.com/WiSpotServices" class="bi bi-facebook" target="_blank"></a>
+        </div>
 
-    <hr>
+        <hr>
 
-    <div class="foot_text">
-        <br>
-        <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
-    </div>
+        <div class="foot-policy">
+            <div class="policy-links">
+            <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
+            <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
+            <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
+            <a href="contactus.php" target="_blank">CONTACT US</a>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="foot_text">
+            <br>
+            <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>

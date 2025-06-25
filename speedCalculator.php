@@ -172,146 +172,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <title>Internet Bandwidth Calculator</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .container {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            color: #333;
-        }
-        .calculator {
-            background: #f5f7fa;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .service-group {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .service-group h3 {
-            color: #3498db;
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
-        }
-        .service-option {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-        .quality-select {
-            margin-left: 10px;
-            padding: 5px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-        }
-        .result {
-            margin-top: 30px;
-            padding: 20px;
-            background: #e8f4fd;
-            border-radius: 8px;
-            border-left: 5px solid #3498db;
-            text-align: center;
-        }
-        .result h3 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        button {
-            background: #3498db;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            display: block;
-            margin: 25px auto 0;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #2980b9;
-        }
-        .bandwidth-value {
-            font-size: 32px;
-            color: #e74c3c;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        .users-value {
-            font-size: 24px;
-            color: #3498db;
-            margin: 15px 0;
-        }
-        .users-input {
-            margin: 20px 0;
-            padding: 15px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .users-input label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .users-input input {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            width: 100px;
-        }
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 25px;
-        }
-        .button-group button {
-            margin: 0;
-        }
-        .return-button {
-            background: #2ecc71;
-        }
-        .return-button:hover {
-            background: #27ae60;
-        }
-    </style>
+    <link rel="stylesheet" href="calcustyle.css">
 </head>
-<body>
+<body style="background-color: #f0f3fa;"> 
 <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-    <div class="nav-container">
+    <div class="container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
-            <ul class="navbar-nav">
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
                 <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
                 <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
                 <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
                 <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
             </ul>
+
             <?php if (isset($_SESSION['username'])): ?>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -319,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </li>
                 </ul>
             <?php else: ?>
-                <div class="auth-buttons ms-auto">
+                <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
                     <a class="btn btn-primary" href="login.php">LOGIN</a>
                     <a class="nav-link" href="register.php">SIGN UP</a>
                 </div>
@@ -334,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-sm-3">
                     <a href="booking_customization.php" class="btn btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
                 </div>
-                <div class="col-sm-6"><h1 class="form-title">Internet Bandwidth Calculator</h1></div>
+                <div class="col-sm-6"><h1 class="form-title">INTERNET BANDWIDTH CALCULATOR</h1></div>
             </div>
        
         <p>Select the websites/services you plan to use to estimate the required bandwidth, including live streaming options.</p>
@@ -509,7 +393,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </select>
                 </div>
                 <div class="service-option">
-                    <label><input type="checkbox" name="services[]" value="cloud_storage" <?= in_array('cloud_storage', $selectedServices) ? 'checked' : '' ?>> Cloud Storage (Google Drive, Dropbox)</label>
+                    <label><input type="checkbox" name="services[]" value="cloud_storage" <?= in_array('cloud_storage', $selectedServices) ? 'checked' : '' ?>> Cloud Storage</label>
                 </div>
                 <div class="service-option">
                     <label><input type="checkbox" name="services[]" value="vpn" <?= in_array('vpn', $selectedServices) ? 'checked' : '' ?>> VPN Usage</label>
@@ -537,41 +421,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
     </div>
 </div>
+</div>
 
-<div class="foot-container" id="grad">
-        <div class="foot-icons">
-            <a href="https://www.youtube.com/" class="bi bi-youtube text-altlight" target=”_blank”></a>
-            <a href="https://web.facebook.com/" class="bi bi-facebook text-altlight" target=”_blank”></a>
-            <a href="https://www.instagram.com/" class="bi bi-instagram text-altlight" target=”_blank”></a>
-            <a href="https://www.tiktok.com/" class="bi bi-tiktok text-altlight" target=”_blank”></a>
-        </div>
-        <hr>
-        <div class="foot-policy">
-            <div class="row">
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="termsofservice.php" target="_blank">Terms of Service</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="copyrightpolicy.php" target="_blank">Copyright Policy</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="privacypolicy.php" target="_blank">Privacy Policy</a>
-                </div>
-                <div class="col-md-3">
-                    <a class="foot-policy text-altlight" href="contactus.php" target=”_blank”>Contact Us</a>
-                </div>
-            </div>
-        </div>
-        <hr>
-        <div class="foot_text text-altlight">
-            <p>Wi-spot is available in English, French, German, Italian, Spanish, and more.</p><br>
-            <p>
-                &copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.
-            </p><br>
-            <p>
-                This webpage is for educational purposes only and no copyright infringement is intended.
-            </p>
-        </div>
+<div class="foot-container">
+    <div class="foot-logo" style="text-align: center; margin-bottom: 1rem;">
+    <img src="logofooter.png" alt="Wi-Spot Logo" style="width: 140px;">
+  </div>
+  <div class="foot-icons">
+    <a href="https://www.facebook.com/WiSpotServices" class="bi bi-facebook" target="_blank"></a>
+  </div>
+
+  <hr>
+
+  <div class="foot-policy">
+    <div class="policy-links">
+      <a href="termsofservice.php" target="_blank">TERMS OF SERVICE</a>
+      <a href="copyrightpolicy.php" target="_blank">COPYRIGHT POLICY</a>
+      <a href="privacypolicy.php" target="_blank">PRIVACY POLICY</a>
+      <a href="contactus.php" target="_blank">CONTACT US</a>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="foot_text">
+    <br>
+    <p>&copy;2025 Wi-spot. All rights reserved. Wi-spot and related trademarks and logos are the property of Wi-spot. All other trademarks are the property of their respective owners.</p><br>
+  </div>
 </div>
 </body>
 </html>

@@ -124,7 +124,7 @@ try {
     <div class="container py-5">
         <div class="row mb-4">
             <div class="col-12">
-                <h1 class="text-center mb-4 mt-5">My Feedback History</h1>
+                <h1 class="text-center mb-4 mt-5">MY FEEDBACK HISTORY</h1>
                 
                 <?php if ($error): ?>
                     <div class="alert alert-danger"><?php echo $error; ?></div>
@@ -142,7 +142,7 @@ try {
                             </div>
                             
                             <div class="mb-3">
-                                <h5>Overall Rating</h5>
+                                <h5>OVERALL RATING</h5>
                                 <div class="d-flex align-items-center">
                                     <div class="star-rating me-2">
                                         <?php
@@ -189,7 +189,7 @@ try {
                             
                             <?php if (!empty($feedback['comment'])): ?>
                             <div class="mb-3">
-                                <h5>My Comments</h5>
+                                <h5>MY COMMENTS</h5>
                                 <p class="mb-0"><?php echo nl2br(htmlspecialchars($feedback['comment'])); ?></p>
                             </div>
                             <?php endif; ?>

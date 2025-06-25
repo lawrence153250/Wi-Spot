@@ -125,11 +125,11 @@ $customerVouchers = $result->fetch_all(MYSQLI_ASSOC);
 </nav>
 
 <div class="container voucher-section">
-    <h1 class="text-center mb-5">My Vouchers</h1>
+    <h1 class="text-center mb-5">MY VOUCHERS</h1>
     
     <!-- Customer's Personal Vouchers -->
     <div class="mb-5">
-        <h2 class="section-title">Your Personal Vouchers</h2>
+        <h2 class="section-title">YOUR PERSONAL VOUCHERS</h2>
         <?php if (!empty($customerVouchers)): ?>
             <div class="row">
                 <?php foreach ($customerVouchers as $voucher): ?>
@@ -162,7 +162,7 @@ $customerVouchers = $result->fetch_all(MYSQLI_ASSOC);
     
     <!-- Available Vouchers -->
     <div class="mb-5">
-        <h2 class="section-title">Available Vouchers</h2>
+        <h2 class="section-title">AVAILABLE VOUCHERS</h2>
         <?php if (!empty($availableVouchers)): ?>
             <div class="row">
                 <?php foreach ($availableVouchers as $voucher): ?>
