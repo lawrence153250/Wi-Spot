@@ -564,6 +564,31 @@ h4 a:hover {
     border-radius: 8px;
 }
 
+.alert {
+    position: fixed;
+    top: 70px; /* Adjust this to match your navbar height */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 600px;
+    z-index: 1000;
+    animation: fadeInDown 0.5s;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* Animation for smooth appearance */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
 /* Modal Enhancements */
 .modal-content {
     border-radius: 15px;
