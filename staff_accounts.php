@@ -227,18 +227,49 @@ $conn->close();
             opacity: 0.9;
         }
         
-        /* View ID button styles */
+        /* Updated View ID button styles for uniform appearance */
         .view-id-btn {
             background-color: #3498db;
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 8px 12px;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 0.875rem;
+            min-width: 120px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1.2;
         }
         
         .view-id-btn:hover {
             background-color: #2980b9;
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Alternative button for "No ID/Proof" state */
+        .no-upload-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: not-allowed;
+            font-size: 0.875rem;
+            min-width: 120px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1.2;
+            opacity: 0.7;
         }
         
         /* Status badge styles */
@@ -439,10 +470,36 @@ $conn->close();
                                             <?php echo ucfirst($emailStatus); ?>
                                         </span>
                                     </td>
-                                    <td><?php echo htmlspecialchars($customer['firstName'] . ' ' . $customer['lastName']); ?></td>
+                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['firstName'] . ' ' . $customer['lastName']); ?></td>
                                     <td><?php echo htmlspecialchars($customer['contactNumber']); ?></td>
-                                    <td><?php echo htmlspecialchars($customer['address']); ?></td>
-                                    <td><?php echo htmlspecialchars($customer['birthday']); ?></td>
+                                    <td>
+                                    <?php if (!empty($customer['address'])): ?>
+                                        <button type="button" class="view-id-btn" data-bs-toggle="modal" data-bs-target="#viewAddressModal<?php echo $customer['customerId']; ?>">
+                                            View Address
+                                        </button>
+                                        <!-- View Address Modal -->
+                                        <div class="modal fade" id="viewAddressModal<?php echo $customer['customerId']; ?>" tabindex="-1" aria-labelledby="viewAddressModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="viewAddressModalLabel">Customer Address</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($customer['address'])); ?></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="no-upload-btn">
+                                            No Address
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                    <td class="text-nowrap">
+                                        <?php echo htmlspecialchars($customer['birthday']); ?>
+                                    </td>
                                     <td>
                                         <?php if ($customer['facebookProfile']): ?>
                                             <?php 
@@ -471,7 +528,7 @@ $conn->close();
                                     <td>
                                         <?php if (!empty($customer['validId'])): ?>
                                             <button type="button" class="view-id-btn" data-bs-toggle="modal" data-bs-target="#viewIdModal<?php echo $customer['customerId']; ?>">
-                                                View Valid ID
+                                                View ID
                                             </button>
                                             
                                             <!-- View Valid ID Modal -->
@@ -492,13 +549,15 @@ $conn->close();
                                                 </div>
                                             </div>
                                         <?php else: ?>
-                                            No ID Uploaded
+                                            <div class="no-upload-btn">
+                                                No ID
+                                            </div>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php if (!empty($customer['proofOfBilling'])): ?>
                                             <button type="button" class="view-id-btn" data-bs-toggle="modal" data-bs-target="#viewBillingModal<?php echo $customer['customerId']; ?>">
-                                                View Proof of Billing
+                                                View Proof
                                             </button>
                                             
                                             <!-- View Proof of Billing Modal -->
@@ -516,7 +575,9 @@ $conn->close();
                                                 </div>
                                             </div>
                                         <?php else: ?>
-                                            No Proof Uploaded
+                                            <div class="no-upload-btn">
+                                                No Proof
+                                            </div>
                                         <?php endif; ?>
                                     </td>
                                     <td>

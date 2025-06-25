@@ -37,7 +37,7 @@
 <script>
 // Chatbot Configuration - UPDATE THESE VALUES
 const chatbotConfig = {
-  apiKey: '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',
+  apiKey: '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',
   referer: window.location.hostname,
   siteName: 'Wi-Spot Services',  
   model: 'deepseek/deepseek-r1:free',
@@ -149,36 +149,48 @@ document.addEventListener('DOMContentLoaded', function() {
   chatbotInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMessage();
   });
-  
-  // Quick question buttons - fixed event listener
-  document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('quick-question')) {
-      const question = e.target.textContent;
-      chatbotInput.value = question;
-      sendMessage();
-    }
-  });
-  
-  // Toggle quick questions when input is focused
-  chatbotInput.addEventListener('focus', () => {
-    quickQuestions.style.display = 'block';
-  });
-  
-  chatbotInput.addEventListener('blur', () => {
-    // Add slight delay to allow click event to fire before hiding
-    setTimeout(() => {
-      quickQuestions.style.display = 'none';
-    }, 200);
-  });
-  
+
+  // ====== QUICK QUESTIONS FIXED IMPLEMENTATION ======
+  // Show quick questions when container is toggled
   function toggleChatbot() {
     if (chatbotContainer.style.display === 'none' || !chatbotContainer.style.display) {
       chatbotContainer.style.display = 'block';
+      quickQuestions.style.display = 'block'; // Show questions when opening
       chatbotInput.focus();
     } else {
       chatbotContainer.style.display = 'none';
+      quickQuestions.style.display = 'none'; // Hide questions when closing
     }
   }
+
+  // Add click handlers to quick questions
+  function setupQuickQuestions() {
+    const quickQuestionButtons = document.querySelectorAll('.quick-question');
+    quickQuestionButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const question = this.textContent;
+        chatbotInput.value = question;
+        sendMessage();
+      });
+    });
+  }
+
+  // Call this after the DOM is loaded
+  setupQuickQuestions();
+
+  // Modified focus/blur handlers
+  chatbotInput.addEventListener('focus', () => {
+    quickQuestions.style.display = 'block';
+  });
+
+  chatbotInput.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!document.querySelector('.quick-question:hover')) {
+        quickQuestions.style.display = 'none';
+      }
+    }, 300);
+  });
+  // ====== END OF QUICK QUESTIONS FIX ======
   
   function addMessage(role, content) {
     const messageDiv = document.createElement('div');

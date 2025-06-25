@@ -461,6 +461,21 @@ $conn->close();
                 gap: 10px;
             }
         }
+
+        .details-btn {
+            background-color: #17a2b8;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .details-btn:hover {
+            background-color: #138496;
+        }
     </style>
 </head>
 <body>
@@ -616,7 +631,7 @@ $conn->close();
                    <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Description</th>
+                            <th>Event Specifications</th>
                             <th>Price</th>
                             <th>Users</th>
                             <th>Type</th>
@@ -633,23 +648,20 @@ $conn->close();
                             <?php foreach ($packages as $package): ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($package['packageName']); ?></td>
-                                    <td><?php echo htmlspecialchars($package['description']); ?></td>
+                                    <td>
+                                        <button class="details-btn" data-bs-toggle="modal" data-bs-target="#detailsModal<?php echo $package['packageId']; ?>">
+                                            <i class="bi bi-gear"></i> View Details
+                                        </button>
+                                    </td>
                                     <td>₱<?php echo number_format($package['price'], 2); ?></td>
                                     <td><?php echo htmlspecialchars($package['numberOfUsers']); ?></td>
                                     <td><?php echo ucfirst(htmlspecialchars($package['eventType'])); ?></td>
                                     <td><?php echo number_format($package['eventAreaSize'], 2); ?></td>
                                     <td><?php echo number_format($package['expectedBandwidth'], 2); ?> Mbps</td>
                                     <td>
-                                        <?php 
-                                        if (!empty($package['equipmentNames'])) {
-                                            echo htmlspecialchars($package['equipmentNames']);
-                                        } else {
-                                            $ids = explode(',', $package['equipmentsIncluded']);
-                                            foreach ($ids as $id) {
-                                                echo "Item #" . htmlspecialchars($id) . "<br>";
-                                            }
-                                        }
-                                        ?>
+                                        <button class="details-btn" data-bs-toggle="modal" data-bs-target="#equipmentModal<?php echo $package['packageId']; ?>">
+                                        <i class="bi bi-hdd"></i> View Equipment
+                                        </button>
                                     </td>
                                     <td>
                                         <span class="status-badge status-<?php echo strtolower($package['status']); ?>">
@@ -674,5 +686,76 @@ $conn->close();
             </div>
         </div>
     </div>
+
+    <!-- Package Details Modals -->
+    <?php foreach ($packages as $package): ?>
+        <div class="modal fade" id="detailsModal<?php echo $package['packageId']; ?>" tabindex="-1" 
+             aria-labelledby="detailsModalLabel<?php echo $package['packageId']; ?>" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="detailsModalLabel<?php echo $package['packageId']; ?>">
+                            <i class="bi bi-box-seam"></i> Package Details: <?php echo htmlspecialchars($package['packageName']); ?>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-calendar-event"></i> Event Specifications</h6>
+                                <p><strong>Number of Users:</strong> <?php echo htmlspecialchars($package['numberOfUsers']); ?></p>
+                                <p><strong>Event Type:</strong> <?php echo ucfirst(htmlspecialchars($package['eventType'])); ?></p>
+                                <p><strong>Event Area Size:</strong> <?php echo number_format($package['eventAreaSize'], 2); ?> sqm</p>
+                                <p><strong>Expected Bandwidth:</strong> <?php echo number_format($package['expectedBandwidth'], 2); ?> Mbps</p>
+                            </div>
+                        </div>  
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endforeach; ?>
+
+    <!-- Equipment Included Modals -->
+<?php foreach ($packages as $package): ?>
+    <div class="modal fade" id="equipmentModal<?php echo $package['packageId']; ?>" tabindex="-1"
+         aria-labelledby="equipmentModalLabel<?php echo $package['packageId']; ?>" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="equipmentModalLabel<?php echo $package['packageId']; ?>">
+                        <i class="bi bi-hdd"></i> Equipment Included: <?php echo htmlspecialchars($package['packageName']); ?>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group">
+                        <?php 
+                        // Use equipmentNames if available, otherwise fall back to equipmentsIncluded
+                        if (!empty($package['equipmentNames'])) {
+                            $equipments = explode(',', $package['equipmentNames']);
+                            foreach ($equipments as $equip) {
+                                echo '<li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>' . htmlspecialchars(trim($equip)) . '</li>';
+                            }
+                        } else {
+                            $ids = explode(',', $package['equipmentsIncluded']);
+                            foreach ($ids as $id) {
+                                echo '<li class="list-group-item"><i class="bi bi-dash-circle-fill text-muted me-2"></i>' . htmlspecialchars(trim($id)) . '</li>';
+                            }
+                        }
+                        ?>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endforeach; ?>
+
+
 </body>
 </html>

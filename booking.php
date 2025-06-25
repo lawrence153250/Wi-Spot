@@ -178,6 +178,38 @@ if (!empty($equipment_list)) {
     }
 }
 
+function validatePhilippineAddress($address) {
+    // Use Google Geocoding API with Philippines restriction
+    $url = "https://maps.googleapis.com/maps/api/geocode/json?address=" . 
+           urlencode($address) . "&components=country:PH&key=AIzaSyCFx7Z_5qK__AetA_wIPEFEpuAhIxIsouI";
+    
+    $response = file_get_contents($url);
+    $data = json_decode($response, true);
+    
+    if ($data['status'] === 'OK') {
+        // Additional check to ensure it's in Philippines
+        foreach ($data['results'][0]['address_components'] as $component) {
+            if (in_array('country', $component['types']) && 
+                strtoupper($component['short_name']) === 'PH') {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+// Usage
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $address = trim($_POST['eventLocation']);
+    
+    if (empty($address)) {
+        $errors['eventLocation'] = 'Address is required';
+    } elseif (!validatePhilippineAddress($address)) {
+        $errors['eventLocation'] = 'Please enter a valid Philippine address';
+    }
+}
+
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -251,7 +283,10 @@ $conn->close();
         </div>
         <div class="form-group">
             <label for="eventLocation">Event's Location Address:</label>
-            <input type="text" id="eventLocation" name="eventLocation" required>
+            <input type="text" id="eventLocation" name="eventLocation" required autocomplete="off">
+            <small id="addressHelp" class="form-text text-muted">Please enter a complete Philippine address</small>
+            <div id="addressValidationFeedback" class="invalid-feedback"></div>
+            <div id="apiStatus"></div>
         </div>
 
         <h4>Want something more personalized? Use our <a href="booking_customization.php">Booking Customization</a> to build a package that fits your needs.</h4>
@@ -556,8 +591,45 @@ function formatDate(dateString) {
     return date.toLocaleDateString('en-US', options);
 }
 
+// Debugging function
+function log(message) {
+    console.log(message);
+    document.getElementById('apiStatus').innerHTML += message + '<br>';
+}
 
+function initAutocomplete() {
+    
+    const input = document.getElementById('eventLocation');
+    
+    // Create the autocomplete object
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+        types: ['geocode'],  // Try 'geocode' instead of 'address' for broader results
+        componentRestrictions: { country: 'ph' },
+        fields: ['address_components', 'geometry', 'formatted_address']
+    });
+    
+   
+    
+    
+    // Handle API errors
+    google.maps.event.addDomListener(window, 'error', function() {
+        const errorMessage = 'Google Maps API failed to load';
+        log(errorMessage);
+        document.getElementById('apiStatus').innerHTML = errorMessage;
+    });
+}
+
+// Fallback if API doesn't load
+setTimeout(function() {
+    if (typeof google === 'undefined') {
+        document.getElementById('apiStatus').innerHTML = 
+            'Error: Google Maps API not loaded. Check your API key and network connection.';
+    }
+}, 5000);
 </script>
+
+<!-- Load Google Maps API with your key -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFx7Z_5qK__AetA_wIPEFEpuAhIxIsouI&libraries=places&callback=initAutocomplete" async defer></script>
 
 </body>
 </html>

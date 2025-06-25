@@ -138,9 +138,8 @@ $conn->close();
     <link rel="stylesheet" href="style.css">
     <style>
         /* Sidebar Styles */
-
         .sidebar-menu li a.nav-link {
-        color: #FFFFFF;
+            color: #FFFFFF;
         }
 
         .sidebar {
@@ -212,6 +211,7 @@ $conn->close();
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
         }
         
         .bookings-table th {
@@ -256,14 +256,104 @@ $conn->close();
             color: #004085;
         }
         
-        .equipment-list {
-            max-width: 200px;
+        .action-buttons {
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
         
-        .action-buttons {
+        /* Info Button Styles */
+        .info-btn {
+            background-color: #17a2b8;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .info-btn:hover {
+            background-color: #138496;
+        }
+
+        /* Equipment Button Styles */
+        .equipment-btn {
+            background-color: #17a2b8;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .equipment-btn:hover {
+            background-color: #138496;
+        }
+        
+        /* Modal Styles */
+        .modal-header {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+
+        .modal-header.equipment-modal {
+            background-color: #3498db;
+        }
+        
+        /* Equipment List in Modal */
+        .equipment-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-left: 4px solid #17a2b8;
+            border-radius: 4px;
+        }
+        
+        /* Action Control Styles */
+        .action-control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: nowrap;
+        }
+
+        .action-control-group .form-select {
+            min-width: 110px;
+            font-size: 12px;
+            padding: 4px 8px;
+            height: auto;
+        }
+
+        .action-control-group .btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            line-height: 1.2;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-control-group .btn i {
+            font-size: 12px;
+        }
+
+        /* Pending action buttons */
+        .pending-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap;
+        }
+
+        .pending-actions .btn {
+            padding: 4px 8px;
+            font-size: 11px;
             white-space: nowrap;
         }
         
@@ -310,6 +400,16 @@ $conn->close();
             .search-sort-container {
                 flex-direction: column;
             }
+
+            .action-control-group {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .pending-actions {
+                flex-direction: column;
+                gap: 2px;
+            }
         }
     </style>
 </head>
@@ -326,6 +426,8 @@ $conn->close();
             <li><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
             <li><a class="nav-link" href="admin_inventory.php">INVENTORY</a></li>
             <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
+            <li><a class="nav-link" href="admin_bookingApproval.php">BOOKING APPROVALS</a></li>
+            <li><a class="nav-link" href="admin_bookingMonitoring.php"><span style="white-space: nowrap;">BOOKING MONITORING</span></a></li>
             <li><a class="nav-link" href="admin_agreementView.php">AGREEMENTS</a></li>
             <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>
@@ -397,7 +499,6 @@ $conn->close();
                 <thead>
                     <tr>
                         <th>Package Name</th>
-                        <th>Description</th>
                         <th>Price</th>
                         <th>Users</th>
                         <th>Event Type</th>
@@ -407,8 +508,7 @@ $conn->close();
                         <th>Status</th>
                         <th>Created By</th>
                         <th>Date Created</th>
-                        <th>Approved By</th>
-                        <th>Date Approved</th>
+                        <th>Description</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -416,15 +516,16 @@ $conn->close();
                     <?php if ($packages && $packages->num_rows > 0): ?>
                         <?php while ($package = $packages->fetch_assoc()): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($package['packageName']); ?></td>
-                                <td><?php echo htmlspecialchars($package['description']); ?></td>
-                                <td>₱<?php echo number_format($package['price'], 2); ?></td>
+                                <td><strong><?php echo htmlspecialchars($package['packageName']); ?></strong></td>
+                                <td><strong>₱<?php echo number_format($package['price'], 2); ?></strong></td>
                                 <td><?php echo htmlspecialchars($package['numberOfUsers']); ?></td>
                                 <td><?php echo ucfirst(htmlspecialchars($package['eventType'])); ?></td>
                                 <td><?php echo number_format($package['eventAreaSize'], 2); ?></td>
                                 <td><?php echo number_format($package['expectedBandwidth'], 2); ?> Mbps</td>
-                                <td class="equipment-list" title="<?php echo htmlspecialchars($package['equipmentNames'] ?? $package['equipmentsIncluded']); ?>">
-                                    <?php echo htmlspecialchars($package['equipmentNames'] ?? $package['equipmentsIncluded']); ?>
+                                <td>
+                                    <button class="equipment-btn" data-bs-toggle="modal" data-bs-target="#equipmentModal<?php echo $package['packageId']; ?>">
+                                        <i class="bi bi-gear"></i> View Equipment
+                                    </button>
                                 </td>
                                 <td>
                                     <span class="status-badge status-<?php echo strtolower($package['status']); ?>">
@@ -433,32 +534,43 @@ $conn->close();
                                 </td>
                                 <td><?php echo htmlspecialchars($package['staff_username'] ?? 'System'); ?></td>
                                 <td><?php echo date("M j, Y", strtotime($package['dateCreated'])); ?></td>
-                                <td><?php echo htmlspecialchars($package['admin_username'] ?? 'N/A'); ?></td>
                                 <td>
-                                    <?php echo $package['approvalDate'] ? date("M j, Y", strtotime($package['approvalDate'])) : 'N/A'; ?>
+                                    <button class="info-btn" data-bs-toggle="modal" data-bs-target="#descriptionModal<?php echo $package['packageId']; ?>">
+                                        <i class="bi bi-file-text"></i> View
+                                    </button>
                                 </td>
                                 <td class="action-buttons">
                                     <?php if ($package['status'] === 'pending'): ?>
-                                        <form method="post" class="d-inline">
-                                            <input type="hidden" name="package_id" value="<?php echo $package['packageId']; ?>">
-                                            <input type="hidden" name="new_status" value="available">
-                                            <button type="submit" name="update_status" class="btn btn-success btn-sm">Approve</button>
-                                        </form>
-                                        <form method="post" class="d-inline">
-                                            <input type="hidden" name="package_id" value="<?php echo $package['packageId']; ?>">
-                                            <input type="hidden" name="new_status" value="rejected">
-                                            <button type="submit" name="update_status" class="btn btn-danger btn-sm">Reject</button>
-                                        </form>
+                                        <div class="pending-actions">
+                                            <form method="post" class="d-inline">
+                                                <input type="hidden" name="package_id" value="<?php echo $package['packageId']; ?>">
+                                                <input type="hidden" name="new_status" value="available">
+                                                <button type="submit" name="update_status" class="btn btn-success btn-sm">
+                                                    <i class="bi bi-check-circle"></i> Approve
+                                                </button>
+                                            </form>
+                                            <form method="post" class="d-inline">
+                                                <input type="hidden" name="package_id" value="<?php echo $package['packageId']; ?>">
+                                                <input type="hidden" name="new_status" value="rejected">
+                                                <button type="submit" name="update_status" class="btn btn-danger btn-sm">
+                                                    <i class="bi bi-x-circle"></i> Reject
+                                                </button>
+                                            </form>
+                                        </div>
                                     <?php else: ?>
                                         <form method="post" class="d-inline">
                                             <input type="hidden" name="package_id" value="<?php echo $package['packageId']; ?>">
-                                            <select name="new_status" class="form-select form-select-sm d-inline" style="width: auto;">
-                                                <option value="available" <?php echo $package['status'] === 'available' ? 'selected' : ''; ?>>Available</option>
-                                                <option value="in_use" <?php echo $package['status'] === 'in_use' ? 'selected' : ''; ?>>In Use</option>
-                                                <option value="maintenance" <?php echo $package['status'] === 'maintenance' ? 'selected' : ''; ?>>Maintenance</option>
-                                                <option value="rejected" <?php echo $package['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
-                                            </select>
-                                            <button type="submit" name="update_status" class="btn btn-primary btn-sm">Update</button>
+                                            <div class="action-control-group">
+                                                <select name="new_status" class="form-select form-select-sm">
+                                                    <option value="available" <?php echo $package['status'] === 'available' ? 'selected' : ''; ?>>Available</option>
+                                                    <option value="in_use" <?php echo $package['status'] === 'in_use' ? 'selected' : ''; ?>>In Use</option>
+                                                    <option value="maintenance" <?php echo $package['status'] === 'maintenance' ? 'selected' : ''; ?>>Maintenance</option>
+                                                    <option value="rejected" <?php echo $package['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+                                                </select>
+                                                <button type="submit" name="update_status" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-arrow-repeat"></i>
+                                                </button>
+                                            </div>
                                         </form>
                                     <?php endif; ?>
                                 </td>
@@ -466,12 +578,73 @@ $conn->close();
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="14" class="text-center">No packages found.</td>
+                            <td colspan="12" class="text-center">No packages found.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
+
+    <!-- Description Modals -->
+    <?php 
+    // Reset the result pointer to create modals
+    $packages->data_seek(0);
+    while ($package = $packages->fetch_assoc()): 
+    ?>
+    <!-- Description Modal -->
+    <div class="modal fade" id="descriptionModal<?php echo $package['packageId']; ?>" tabindex="-1" aria-labelledby="descriptionModalLabel<?php echo $package['packageId']; ?>" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="descriptionModalLabel<?php echo $package['packageId']; ?>">
+                        <i class="bi bi-file-text"></i> <?php echo htmlspecialchars($package['packageName']); ?> - Description
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6><i class="bi bi-file-text"></i> Package Description</h6>
+                    <p><?php echo nl2br(htmlspecialchars($package['description'])); ?></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Equipment Modal -->
+    <div class="modal fade" id="equipmentModal<?php echo $package['packageId']; ?>" tabindex="-1" aria-labelledby="equipmentModalLabel<?php echo $package['packageId']; ?>" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header equipment-modal">
+                    <h5 class="modal-title" id="equipmentModalLabel<?php echo $package['packageId']; ?>">
+                        <i class="bi bi-gear"></i> <?php echo htmlspecialchars($package['packageName']); ?> - Equipment Included
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6><i class="bi bi-list-ul"></i> Equipment List</h6>
+                    <?php 
+                    $equipmentList = $package['equipmentNames'] ?? $package['equipmentsIncluded'];
+                    if (!empty($equipmentList)) {
+                        $equipmentItems = explode(', ', $equipmentList);
+                        foreach ($equipmentItems as $equipment) {
+                            if (!empty(trim($equipment))) {
+                                echo '<div class="equipment-item"><i class="bi bi-check-circle text-info"></i> ' . htmlspecialchars(trim($equipment)) . '</div>';
+                            }
+                        }
+                    } else {
+                        echo '<div class="text-muted"><i class="bi bi-info-circle"></i> No equipment specified for this package.</div>';
+                    }
+                    ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endwhile; ?>
 </body>
 </html>

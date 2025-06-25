@@ -20,6 +20,7 @@ if (isset($_SESSION['timeout'])) {
 
 // Update timeout with current time
 $_SESSION['timeout'] = time();
+
 // Check if user is logged in and is staff
 if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     header("Location: login.php");
@@ -42,13 +43,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("si", $newStatus, $bookingId);
             $stmt->execute();
             $stmt->close();
-        } else {
+            
+            $_SESSION['message'] = "Booking status updated successfully!";
+        } 
+        elseif ($action === 'cancel_booking' && isset($_POST['cancel_reason'])) {
+            // Handle cancellation with reason
+            $reason = $_POST['cancel_reason'];
+            $stmt = $conn->prepare("UPDATE booking SET bookingStatus = 'Cancelled', cancelReason = ? WHERE bookingId = ?");
+            $stmt->bind_param("si", $reason, $bookingId);
+            $stmt->execute();
+            $stmt->close();
+            
+            $_SESSION['message'] = "Booking #$bookingId has been cancelled successfully.";
+        }
+        else {
             // Original accept/decline logic (for backward compatibility)
             $stmt = $conn->prepare("UPDATE booking SET bookingStatus = ? WHERE bookingId = ?");
             $status = ($action === 'accept') ? 'Confirmed' : 'Cancelled';
             $stmt->bind_param("si", $status, $bookingId);
             $stmt->execute();
             $stmt->close();
+            
+            $_SESSION['message'] = "Booking has been " . strtolower($status) . " successfully.";
         }
         
         // Redirect to avoid form resubmission
@@ -72,6 +88,7 @@ $sql = "SELECT
             b.price AS total_price,
             b.bookingStatus AS booking_status,
             b.paymentStatus AS payment_status,
+            b.cancelReason,
             c.username AS customer_username,
             c.firstName AS customer_firstname,
             c.lastName AS customer_lastname,
@@ -164,13 +181,14 @@ $conn->close();
             background-color: #34495e;
         }
         
-.sidebar-menu li a.nav-link {
-        color: #FFFFFF;
+        .sidebar-menu li a.nav-link {
+            color: #FFFFFF;
         }
 
         .sidebar-menu li.active {
             background-color: #34485f;
         }
+        
         /* Main Content Styles */
         .main-content {
             margin-left: 250px;
@@ -217,6 +235,7 @@ $conn->close();
             background-color: #f9f9f9;
         }
         
+        /* Status Badges */
         .status-pending {
             color: #f39c12;
             font-weight: 600;
@@ -242,20 +261,49 @@ $conn->close();
             font-weight: 600;
         }
         
+        /* Action Buttons */
         .action-buttons {
             display: flex;
             gap: 5px;
         }
         
-        .btn-sm {
-            padding: 0.25rem 0.5rem;
+        /* Tooltip Styles */
+        .tooltip-inner {
+            max-width: 300px;
+            text-align: left;
+            background-color: #f8f9fa;
+            color: #212529;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before, 
+        .bs-tooltip-top .tooltip-arrow::before {
+            border-top-color: #dee2e6;
+        }
+
+        .view-id-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
             font-size: 0.875rem;
+            min-width: 120px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1.2;
         }
         
-        /* Sort Dropdown Styles */
-        .sort-dropdown .dropdown-toggle {
-            background-color: #3498db;
-            border: none;
+        .view-id-btn:hover {
+            background-color: #2980b9;
+            color: white;
+            text-decoration: none;
         }
         
         /* Responsive adjustments */
@@ -280,61 +328,10 @@ $conn->close();
                 overflow-x: auto;
             }
         }
-        
-        /* Modal styles */
-        .modal-item-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .item-checkbox {
-            margin-right: 10px;
-        }
-        
-        .status-selector {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .status-option {
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .status-option:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .status-option input[type="radio"] {
-            margin-right: 10px;
-        }
-        
-        .status-option.pending {
-            border-left: 4px solid #f39c12;
-        }
-        
-        .status-option.confirmed {
-            border-left: 4px solid #2ecc71;
-        }
-        
-        .status-option.in-progress {
-            border-left: 4px solid #3498db;
-        }
-        
-        .status-option.completed {
-            border-left: 4px solid #9b59b6;
-        }
-        
-        .status-option.cancelled {
-            border-left: 4px solid #e74c3c;
-        }
     </style>
 </head>
 <body>
-<!-- Sidebar Navigation -->
+    <!-- Sidebar Navigation -->
     <div class="sidebar">
         <div class="sidebar-header">
             <a class="navbar-brand" href="staff_dashboard.php"><img src="logo.png"></a>
@@ -362,6 +359,20 @@ $conn->close();
                 Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> <i class="bi bi-person-circle"></i>
             </div>
         </div>
+        
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
         
         <!-- Sort Dropdown -->
         <div class="dropdown sort-dropdown mb-3">
@@ -404,17 +415,42 @@ $conn->close();
                     <?php if (!empty($bookings)): ?>
                         <?php foreach ($bookings as $booking): ?>
                             <tr>
-                                <td>
+                                <td class="text-nowrap">
                                     <?php echo htmlspecialchars($booking['customer_firstname'] . ' ' . $booking['customer_lastname']); ?><br>
                                     <small><?php echo htmlspecialchars($booking['customer_username']); ?></small>
                                 </td>
                                 <td><?php echo htmlspecialchars($booking['customer_contact']); ?></td>
-                                <td><?php echo htmlspecialchars($booking['date_booking_created']); ?></td>
-                                <td>
-                                    <?php echo htmlspecialchars($booking['date_of_start']); ?> to<br>
+                                <td class="text-nowrap"><?php echo htmlspecialchars($booking['date_booking_created']); ?></td>
+                                <td class="text-nowrap">
+                                    <?php echo htmlspecialchars($booking['date_of_start']); ?> -<br>
                                     <?php echo htmlspecialchars($booking['date_of_return']); ?>
                                 </td>
-                                <td><?php echo htmlspecialchars($booking['event_location']); ?></td>
+                                <td>
+                                    <?php if (!empty($booking['event_location'])): ?>
+                                        <button type="button" class="view-id-btn" data-bs-toggle="modal" data-bs-target="#locationModal<?php echo $booking['bookingId']; ?>">
+                                            View Location
+                                        </button>
+
+                                        <!-- Location Modal -->
+                                        <div class="modal fade" id="locationModal<?php echo $booking['bookingId']; ?>" tabindex="-1" aria-labelledby="locationModalLabel<?php echo $booking['bookingId']; ?>" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="locationModalLabel<?php echo $booking['bookingId']; ?>">Event Location</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($booking['event_location'])); ?></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="no-upload-btn">
+                                            No Location
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo htmlspecialchars($booking['package_chosen']); ?></td>
                                 <td>₱<?php echo number_format($booking['total_price'], 2); ?></td>
                                 <td class="<?php echo 'status-' . strtolower(str_replace(' ', '-', $booking['booking_status'])); ?>">
@@ -427,16 +463,29 @@ $conn->close();
                                             <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#acceptModal<?php echo $booking['bookingId']; ?>">
                                                 Accept
                                             </button>
-                                            <form method="post" style="display:inline;">
-                                                <input type="hidden" name="booking_id" value="<?php echo $booking['bookingId']; ?>">
-                                                <input type="hidden" name="action" value="decline">
-                                                <button type="submit" class="btn btn-danger btn-sm">Decline</button>
-                                            </form>
+                                            <button class="btn btn-danger btn-sm" data-bs-toggle="modal" 
+                                                    data-bs-target="#cancelBookingModal" data-booking-id="<?php echo $booking['bookingId']; ?>">
+                                                Decline
+                                            </button>
                                         </div>
                                     <?php else: ?>
-                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#updateStatusModal<?php echo $booking['bookingId']; ?>">
-                                            Update Status
-                                        </button>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#updateStatusModal<?php echo $booking['bookingId']; ?>">
+                                                Update Status
+                                            </button>
+                                            <?php if (strtolower($booking['booking_status']) != 'cancelled'): ?>
+                                                <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" 
+                                                        data-bs-target="#cancelBookingModal" data-booking-id="<?php echo $booking['bookingId']; ?>">
+                                                    Cancel
+                                                </button>
+                                            <?php endif; ?>
+                                            <?php if (!empty($booking['cancelReason'])): ?>
+                                                <button class="btn btn-sm btn-outline-secondary mt-1" data-bs-toggle="tooltip" 
+                                                        title="<?php echo htmlspecialchars($booking['cancelReason']); ?>">
+                                                    <i class="bi bi-info-circle"></i> View Reason
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -592,5 +641,54 @@ $conn->close();
             </table>
         </div>
     </div>
+
+    <!-- Cancel Booking Confirmation Modal -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1" aria-labelledby="cancelBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="cancelBookingModalLabel">Confirm Booking Cancellation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel booking #<span id="bookingIdDisplay"></span>?</p>
+                    <input type="hidden" name="booking_id" id="cancelBookingId">
+                    <input type="hidden" name="action" value="cancel_booking">
+                    <div class="mb-3">
+                        <label for="cancelReason" class="form-label">Reason for Cancellation:</label>
+                        <textarea class="form-control" id="cancelReason" name="cancel_reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <script>
+    // Cancel Booking Modal Handler
+    document.addEventListener('DOMContentLoaded', function() {
+        var cancelBookingModal = document.getElementById('cancelBookingModal');
+        if (cancelBookingModal) {
+            cancelBookingModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var bookingId = button.getAttribute('data-booking-id');
+                var modal = this;
+                modal.querySelector('#cancelBookingId').value = bookingId;
+                modal.querySelector('#bookingIdDisplay').textContent = bookingId;
+            });
+        }
+        
+        // Enable tooltips for cancellation reasons
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+    </script>
 </body>
 </html>
