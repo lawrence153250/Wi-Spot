@@ -249,6 +249,7 @@ $conn->close();
             </div>
         </div>
     </div>
+    </div>
 
     
     <div class="foot-container">
