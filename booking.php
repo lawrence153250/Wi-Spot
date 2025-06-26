@@ -91,7 +91,7 @@ function computePrice($packageId, $dateOfBooking, $dateOfReturn) {
     $startDate = new DateTime($dateOfBooking);
     $endDate = new DateTime($dateOfReturn);
     $interval = $startDate->diff($endDate);
-    $numberOfDays = max($interval->days, 1); // Ensure at least 1-day charge
+    $numberOfDays = $interval->days + 1; // Add 1 to include both start and end days
 
     return $packagePrices[$packageId] * $numberOfDays;
 }
@@ -106,9 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     $totalPrice = $_POST['totalPrice'];
 
     // Validate date range
-    if (new DateTime($dateOfBooking) >= new DateTime($dateOfReturn)) {
-        echo '<div class="alert alert-danger">Error: Return date must be after the booking date.</div>';
-    } else {
+    // Change from >= to > to allow same-day rentals
+        if (new DateTime($dateOfBooking) > new DateTime($dateOfReturn)) {
+            echo '<div class="alert alert-danger">Error: Return date must be on or after the booking date.</div>';
+        } else {
         // Generate the agreement content
         $agreementContent = generateAgreementContent($user, $effectiveDate, $signatureData);
         
@@ -274,11 +275,11 @@ $conn->close();
     <h3>LOAN PERIOD</h3>
     <form id="bookingForm" method="POST">
         <div class="form-group">
-            <label for="dateOfBooking">Start Date: </label>
+            <label for="dateOfBooking">Rental Date (Start): </label>
             <input type="date" id="dateOfBooking" name="dateOfBooking" required>
         </div>
         <div class="form-group">
-            <label for="dateOfReturn">Date of Return: </label>
+            <label for="dateOfReturn">Rental Date (End): </label>
             <input type="date" id="dateOfReturn" name="dateOfReturn" required>
         </div>
         <div class="form-group">
@@ -457,8 +458,8 @@ $conn->close();
             </div>
             <div class="modal-body">
                 <p><strong>Customer Name:</strong> <span id="modalCustomerName"></span></p>
-                <p><strong>Start Date:</strong> <span id="modalDateOfBooking"></span></p>
-                <p><strong>Return Date:</strong> <span id="modalDateOfReturn"></span></p>
+                <p><strong>Rental Date (Start): </strong> <span id="modalDateOfBooking"></span></p>
+                <p><strong>Rental Date (End): </strong> <span id="modalDateOfReturn"></span></p>
                 <p><strong>Event Location:</strong> <span id="modalEventLocation"></span></p>
                 <p><strong>Package Chosen:</strong> <span id="modalPackageChosen"></span></p>
                 
@@ -569,19 +570,23 @@ $conn->close();
 
     // Function to compute price
     function computePrice(packageId, dateOfBooking, dateOfReturn) {
-        const packagePrices = {
-            1: 1000, // Package 1: ₱1000 per day
-            2: 1500, // Package 2: ₱1500 per day
-            3: 4000, // Package 3: ₱4000 per day
-            4: 5000, // Package 4: ₱5000 per day
-        };
+    const packagePrices = {
+        1: 1000, // Package 1: ₱1000 per day
+        2: 1500, // Package 2: ₱1500 per day
+        3: 4000, // Package 3: ₱4000 per day
+        4: 5000, // Package 4: ₱5000 per day
+    };
 
-        const startDate = new Date(dateOfBooking);
-        const endDate = new Date(dateOfReturn);
-        const timeDiff = endDate - startDate;
-        const numberOfDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    const startDate = new Date(dateOfBooking);
+    const endDate = new Date(dateOfReturn);
+    
+    // Calculate difference in milliseconds
+    const timeDiff = endDate - startDate;
+    
+    // Convert to days and add 1 to include both dates
+    const numberOfDays = (timeDiff / (1000 * 60 * 60 * 24)) + 1;
 
-        return packagePrices[packageId] * numberOfDays;
+    return packagePrices[packageId] * numberOfDays;
     }
 });
 

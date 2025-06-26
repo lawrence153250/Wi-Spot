@@ -11,8 +11,7 @@ $fieldErrors = [
     'confirm_password' => '',
     'birthday' => '',
     'contactnumber' => '',
-    'address' => '',
-    'facebookProfile' => ''
+    'address' => ''
 ];
 
 // Process errors from session
@@ -39,8 +38,6 @@ if (isset($_SESSION['errors'])) {
             $fieldErrors['birthday'] = $error;
         } elseif (strpos($error, 'Address') !== false) {
             $fieldErrors['address'] = $error;
-        } elseif (strpos($error, 'Facebook profile') !== false) {
-            $fieldErrors['facebookProfile'] = $error;
         }
     }
     unset($_SESSION['errors']);
@@ -48,7 +45,6 @@ if (isset($_SESSION['errors'])) {
 
 // Repopulate form fields if available
 $formData = $_SESSION['form_data'] ?? [];
-unset($_SESSION['form_data']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -268,14 +264,8 @@ unset($_SESSION['form_data']);
                 </div>
                 
                 <div class="form-group mb-4">
-                    <label for="facebookProfile">Facebook Profile Link (optional)</label>
-                    <?php if (!empty($fieldErrors['facebookProfile'])): ?>
-                        <div class="alert alert-danger p-2 mb-2">
-                            <?= htmlspecialchars($fieldErrors['facebookProfile']) ?>
-                        </div>
-                    <?php endif; ?>
-                    <input type="text" id="facebookProfile" name="facebookProfile" class="form-control wi-input <?= !empty($fieldErrors['facebookProfile']) ? 'is-invalid' : '' ?>" 
-                        value="<?= htmlspecialchars($formData['facebookProfile'] ?? '') ?>">
+                    <label for="facebookProfile">Facebook Profile Link</label>
+                    <input type="text" id="facebookProfile" name="facebookProfile" class="form-control wi-input">
                     <div class="error-message" id="facebookProfileError"></div>
                 </div>
                 
@@ -319,12 +309,33 @@ unset($_SESSION['form_data']);
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('registrationForm');
     
+    // Show password toggle functionality
+    const togglePassword = document.getElementById('togglePassword');
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+    const passwordField = document.getElementById('password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+        });
+    }
+    
+    if (toggleConfirmPassword) {
+        toggleConfirmPassword.addEventListener('click', function() {
+            const type = confirmPasswordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirmPasswordField.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+        });
+    }
+
     // Client-side validation
     form.addEventListener('submit', function(e) {
         if (!validateForm()) {
             e.preventDefault();
         }
-        // Let the form submit if validation passes
     });
     
     function validateForm() {
@@ -335,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
         
         // Validate required fields
-        const requiredFields = ['firstname', 'lastname', 'username', 'email', 'password', 'confirm_password', 'birthday', 'contactnumber', 'address', 'facebookProfile'];
+        const requiredFields = ['firstname', 'lastname', 'username', 'email', 'password', 'confirm_password', 'birthday', 'contactnumber', 'address'];
         requiredFields.forEach(field => {
             const element = document.getElementById(field);
             if (!element.value.trim()) {
@@ -345,7 +356,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Only proceed with other validations if required fields are filled
         if (!isValid) return false;
         
         // Validate email
@@ -357,24 +367,24 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
         }
         
-        // Validate password
-        const password = document.getElementById('password').value;
+        // Validate password (using passwordField instead of password)
+        const password = passwordField.value;
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordRegex.test(password)) {
             document.getElementById('passwordError').textContent = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character.';
-            document.getElementById('password').classList.add('is-invalid');
+            passwordField.classList.add('is-invalid');
             isValid = false;
         }
         
         // Validate password match
-        const confirmPassword = document.getElementById('confirm_password').value;
+        const confirmPassword = confirmPasswordField.value;
         if (password !== confirmPassword) {
             document.getElementById('confirmPasswordError').textContent = 'Passwords do not match.';
-            document.getElementById('confirm_password').classList.add('is-invalid');
+            confirmPasswordField.classList.add('is-invalid');
             isValid = false;
         }
         
-        // Validate birthday (must be at least 18 years old)
+        // Validate birthday
         const birthday = document.getElementById('birthday').value;
         if (birthday) {
             const birthDate = new Date(birthday);
@@ -393,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Validate contact number (Philippine format: +63 followed by 10 digits)
+        // Validate contact number
         const contactNumber = document.getElementById('contactnumber').value;
         const contactRegex = /^09\d{9}$/;
         if (!contactRegex.test(contactNumber)) {
@@ -402,19 +412,21 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
         }
         
-        // Validate Facebook profile link
+        // Validate Facebook profile link (optional)
         const facebookProfile = document.getElementById('facebookProfile').value;
-        const facebookRegex = /^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/;
-        if (!facebookRegex.test(facebookProfile)) {
-            document.getElementById('facebookProfileError').textContent = 'Please enter a valid Facebook profile URL.';
-            document.getElementById('facebookProfile').classList.add('is-invalid');
-            isValid = false;
+        if (facebookProfile.trim() !== '') {
+            const facebookRegex = /^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/;
+            if (!facebookRegex.test(facebookProfile)) {
+                document.getElementById('facebookProfileError').textContent = 'Please enter a valid Facebook profile URL.';
+                document.getElementById('facebookProfile').classList.add('is-invalid');
+                isValid = false;
+            }
         }
         
         return isValid;
     }
-});
-        // Add these functions to your existing script
+
+    // Add these functions to your existing script
     function checkUsernameAvailability() {
         const username = document.getElementById('username').value.trim();
         if (username.length < 3) return; // Don't check for very short usernames
@@ -473,70 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('username').addEventListener('blur', checkUsernameAvailability);
     document.getElementById('email').addEventListener('blur', checkEmailAvailability);
     document.getElementById('contactnumber').addEventListener('blur', checkContactNumberAvailability);
-
-// Add this to your existing script
-document.addEventListener('DOMContentLoaded', function() {
-    // Show password toggle functionality
-    const togglePassword = document.getElementById('togglePassword');
-    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
-    const password = document.getElementById('password');
-    const confirmPassword = document.getElementById('confirm_password');
-    
-    if (togglePassword) {
-        togglePassword.addEventListener('click', function() {
-            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-            password.setAttribute('type', type);
-            this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
-        });
-    }
-    
-    if (toggleConfirmPassword) {
-        toggleConfirmPassword.addEventListener('click', function() {
-            const type = confirmPassword.getAttribute('type') === 'password' ? 'text' : 'password';
-            confirmPassword.setAttribute('type', type);
-            this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
-        });
-    }
-
-    // Modify the validateForm function to make Facebook profile optional
-    function validateForm() {
-        let isValid = true;
-        
-        // Reset error messages
-        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-        
-        // Validate required fields (excluding facebookProfile)
-        const requiredFields = ['firstname', 'lastname', 'username', 'email', 'password', 'confirm_password', 'birthday', 'contactnumber', 'address'];
-        requiredFields.forEach(field => {
-            const element = document.getElementById(field);
-            if (!element.value.trim()) {
-                document.getElementById(field + 'Error').textContent = 'This field is required';
-                element.classList.add('is-invalid');
-                isValid = false;
-            }
-        });
-        
-        // Only proceed with other validations if required fields are filled
-        if (!isValid) return false;
-        
-        // ... rest of your existing validation code ...
-        
-        // Modify Facebook profile validation to only check if it's provided
-        const facebookProfile = document.getElementById('facebookProfile').value;
-        if (facebookProfile.trim() !== '') {
-            const facebookRegex = /^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/;
-            if (!facebookRegex.test(facebookProfile)) {
-                document.getElementById('facebookProfileError').textContent = 'Please enter a valid Facebook profile URL.';
-                document.getElementById('facebookProfile').classList.add('is-invalid');
-                isValid = false;
-            }
-        }
-        
-        return isValid;
-    }
 });
-
 </script>
 </body>
 </html>
