@@ -180,7 +180,7 @@ $conn->close();
         }
         
         .sidebar-menu li {
-            font-size: 2vh;
+            font-size: 1.5vh;
             padding: 10px 15px;
             cursor: pointer;
             transition: background-color 0.3s;

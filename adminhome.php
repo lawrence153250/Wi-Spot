@@ -70,6 +70,10 @@ $voucherCount = getCount($conn, 'voucher_batch', 'approvalStatus', 'pending');
 $inventoryCount = getCount($conn, 'inventory', 'status', 'pending');
 $feedbackCount = getCount($conn, 'feedback', 'displayStatus', 'pending');
 
+// New counts for booking sections
+$bookingEditsCount = getCount($conn, 'booking_edits', 'edit_status', 'Pending');
+$connectionErrorCount = getCount($conn, 'booking', 'connectionStatus', 'error');
+
 $conn->close();
 ?>
 
@@ -95,12 +99,54 @@ $conn->close();
             background-color: #2c3e50;
             color: white;
             height: 100vh;
-            padding: 20px 0;
             position: fixed;
+            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
         }
         
+        .sidebar-content {
+            padding: 20px 0;
+            min-height: 100%; /* Ensure content takes full height */
+        }
+
+        /* Custom scrollbar for webkit browsers */
+                .sidebar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                
+                .sidebar::-webkit-scrollbar-track {
+                    background: #34495e;
+                }
+                
+                .sidebar::-webkit-scrollbar-thumb {
+                    background: #5a6c7d;
+                    border-radius: 3px;
+                }
+                
+                .sidebar::-webkit-scrollbar-thumb:hover {
+                    background: #7f8c8d;
+                }
+
+        @media (max-width: 576px) {
+            .sidebar {
+                width: 60px;
+            }
+
+            .main-content {
+                margin-left: 60px;
+                width: calc(100% - 60px);
+                padding: 15px;
+            }
+
+            .sidebar-menu li {
+                padding: 8px 10px;
+                font-size: 1.8vh;
+            }
+        }
+
+        
         .sidebar-header {
-            padding: 0 20px 20px;
+            padding: 0 15px 15px;
             border-bottom: 1px solid #34495e;
             margin-bottom: 20px;
         }
@@ -269,6 +315,32 @@ $conn->close();
                 <div class="card-count"><?php echo $lockedAccountsCount; ?></div>
             </a>
             
+            <a href="admin_bookingApproval.php" class="dashboard-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <div class="card-text">
+                        <h3>Booking Approvals</h3>
+                        <p>Pending booking edits</p>
+                    </div>
+                </div>
+                <div class="card-count"><?php echo $bookingEditsCount; ?></div>
+            </a>
+            
+            <a href="admin_bookingMonitoring.php" class="dashboard-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="bi bi-wifi-off"></i>
+                    </div>
+                    <div class="card-text">
+                        <h3>Booking Monitoring</h3>
+                        <p>Connection errors</p>
+                    </div>
+                </div>
+                <div class="card-count"><?php echo $connectionErrorCount; ?></div>
+            </a>
+
             <a href="admin_packages.php" class="dashboard-card">
                 <div class="card-content">
                     <div class="card-icon">

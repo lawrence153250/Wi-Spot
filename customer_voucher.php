@@ -47,7 +47,50 @@ if ($customer) {
     die("Customer not found");
 }
 
-// Fetch all available voucher batches (not expired and approved)
+// Handle voucher claim
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['claim_voucher'])) {
+    $batchId = $_POST['batchId'];
+    
+    // Find an available voucher code from this batch
+    $stmt = $conn->prepare("
+        SELECT codeId FROM voucher_code 
+        WHERE batchId = ? AND isGiven = FALSE 
+        LIMIT 1
+    ");
+    $stmt->bind_param("i", $batchId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $voucher = $result->fetch_assoc();
+        $codeId = $voucher['codeId'];
+        
+        // Update the voucher to assign it to the customer
+        $updateStmt = $conn->prepare("
+            UPDATE voucher_code 
+            SET isGiven = TRUE, customerId = ? 
+            WHERE codeId = ?
+        ");
+        $updateStmt->bind_param("ii", $customerId, $codeId);
+        $updateStmt->execute();
+        
+        if ($updateStmt->affected_rows > 0) {
+            $_SESSION['voucher_message'] = "Voucher claimed successfully!";
+        } else {
+            $_SESSION['voucher_message'] = "Failed to claim voucher. Please try again.";
+        }
+        
+        // Redirect to prevent form resubmission
+        header("Location: customer_voucher.php");
+        exit();
+    } else {
+        $_SESSION['voucher_message'] = "No vouchers available in this batch.";
+        header("Location: customer_voucher.php");
+        exit();
+    }
+}
+
+// Fetch all available voucher batches (not expired and approved) excluding Birthday, Referral, and Returning Customer types
 $currentDate = date('Y-m-d H:i:s');
 $availableVouchersQuery = "
     SELECT vb.*, COUNT(vc.codeId) as remaining
@@ -56,7 +99,9 @@ $availableVouchersQuery = "
     WHERE vb.approvalStatus = 'approved' 
     AND vb.startDate <= '$currentDate' 
     AND vb.endDate >= '$currentDate'
+    AND vb.voucherType NOT IN ('Birthday', 'Referral', 'Returning Customer')
     GROUP BY vb.batchId
+    HAVING remaining > 0
 ";
 $availableVouchersResult = $conn->query($availableVouchersQuery);
 $availableVouchers = [];
@@ -66,7 +111,7 @@ if ($availableVouchersResult) {
 
 // Fetch vouchers specifically given to this customer
 $customerVouchersQuery = "
-    SELECT vc.*, vb.voucherName, vb.description, vb.discountRate, vb.endDate
+    SELECT vc.*, vb.voucherName, vb.description, vb.discountRate, vb.endDate, vb.voucherType
     FROM voucher_code vc
     JOIN voucher_batch vb ON vc.batchId = vb.batchId
     WHERE vc.customerId = ? AND vc.isGiven = TRUE AND vc.isUsed = FALSE
@@ -127,6 +172,14 @@ $customerVouchers = $result->fetch_all(MYSQLI_ASSOC);
 <div class="container voucher-section">
     <h1 class="text-center mb-5">MY VOUCHERS</h1>
     
+    <?php if (isset($_SESSION['voucher_message'])): ?>
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <?= $_SESSION['voucher_message'] ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['voucher_message']); ?>
+    <?php endif; ?>
+    
     <!-- Customer's Personal Vouchers -->
     <div class="mb-5">
         <h2 class="section-title">YOUR PERSONAL VOUCHERS</h2>
@@ -137,6 +190,7 @@ $customerVouchers = $result->fetch_all(MYSQLI_ASSOC);
                         <div class="voucher-card yours">
                             <div class="voucher-header">
                                 <h5 class="mb-0"><?= htmlspecialchars($voucher['voucherName']) ?></h5>
+                                <small class="text-muted"><?= htmlspecialchars($voucher['voucherType']) ?></small>
                             </div>
                             <div class="voucher-body">
                                 <div class="discount-badge mb-3"><?= htmlspecialchars($voucher['discountRate']) ?>% OFF</div>
@@ -170,6 +224,7 @@ $customerVouchers = $result->fetch_all(MYSQLI_ASSOC);
                         <div class="voucher-card available">
                             <div class="voucher-header">
                                 <h5 class="mb-0"><?= htmlspecialchars($voucher['voucherName']) ?></h5>
+                                <small class="text-muted"><?= htmlspecialchars($voucher['voucherType']) ?></small>
                             </div>
                             <div class="voucher-body">
                                 <div class="discount-badge mb-3"><?= htmlspecialchars($voucher['discountRate']) ?>% OFF</div>
@@ -180,6 +235,10 @@ $customerVouchers = $result->fetch_all(MYSQLI_ASSOC);
                                         <span class="badge bg-primary"><?= $voucher['remaining'] ?> left</span>
                                     <?php endif; ?>
                                 </div>
+                                <form method="post" class="mt-3">
+                                    <input type="hidden" name="batchId" value="<?= $voucher['batchId'] ?>">
+                                    <button type="submit" name="claim_voucher" class="btn btn-primary w-100">Claim Voucher</button>
+                                </form>
                             </div>
                         </div>
                     </div>
