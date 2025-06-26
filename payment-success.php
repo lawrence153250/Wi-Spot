@@ -159,7 +159,7 @@ $conn->close();
     <style>
         .card {
             max-width: 600px;
-            margin: 0 auto;
+            margin: 100px auto;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .card-header {
