@@ -204,11 +204,16 @@ unset($_SESSION['form_data']);
                             <?= htmlspecialchars($fieldErrors['password']) ?>
                         </div>
                     <?php endif; ?>
-                    <input type="password" id="password" name="password" class="form-control wi-input <?= !empty($fieldErrors['password']) ? 'is-invalid' : '' ?>" required>
+                    <div class="input-group">
+                        <input type="password" id="password" name="password" class="form-control wi-input <?= !empty($fieldErrors['password']) ? 'is-invalid' : '' ?>" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <div class="error-message" id="passwordError"></div>
                     <small class="form-text text-muted">Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character.</small>
                 </div>
-                
+
                 <div class="form-group mb-3">
                     <label for="confirm_password">Confirm Password</label>
                     <?php if (!empty($fieldErrors['confirm_password'])): ?>
@@ -216,7 +221,12 @@ unset($_SESSION['form_data']);
                             <?= htmlspecialchars($fieldErrors['confirm_password']) ?>
                         </div>
                     <?php endif; ?>
-                    <input type="password" id="confirm_password" name="confirm_password" class="form-control wi-input <?= !empty($fieldErrors['confirm_password']) ? 'is-invalid' : '' ?>" required>
+                    <div class="input-group">
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control wi-input <?= !empty($fieldErrors['confirm_password']) ? 'is-invalid' : '' ?>" required>
+                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <div class="error-message" id="confirmPasswordError"></div>
                 </div>
                 
@@ -258,14 +268,14 @@ unset($_SESSION['form_data']);
                 </div>
                 
                 <div class="form-group mb-4">
-                    <label for="facebookProfile">Facebook Profile Link</label>
+                    <label for="facebookProfile">Facebook Profile Link (optional)</label>
                     <?php if (!empty($fieldErrors['facebookProfile'])): ?>
                         <div class="alert alert-danger p-2 mb-2">
                             <?= htmlspecialchars($fieldErrors['facebookProfile']) ?>
                         </div>
                     <?php endif; ?>
                     <input type="text" id="facebookProfile" name="facebookProfile" class="form-control wi-input <?= !empty($fieldErrors['facebookProfile']) ? 'is-invalid' : '' ?>" 
-                        value="<?= htmlspecialchars($formData['facebookProfile'] ?? '') ?>" required>
+                        value="<?= htmlspecialchars($formData['facebookProfile'] ?? '') ?>">
                     <div class="error-message" id="facebookProfileError"></div>
                 </div>
                 
@@ -463,6 +473,69 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('username').addEventListener('blur', checkUsernameAvailability);
     document.getElementById('email').addEventListener('blur', checkEmailAvailability);
     document.getElementById('contactnumber').addEventListener('blur', checkContactNumberAvailability);
+
+// Add this to your existing script
+document.addEventListener('DOMContentLoaded', function() {
+    // Show password toggle functionality
+    const togglePassword = document.getElementById('togglePassword');
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+        });
+    }
+    
+    if (toggleConfirmPassword) {
+        toggleConfirmPassword.addEventListener('click', function() {
+            const type = confirmPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirmPassword.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+        });
+    }
+
+    // Modify the validateForm function to make Facebook profile optional
+    function validateForm() {
+        let isValid = true;
+        
+        // Reset error messages
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        
+        // Validate required fields (excluding facebookProfile)
+        const requiredFields = ['firstname', 'lastname', 'username', 'email', 'password', 'confirm_password', 'birthday', 'contactnumber', 'address'];
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (!element.value.trim()) {
+                document.getElementById(field + 'Error').textContent = 'This field is required';
+                element.classList.add('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        // Only proceed with other validations if required fields are filled
+        if (!isValid) return false;
+        
+        // ... rest of your existing validation code ...
+        
+        // Modify Facebook profile validation to only check if it's provided
+        const facebookProfile = document.getElementById('facebookProfile').value;
+        if (facebookProfile.trim() !== '') {
+            const facebookRegex = /^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/;
+            if (!facebookRegex.test(facebookProfile)) {
+                document.getElementById('facebookProfileError').textContent = 'Please enter a valid Facebook profile URL.';
+                document.getElementById('facebookProfile').classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+});
 
 </script>
 </body>
