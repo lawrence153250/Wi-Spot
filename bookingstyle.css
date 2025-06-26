@@ -566,7 +566,7 @@ h4 a:hover {
 
 .alert {
     position: fixed;
-    top: 70px; /* Adjust this to match your navbar height */
+    top: 70px;
     left: 50%;
     transform: translateX(-50%);
     width: 80%;
