@@ -133,11 +133,8 @@ if ($stmt->execute()) {
     unset($_SESSION['payment_info']);
     $message = "Payment successful! Status updated to: " . $newStatus;
     
-    // If balance was fully paid, update booking status to confirmed if it was pending
-    if ($newStatus === 'Paid') {
-        $conn->query("UPDATE booking SET bookingStatus = 'Confirmed' 
-                     WHERE bookingId = $bookingId AND bookingStatus = 'Pending'");
-    }
+    // Removed the code that updates bookingStatus to 'Confirmed'
+    // The bookingStatus will now remain unchanged regardless of payment status
 } else {
     $message = "Payment received but database update failed. Please contact support.";
 }

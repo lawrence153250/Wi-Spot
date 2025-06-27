@@ -159,17 +159,58 @@ $conn->close();
     <link rel="stylesheet" href="style.css">
     <style>
         /* Sidebar Styles */
-        .sidebar {
+       .sidebar {
             width: 250px;
             background-color: #2c3e50;
             color: white;
             height: 100vh;
-            padding: 20px 0;
             position: fixed;
+            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
         }
         
+        .sidebar-content {
+            padding: 20px 0;
+            min-height: 100%; /* Ensure content takes full height */
+        }
+
+        /* Custom scrollbar for webkit browsers */
+                .sidebar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                
+                .sidebar::-webkit-scrollbar-track {
+                    background: #34495e;
+                }
+                
+                .sidebar::-webkit-scrollbar-thumb {
+                    background: #5a6c7d;
+                    border-radius: 3px;
+                }
+                
+                .sidebar::-webkit-scrollbar-thumb:hover {
+                    background: #7f8c8d;
+                }
+
+        @media (max-width: 576px) {
+            .sidebar {
+                width: 60px;
+            }
+
+            .main-content {
+                margin-left: 60px;
+                width: calc(100% - 60px);
+                padding: 15px;
+            }
+
+            .sidebar-menu li {
+                padding: 8px 10px;
+                font-size: 1.8vh;
+            }
+        }
+
         .sidebar-header {
-            padding: 0 20px 20px;
+            padding: 0 15px 15px;
             border-bottom: 1px solid #34495e;
             margin-bottom: 20px;
         }
@@ -180,12 +221,11 @@ $conn->close();
         }
         
         .sidebar-menu li {
-            font-size: 1.5vh;
+            font-size: 2vh;
             padding: 10px 15px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        
         .sidebar-menu li:hover {
             background-color: #34495e;
         }
@@ -463,7 +503,10 @@ $conn->close();
 
         <a href="create_account.php" class="add-account-btn">
             <i class="bi bi-plus-circle"></i> Add New Account
-        </a>
+        </a><br>
+        <a href="admin_accountsApproval.php" class="add-account-btn">
+            <i class="bi bi-person-check"></i> Manage Account Verification
+        </a><br><br>
 
         <?php if (!empty($search_username)) : ?>
             <!-- Search Results Modal -->

@@ -315,14 +315,14 @@ $conn->close();
                 <div class="card-count"><?php echo $lockedAccountsCount; ?></div>
             </a>
             
-            <a href="admin_bookingApproval.php" class="dashboard-card">
+            <a href="admin_bookingView.php" class="dashboard-card">
                 <div class="card-content">
                     <div class="card-icon">
                         <i class="bi bi-pencil-square"></i>
                     </div>
                     <div class="card-text">
-                        <h3>Booking Approvals</h3>
-                        <p>Pending booking edits</p>
+                        <h3>Booking Changes Approval</h3>
+                        <p>Pending booking changes</p>
                     </div>
                 </div>
                 <div class="card-count"><?php echo $bookingEditsCount; ?></div>

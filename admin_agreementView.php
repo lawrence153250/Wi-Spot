@@ -65,22 +65,59 @@ $conn->close();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Sidebar Styles */
-        .sidebar-menu li a.nav-link {
-            color: #FFFFFF;
-        }
-
+         /* Sidebar Styles */
         .sidebar {
             width: 250px;
             background-color: #2c3e50;
             color: white;
             height: 100vh;
-            padding: 20px 0;
             position: fixed;
+            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
         }
         
+        .sidebar-content {
+            padding: 20px 0;
+            min-height: 100%; /* Ensure content takes full height */
+        }
+
+        /* Custom scrollbar for webkit browsers */
+                .sidebar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                
+                .sidebar::-webkit-scrollbar-track {
+                    background: #34495e;
+                }
+                
+                .sidebar::-webkit-scrollbar-thumb {
+                    background: #5a6c7d;
+                    border-radius: 3px;
+                }
+                
+                .sidebar::-webkit-scrollbar-thumb:hover {
+                    background: #7f8c8d;
+                }
+
+        @media (max-width: 576px) {
+            .sidebar {
+                width: 60px;
+            }
+
+            .main-content {
+                margin-left: 60px;
+                width: calc(100% - 60px);
+                padding: 15px;
+            }
+
+            .sidebar-menu li {
+                padding: 8px 10px;
+                font-size: 1.8vh;
+            }
+        }
+
         .sidebar-header {
-            padding: 0 20px 20px;
+            padding: 0 15px 15px;
             border-bottom: 1px solid #34495e;
             margin-bottom: 20px;
         }
@@ -91,7 +128,7 @@ $conn->close();
         }
         
         .sidebar-menu li {
-            font-size: 1.5vh;
+            font-size: 2vh;
             padding: 10px 15px;
             cursor: pointer;
             transition: background-color 0.3s;
@@ -101,6 +138,10 @@ $conn->close();
             background-color: #34495e;
         }
         
+        .sidebar-menu li a.nav-link {
+            color: #FFFFFF;
+        }
+
         .sidebar-menu li.active {
             background-color: #34485f;
         }

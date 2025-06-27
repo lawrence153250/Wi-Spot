@@ -27,14 +27,131 @@ if (!isset($_SESSION['username']) || $_SESSION['userlevel'] !== 'staff') {
     exit();
 }
 
-// Database connection
+// Database connection and PHPMailer setup
 require_once 'config.php';
+require 'phpmailer/src/Exception.php';
+require 'phpmailer/src/PHPMailer.php';
+require 'phpmailer/src/SMTP.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Function to send booking confirmation email
+function sendBookingConfirmationEmail($customerEmail, $bookingId, $bookingDetails) {
+    $mail = new PHPMailer(true);
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'wispot.servicesph@gmail.com';
+        $mail->Password   = 'dzij hshz xbqt hwlb';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+
+        // Recipients
+        $mail->setFrom('wispot.servicesph@gmail.com', 'Wi-Spot Services');
+        $mail->addAddress($customerEmail);
+
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = 'Your Booking #' . $bookingId . ' Has Been Confirmed';
+        
+        $mail->Body = '
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #f8f9fa; padding: 20px; text-align: center; }
+                .content { padding: 20px; }
+                .footer { margin-top: 20px; padding: 20px; background-color: #f8f9fa; text-align: center; font-size: 12px; }
+                .booking-details { margin: 20px 0; }
+                .detail-row { margin-bottom: 10px; }
+                .detail-label { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>Booking Confirmation</h2>
+                </div>
+                <div class="content">
+                    <p>Dear ' . htmlspecialchars($bookingDetails['customer_firstname']) . ',</p>
+                    <p>We are pleased to inform you that your booking with Wi-Spot Services has been confirmed.</p>
+                    
+                    <div class="booking-details">
+                        <h3>Booking Details</h3>
+                        <div class="detail-row">
+                            <span class="detail-label">Booking ID:</span> ' . $bookingId . '
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Package:</span> ' . htmlspecialchars($bookingDetails['package_chosen']) . '
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Event Date:</span> ' . htmlspecialchars($bookingDetails['date_of_start']) . ' to ' . htmlspecialchars($bookingDetails['date_of_return']) . '
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Location:</span> ' . htmlspecialchars($bookingDetails['event_location']) . '
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Total Price:</span> ₱' . number_format($bookingDetails['total_price'], 2) . '
+                        </div>
+                    </div>
+                    
+                    <p>Thank you for choosing Wi-Spot Services. If you have any questions, please don\'t hesitate to contact us.</p>
+                </div>
+                <div class="footer">
+                    <p>© ' . date('Y') . ' Wi-Spot Services. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>';
+
+        $mail->AltBody = "Dear " . $bookingDetails['customer_firstname'] . ",\n\n" .
+                        "We are pleased to inform you that your booking with Wi-Spot Services has been confirmed.\n\n" .
+                        "Booking Details:\n" .
+                        "Booking ID: " . $bookingId . "\n" .
+                        "Package: " . $bookingDetails['package_chosen'] . "\n" .
+                        "Event Date: " . $bookingDetails['date_of_start'] . " to " . $bookingDetails['date_of_return'] . "\n" .
+                        "Location: " . $bookingDetails['event_location'] . "\n" .
+                        "Total Price: ₱" . number_format($bookingDetails['total_price'], 2) . "\n\n" .
+                        "Thank you for choosing Wi-Spot Services. If you have any questions, please don't hesitate to contact us.";
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("Email sending failed: " . $e->getMessage());
+        return false;
+    }
+}
 
 // Handle booking status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && isset($_POST['booking_id'])) {
         $bookingId = $_POST['booking_id'];
         $action = $_POST['action'];
+        
+        // First, get customer email and details for potential notification
+        $stmt = $conn->prepare("SELECT c.email, c.firstName, c.lastName, p.packageName, b.dateOfBooking, b.dateOfReturn, b.eventLocation, b.price 
+                               FROM booking b 
+                               JOIN customer c ON b.customerId = c.customerId 
+                               JOIN package p ON b.packageId = p.packageId 
+                               WHERE b.bookingId = ?");
+        $stmt->bind_param("i", $bookingId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $customerData = $result->fetch_assoc();
+        $stmt->close();
+        
+        $bookingDetails = [
+            'customer_firstname' => $customerData['firstName'],
+            'package_chosen' => $customerData['packageName'],
+            'date_of_start' => date("F j, Y", strtotime($customerData['dateOfBooking'])),
+            'date_of_return' => date("F j, Y", strtotime($customerData['dateOfReturn'])),
+            'event_location' => $customerData['eventLocation'],
+            'total_price' => $customerData['price']
+        ];
         
         if ($action === 'update_status' && isset($_POST['new_status'])) {
             // Update booking status to the selected value
@@ -43,6 +160,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("si", $newStatus, $bookingId);
             $stmt->execute();
             $stmt->close();
+            
+            // Send email if status changed to Confirmed
+            if ($newStatus === 'Confirmed' && !empty($customerData['email'])) {
+                $emailSent = sendBookingConfirmationEmail($customerData['email'], $bookingId, $bookingDetails);
+                if (!$emailSent) {
+                    $_SESSION['error'] = "Booking status updated but failed to send confirmation email.";
+                }
+            }
             
             $_SESSION['message'] = "Booking status updated successfully!";
         } 
@@ -73,6 +198,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("si", $status, $bookingId);
             $stmt->execute();
             $stmt->close();
+            
+            // Send email if booking was accepted
+            if ($action === 'accept' && !empty($customerData['email'])) {
+                $emailSent = sendBookingConfirmationEmail($customerData['email'], $bookingId, $bookingDetails);
+                if (!$emailSent) {
+                    $_SESSION['error'] = "Booking accepted but failed to send confirmation email.";
+                }
+            }
             
             $_SESSION['message'] = "Booking has been " . strtolower($status) . " successfully.";
         }

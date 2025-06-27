@@ -52,6 +52,43 @@ date_default_timezone_set('Asia/Manila');
 // Get the current date in the desired format 
 $effectiveDate = date("F j, Y");
 
+// Function to get all booked date ranges from the database
+function getBookedDateRanges($conn) {
+    $bookedRanges = array();
+    $result = $conn->query("SELECT dateOfBooking, dateOfReturn FROM booking");
+    
+    while ($row = $result->fetch_assoc()) {
+        $bookedRanges[] = array(
+            'start' => $row['dateOfBooking'],
+            'end' => $row['dateOfReturn']
+        );
+    }
+    
+    return $bookedRanges;
+}
+
+// Get all booked date ranges
+$bookedRanges = getBookedDateRanges($conn);
+$bookedRangesJson = json_encode($bookedRanges);
+
+// Initialize $bookedDates array
+$bookedDates = array();
+
+// Populate $bookedDates with all individual booked dates
+foreach ($bookedRanges as $range) {
+    $start = new DateTime($range['start']);
+    $end = new DateTime($range['end']);
+    
+    // Include the end date in the range
+    $end = $end->modify('+1 day');
+    
+    $period = new DatePeriod($start, new DateInterval('P1D'), $end);
+    
+    foreach ($period as $date) {
+        $bookedDates[] = $date->format('Y-m-d');
+    }
+}
+
 function formatDate($dateString) {
     return date("F j, Y", strtotime($dateString));
 }
@@ -106,36 +143,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     $totalPrice = $_POST['totalPrice'];
 
     // Validate date range
-    // Change from >= to > to allow same-day rentals
-        if (new DateTime($dateOfBooking) > new DateTime($dateOfReturn)) {
-            echo '<div class="alert alert-danger">Error: Return date must be on or after the booking date.</div>';
-        } else {
-        // Generate the agreement content
-        $agreementContent = generateAgreementContent($user, $effectiveDate, $signatureData);
+    if (new DateTime($dateOfBooking) > new DateTime($dateOfReturn)) {
+        echo '<div class="alert alert-danger">Error: Return date must be on or after the booking date.</div>';
+    } else {
+        // Check if any dates in the selected range are already booked
+        $start = new DateTime($dateOfBooking);
+        $end = new DateTime($dateOfReturn);
+        $interval = new DateInterval('P1D');
+        $period = new DatePeriod($start, $interval, $end->modify('+1 day'));
         
-        // Create a unique filename
-        $filename = "agreement_" . $customerId . "_" . time() . ".txt";
-        $filepath = "agreements/" . $filename;
-        
-        // Save the agreement to a file
-        if (!is_dir("agreements")) {
-            mkdir("agreements", 0755, true);
+        $conflict = false;
+        foreach ($period as $date) {
+            if (in_array($date->format('Y-m-d'), $bookedDates)) {
+                $conflict = true;
+                break;
+            }
         }
         
-        file_put_contents($filepath, $agreementContent);
-        
-        // Insert booking with the total price, payment balance, and agreement file path
-        $stmt = $conn->prepare("INSERT INTO booking (customerId, packageId, dateOfBooking, dateOfReturn, eventLocation, price, lendingAgreement, paymentBalance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iisssdsd", $customerId, $packageId, $dateOfBooking, $dateOfReturn, $eventLocation, $totalPrice, $filepath, $totalPrice);
+        if ($conflict) {
+            echo '<div class="alert alert-danger">Error: One or more dates in your selected range are already booked. Please choose different dates.</div>';
+        } else {
+            // Generate the agreement content
+            $agreementContent = generateAgreementContent($user, $effectiveDate, $signatureData);
+            
+            // Create a unique filename
+            $filename = "agreement_" . $customerId . "_" . time() . ".txt";
+            $filepath = "agreements/" . $filename;
+            
+            // Save the agreement to a file
+            if (!is_dir("agreements")) {
+                mkdir("agreements", 0755, true);
+            }
+            
+            file_put_contents($filepath, $agreementContent);
+            
+            // Insert booking with the total price, payment balance, and agreement file path
+            $stmt = $conn->prepare("INSERT INTO booking (customerId, packageId, dateOfBooking, dateOfReturn, eventLocation, price, lendingAgreement, paymentBalance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iisssdsd", $customerId, $packageId, $dateOfBooking, $dateOfReturn, $eventLocation, $totalPrice, $filepath, $totalPrice);
 
-        if ($stmt->execute()) {
-            // Clear the custom equipment from session after successful booking
-            unset($_SESSION['selected_equipment']);
-            echo '<div class="alert alert-success">Booking successfully created!</div>';
-        } else {
-            echo '<div class="alert alert-danger">Error: ' . $stmt->error . '</div>';
+            if ($stmt->execute()) {
+                // Clear the custom equipment from session after successful booking
+                unset($_SESSION['selected_equipment']);
+                echo '<div class="alert alert-success">Booking successfully created!</div>';
+            } else {
+                echo '<div class="alert alert-danger">Error: ' . $stmt->error . '</div>';
+            }
+            $stmt->close();
         }
-        $stmt->close();
     }
 }
 
@@ -226,6 +280,24 @@ $conn->close();
     <link rel="stylesheet" href="bookingstyle.css">
     <!-- Include Signature Pad library -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <style>
+        /* Style for disabled dates in date picker */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 1;
+        }
+
+        input[type="date"]:disabled::-webkit-calendar-picker-indicator {
+            opacity: 0.5;
+        }
+
+        /* Custom message for booked dates */
+        .date-picker-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+    </style>
 </head>
 <body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
     <div class="container">
@@ -277,10 +349,12 @@ $conn->close();
         <div class="form-group">
             <label for="dateOfBooking">Rental Date (Start): </label>
             <input type="date" id="dateOfBooking" name="dateOfBooking" required>
+            <div id="bookingDateMessage" class="date-picker-message"></div>
         </div>
         <div class="form-group">
             <label for="dateOfReturn">Rental Date (End): </label>
             <input type="date" id="dateOfReturn" name="dateOfReturn" required>
+            <div id="returnDateMessage" class="date-picker-message"></div>
         </div>
         <div class="form-group">
             <label for="eventLocation">Event's Location Address:</label>
@@ -484,157 +558,299 @@ $conn->close();
 
     
     <!-- Signature Pad Script -->
-    <script>
-   document.addEventListener('DOMContentLoaded', function () {
+<script>
+// Main document ready function
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Signature Pad
     const canvas = document.getElementById('signature-canvas');
-    const signaturePad = new SignaturePad(canvas);
+    const signaturePad = new SignaturePad(canvas, {
+        backgroundColor: 'rgb(255, 255, 255)'
+    });
 
-    // Clear signature
-    document.getElementById('clear-signature').addEventListener('click', function () {
+    // Clear signature button
+    document.getElementById('clear-signature').addEventListener('click', function() {
         signaturePad.clear();
     });
 
-    // Save signature
-    document.getElementById('save-signature').addEventListener('click', function () {
+    // Save signature button
+    document.getElementById('save-signature').addEventListener('click', function() {
         if (signaturePad.isEmpty()) {
             alert('Please provide a signature first.');
         } else {
-            const signatureData = signaturePad.toDataURL(); // Get signature as image data URL
-            document.getElementById('lendingAgreement').value = signatureData; // Store in hidden input
+            const signatureData = signaturePad.toDataURL();
+            document.getElementById('lendingAgreement').value = signatureData;
             alert('Lending Agreement has been signed successfully.');
         }
     });
 
-    // Book Now button click handler
-    document.querySelector('.btn-primary').addEventListener('click', function (event) {
-        event.preventDefault(); // Prevent the default behavior of the button
+    // Load Google Maps API
+    loadGoogleMapsAPI();
 
-        const signatureData = document.getElementById('lendingAgreement').value;
+    // Initialize date pickers
+    setupDatePickers();
 
-        if (!signatureData) {
-            alert('You need to sign the agreement first before proceeding.');
-        } else {
-            // Update confirmation modal with form data
-            const customerName = "<?php echo $user['firstName'] . ' ' . $user['lastName']; ?>";
-            const dateOfBooking = formatDate(document.getElementById('dateOfBooking').value);
-            const dateOfReturn = formatDate(document.getElementById('dateOfReturn').value);
-            const eventLocation = document.getElementById('eventLocation').value;
-            const packageId = document.querySelector('input[name="packageId"]:checked').value;
-            const packageName = document.querySelector('input[name="packageId"]:checked + .package-img + span').textContent;
-            const packagePrice = computePrice(packageId, document.getElementById('dateOfBooking').value, document.getElementById('dateOfReturn').value);
-            
-            // Get custom equipment data from PHP session
-            const customEquipment = <?php echo isset($_SESSION['selected_equipment']) ? json_encode($_SESSION['selected_equipment']) : '[]'; ?>;
-            let equipmentTotal = 0;
-            let equipmentHTML = '';
-            
-            if (customEquipment.length > 0) {
-                customEquipment.forEach(item => {
-                    const itemTotal = item.price * item.quantity;
-                    equipmentTotal += itemTotal;
-                    equipmentHTML += `
-                        <div class="d-flex justify-content-between">
-                            <span>${item.name} (${item.type}) x ${item.quantity}</span>
-                            <span>₱${itemTotal.toFixed(2)}</span>
-                        </div>
-                    `;
-                });
-            } else {
-                equipmentHTML = '<p class="text-muted">No additional equipment selected</p>';
+    // Book Now button handler
+    document.querySelector('.btn-primary').addEventListener('click', handleBookingClick);
+});
+
+// Google Maps API loader
+function loadGoogleMapsAPI() {
+    const apiKey = 'AIzaSyCFx7Z_5qK__AetA_wIPEFEpuAhIxIsouI';
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initAutocomplete`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = function() {
+        showApiError('Failed to load Google Maps API. Using basic location input.');
+        setupBasicAutocomplete();
+    };
+    document.head.appendChild(script);
+}
+
+// Initialize Google Maps Autocomplete
+function initAutocomplete() {
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        showApiError('Google Maps not available. Using basic location input.');
+        setupBasicAutocomplete();
+        return;
+    }
+
+    try {
+        const input = document.getElementById('eventLocation');
+        const options = {
+            types: ['geocode'],
+            componentRestrictions: { country: 'ph' },
+            fields: ['address_components', 'geometry', 'formatted_address']
+        };
+        
+        const autocomplete = new google.maps.places.Autocomplete(input, options);
+        
+        autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) {
+                showApiError('Location not found. Please try again.');
             }
-            
-            // Update modal content
-            document.getElementById('modalCustomerName').textContent = customerName;
-            document.getElementById('modalDateOfBooking').textContent = dateOfBooking;
-            document.getElementById('modalDateOfReturn').textContent = dateOfReturn;
-            document.getElementById('modalEventLocation').textContent = eventLocation;
-            document.getElementById('modalPackageChosen').textContent = packageName;
-            
-            // Update equipment section
-            const equipmentList = document.getElementById('modalEquipmentList');
-            equipmentList.innerHTML = equipmentHTML;
-            document.getElementById('modalEquipmentTotal').textContent = `₱${equipmentTotal.toFixed(2)}`;
-            
-            // Calculate and display total price (package + equipment)
-            const totalPrice = packagePrice + equipmentTotal;
-            document.getElementById('modalTotalPrice').textContent = `₱${totalPrice.toFixed(2)}`;
-            
-            // Store the total price in the hidden field
-            document.getElementById('totalPrice').value = totalPrice;
+        });
+        
+        document.getElementById('apiStatus').textContent = '';
+    } catch (error) {
+        showApiError('Error initializing location search. Using basic input.');
+        setupBasicAutocomplete();
+    }
+}
 
-            // Show the confirmation modal
-            const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-            confirmationModal.show();
+// Basic autocomplete fallback
+function setupBasicAutocomplete() {
+    const philippineCities = [
+        "Manila", "Quezon City", "Makati", "Taguig", "Pasig",
+        "Mandaluyong", "San Juan", "Pasay", "Parañaque", "Las Piñas"
+    ];
+
+    const input = document.getElementById('eventLocation');
+    const datalist = document.createElement('datalist');
+    datalist.id = 'citySuggestions';
+    
+    philippineCities.forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        datalist.appendChild(option);
+    });
+    
+    document.body.appendChild(datalist);
+    input.setAttribute('list', 'citySuggestions');
+}
+
+// Date picker setup and validation
+function setupDatePickers() {
+    const today = new Date();
+    const dateOfBookingInput = document.getElementById('dateOfBooking');
+    const dateOfReturnInput = document.getElementById('dateOfReturn');
+    const bookingDateMessage = document.getElementById('bookingDateMessage');
+    const returnDateMessage = document.getElementById('returnDateMessage');
+
+    // Set min date to today
+    const minDate = today.toISOString().split('T')[0];
+    dateOfBookingInput.min = minDate;
+    dateOfReturnInput.min = minDate;
+
+    // Get booked dates from PHP
+    const bookedRanges = <?php echo $bookedRangesJson; ?>;
+    const bookedDates = bookedRanges.map(range => {
+        return {
+            start: new Date(range.start),
+            end: new Date(range.end)
+        };
+    });
+
+    // Booking date change handler
+    dateOfBookingInput.addEventListener('change', function() {
+        dateOfReturnInput.min = this.value;
+        hideMessage(bookingDateMessage);
+        
+        if (this.value) {
+            const selectedDate = new Date(this.value);
+            if (isDateBooked(selectedDate, bookedDates)) {
+                showMessage(bookingDateMessage, 'This date is already booked. Please choose another date.');
+                this.value = '';
+            }
         }
     });
 
-    // Function to compute price
-    function computePrice(packageId, dateOfBooking, dateOfReturn) {
-    const packagePrices = {
-        1: 1000, // Package 1: ₱1000 per day
-        2: 1500, // Package 2: ₱1500 per day
-        3: 4000, // Package 3: ₱4000 per day
-        4: 5000, // Package 4: ₱5000 per day
-    };
+    // Return date change handler
+    dateOfReturnInput.addEventListener('change', function() {
+        hideMessage(returnDateMessage);
+        
+        if (this.value && dateOfBookingInput.value) {
+            const startDate = new Date(dateOfBookingInput.value);
+            const endDate = new Date(this.value);
+            
+            if (isDateRangeBooked(startDate, endDate, bookedDates)) {
+                showMessage(returnDateMessage, 'One or more dates in your selected range are already booked. Please choose different dates.');
+                this.value = '';
+            }
+        }
+    });
+}
 
-    const startDate = new Date(dateOfBooking);
-    const endDate = new Date(dateOfReturn);
-    
-    // Calculate difference in milliseconds
-    const timeDiff = endDate - startDate;
-    
-    // Convert to days and add 1 to include both dates
-    const numberOfDays = (timeDiff / (1000 * 60 * 60 * 24)) + 1;
+// Date validation functions
+function isDateBooked(date, bookedDates) {
+    return bookedDates.some(range => {
+        return date >= range.start && date <= range.end;
+    });
+}
 
-    return packagePrices[packageId] * numberOfDays;
+function isDateRangeBooked(startDate, endDate, bookedDates) {
+    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        if (isDateBooked(date, bookedDates)) {
+            return true;
+        }
     }
-});
+    return false;
+}
+
+// Booking form submission handler
+function handleBookingClick(event) {
+    event.preventDefault();
+
+    // Get form values
+    const signatureData = document.getElementById('lendingAgreement').value;
+    const dateOfBooking = document.getElementById('dateOfBooking').value;
+    const dateOfReturn = document.getElementById('dateOfReturn').value;
+    const eventLocation = document.getElementById('eventLocation').value;
+    const packageRadio = document.querySelector('input[name="packageId"]:checked');
+
+    // Validation checks
+    if (!signatureData) {
+        alert('You need to sign the agreement first before proceeding.');
+        return;
+    }
+
+    if (!dateOfBooking || !dateOfReturn) {
+        alert('Please select both start and end dates.');
+        return;
+    }
+
+    if (new Date(dateOfBooking) > new Date(dateOfReturn)) {
+        alert('Return date must be on or after the booking date.');
+        return;
+    }
+
+    if (!packageRadio) {
+        alert('Please select a package.');
+        return;
+    }
+
+    if (!eventLocation) {
+        alert('Please enter an event location.');
+        return;
+    }
+
+    // Prepare confirmation modal
+    prepareConfirmationModal({
+        dateOfBooking,
+        dateOfReturn,
+        eventLocation,
+        packageId: packageRadio.value
+    });
+
+    // Show confirmation modal
+    const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    confirmationModal.show();
+}
+
+// Prepare confirmation modal data
+function prepareConfirmationModal(data) {
+    const customerName = "<?php echo $user['firstName'] . ' ' . $user['lastName']; ?>";
+    const packageName = document.querySelector(`input[name="packageId"][value="${data.packageId}"] + .package-img + span`).textContent;
+    const packagePrice = computePrice(data.packageId, data.dateOfBooking, data.dateOfReturn);
+    
+    // Get equipment data
+    const customEquipment = <?php echo isset($_SESSION['selected_equipment']) ? json_encode($_SESSION['selected_equipment']) : '[]'; ?>;
+    let equipmentTotal = 0;
+    let equipmentHTML = '';
+    
+    if (customEquipment.length > 0) {
+        customEquipment.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            equipmentTotal += itemTotal;
+            equipmentHTML += `
+                <div class="d-flex justify-content-between">
+                    <span>${item.name} x ${item.quantity}</span>
+                    <span>₱${itemTotal.toFixed(2)}</span>
+                </div>
+            `;
+        });
+    } else {
+        equipmentHTML = '<p class="text-muted">No additional equipment selected</p>';
+    }
+    
+    // Update modal content
+    document.getElementById('modalCustomerName').textContent = customerName;
+    document.getElementById('modalDateOfBooking').textContent = formatDate(data.dateOfBooking);
+    document.getElementById('modalDateOfReturn').textContent = formatDate(data.dateOfReturn);
+    document.getElementById('modalEventLocation').textContent = data.eventLocation;
+    document.getElementById('modalPackageChosen').textContent = packageName;
+    document.getElementById('modalEquipmentList').innerHTML = equipmentHTML;
+    document.getElementById('modalEquipmentTotal').textContent = `₱${equipmentTotal.toFixed(2)}`;
+    
+    // Calculate and display total price
+    const totalPrice = packagePrice + equipmentTotal;
+    document.getElementById('modalTotalPrice').textContent = `₱${totalPrice.toFixed(2)}`;
+    document.getElementById('totalPrice').value = totalPrice;
+}
+
+// Helper functions
+function showMessage(element, message) {
+    element.textContent = message;
+    element.style.display = 'block';
+}
+
+function hideMessage(element) {
+    element.style.display = 'none';
+}
+
+function showApiError(message) {
+    const apiStatus = document.getElementById('apiStatus');
+    apiStatus.textContent = message;
+    apiStatus.style.color = '#dc3545';
+}
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
-}
-
-// Debugging function
-function log(message) {
-    console.log(message);
-    document.getElementById('apiStatus').innerHTML += message + '<br>';
-}
-
-function initAutocomplete() {
-    
-    const input = document.getElementById('eventLocation');
-    
-    // Create the autocomplete object
-    const autocomplete = new google.maps.places.Autocomplete(input, {
-        types: ['geocode'],  // Try 'geocode' instead of 'address' for broader results
-        componentRestrictions: { country: 'ph' },
-        fields: ['address_components', 'geometry', 'formatted_address']
-    });
-    
-   
-    
-    
-    // Handle API errors
-    google.maps.event.addDomListener(window, 'error', function() {
-        const errorMessage = 'Google Maps API failed to load';
-        log(errorMessage);
-        document.getElementById('apiStatus').innerHTML = errorMessage;
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
     });
 }
 
-// Fallback if API doesn't load
-setTimeout(function() {
-    if (typeof google === 'undefined') {
-        document.getElementById('apiStatus').innerHTML = 
-            'Error: Google Maps API not loaded. Check your API key and network connection.';
-    }
-}, 5000);
+function computePrice(packageId, dateOfBooking, dateOfReturn) {
+    const packagePrices = { 1: 1000, 2: 1500, 3: 4000, 4: 5000 };
+    const startDate = new Date(dateOfBooking);
+    const endDate = new Date(dateOfReturn);
+    const numberOfDays = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
+    return packagePrices[packageId] * numberOfDays;
+}
 </script>
-
-<!-- Load Google Maps API with your key -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFx7Z_5qK__AetA_wIPEFEpuAhIxIsouI&libraries=places&callback=initAutocomplete" async defer></script>
-
 </body>
 </html>
