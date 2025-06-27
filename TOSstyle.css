@@ -11,56 +11,64 @@
     width: 100%;
     z-index: 1000;
     background: rgb(255, 255, 255);
-    padding: 0.5px 0;
+    padding: 0.5rem 0;
     transition: background-color 0.3s ease;
-  }
-  
-  .nav-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between; 
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-  }
-  
-  .navbar-brand {
-    margin-left: auto; 
-    margin-right: 15rem; 
-  }
-  
-  .navbar-brand img {
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom navbar-toggler icon color */
+.navbar-toggler {
+    border: none;
+    padding: 0.5rem;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(24,71,208, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+    width: 1.5em;
+    height: 1.5em;
+}
+
+/* Logo styles */
+.navbar-brand img {
     width: 140px;
-  }
-  
-  .navbar-brand img:hover {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand img:hover {
     transform: scale(1.05);
-  }
-  
-  .navbar-nav {
-    display: flex;
-    gap: 2rem; 
-  }
-  
-  .nav-item {
+}
+
+/* Nav items */
+.navbar-nav {
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.nav-item {
     list-style: none;
-  }
-  
-  .nav-link {
-    color: #1847d0;
-    padding: 0.5rem 1rem;
+}
+
+.nav-link {
+    color: #1847d0 !important; /* Important to override Bootstrap */
+    padding: 0.5rem 1rem !important;
     border-radius: 20px;
     text-decoration: none !important;
     transition: background-color 0.3s ease, color 0.3s ease;
     position: relative;
     font-size: 0.9em;
-  }
-  
-  .nav-link:hover {
-  color: #0e2c87;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
-  .nav-link::after {
+.nav-link:hover {
+    color: #0e2c87 !important;
+}
+
+.nav-link::after {
     content: '';
     position: absolute;
     width: 0;
@@ -69,54 +77,77 @@
     left: 50%;
     background-color: #0e2c87;
     transition: width 0.3s ease, left 0.3s ease;
-  }
-  
-  .nav-link:hover::after {
+}
+
+.nav-link:hover::after {
     width: 100%;
     left: 0;
-  }
-
-     .navbar-toggler-icon {
-  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(24,71,208, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
 }
 
-  .auth-buttons {
-  display: flex;
-  gap: 1rem;
-}
-
+/* Auth buttons */
 .auth-buttons {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-left: auto; /* pushes to the right */
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .auth-buttons .btn-primary {
-  padding: 8px 30px;
-  font-size: 0.85rem;
-  border-radius: 30px;
-  border-top-right-radius: 0;
-  background-image: linear-gradient(45deg, #1847d0, #0f0790);
-  color: #fff;
-  text-decoration: none;
-  transition: 0.3s;
-  white-space: nowrap;
+    padding: 8px 30px;
+    font-size: 0.85rem;
+    border-radius: 30px;
+    border-top-right-radius: 0;
+    background-image: linear-gradient(45deg, #1847d0, #0f0790);
+    color: #fff;
+    text-decoration: none;
+    transition: 0.3s;
+    white-space: nowrap;
+    border: none;
 }
 
 .auth-buttons .btn-primary:hover {
-  border-top-right-radius: 30px;
+    border-top-right-radius: 30px;
 }
 
 .auth-buttons .nav-link {
-  font-size: 0.85rem;
-  color: #1847d0;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  white-space: nowrap;
+    font-size: 0.85rem;
+    color: #1847d0;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    white-space: nowrap;
 }
 
+/* Mobile specific styles */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background-color: white;
+        padding: 1rem;
+        margin-top: 0.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .navbar-nav {
+        gap: 0.5rem;
+    }
+    
+    .auth-buttons {
+        flex-direction: column;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .auth-buttons .btn-primary,
+    .auth-buttons .nav-link {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .navbar-brand {
+        margin-left: 0;
+        margin-right: auto;
+    }
+}
 .text-content {
     position: relative;
     z-index: 1;
@@ -160,6 +191,7 @@
    color: rgba(24, 71, 208, 1);
     font-size: 2.2rem;
     font-weight: 600;
+    margin-top: 2.5rem;
     margin-bottom: 2.5rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid rgba(24, 71, 208, 1);
