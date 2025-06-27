@@ -74,9 +74,50 @@ $dashboardLink = $isAdmin ? 'adminhome.php' : 'staff_dashboard.php';
             background-color: #2c3e50;
             color: white;
             height: 100vh;
-            padding: 20px 0;
             position: fixed;
+            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
         }
+        
+        .sidebar-content {
+            padding: 20px 0;
+            min-height: 100%; /* Ensure content takes full height */
+        }
+
+/* Custom scrollbar for webkit browsers */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #34495e;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #5a6c7d;
+            border-radius: 3px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #7f8c8d;
+        }
+
+@media (max-width: 576px) {
+    .sidebar {
+        width: 60px;
+    }
+
+    .main-content {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+        padding: 15px;
+    }
+
+    .sidebar-menu li {
+        padding: 8px 10px;
+        font-size: 1.8vh;
+    }
+}
 
         .sidebar-header {
             padding: 0 20px 20px;

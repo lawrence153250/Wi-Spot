@@ -26,7 +26,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     if (empty($birthday)) $errors[] = "Birthday is required";
     if (empty($contactnumber)) $errors[] = "Contact number is required";
     if (empty($address)) $errors[] = "Address is required";
-    if (empty($facebookProfile)) $errors[] = "Facebook profile is required";
     
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = "Invalid email format";
@@ -55,10 +54,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
 
     if (!preg_match('/^09\d{9}$/', $contactnumber)) {
         $errors[] = "Invalid Philippine number format. Must start with 09 followed by 9 digits (11 digits total)";
-    }
-
-    if (!preg_match('/^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?$/', $facebookProfile)) {
-        $errors[] = "Invalid Facebook profile URL";
     }
 
     // Only check database if no validation errors

@@ -281,8 +281,7 @@ $conn->close();
             <li><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
             <li><a class="nav-link" href="admin_inventory.php">INVENTORY</a></li>
             <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
-            <li><a class="nav-link" href="admin_bookingApproval.php">BOOKING APPROVALS</a></li>
-            <li><a class="nav-link" href="admin_bookingMonitoring.php"><span style="white-space: nowrap;">BOOKING MONITORING</span></a></li>
+            <li><a class="nav-link" href="admin_bookingApproval.php">BOOKING MANAGEMENT</a></li>
             <li><a class="nav-link" href="admin_agreementView.php">AGREEMENTS</a></li>
             <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>
@@ -315,30 +314,17 @@ $conn->close();
                 <div class="card-count"><?php echo $lockedAccountsCount; ?></div>
             </a>
             
-            <a href="admin_bookingApproval.php" class="dashboard-card">
+            <a href="admin_bookingView.php" class="dashboard-card">
                 <div class="card-content">
                     <div class="card-icon">
                         <i class="bi bi-pencil-square"></i>
                     </div>
                     <div class="card-text">
-                        <h3>Booking Approvals</h3>
-                        <p>Pending booking edits</p>
+                        <h3>Booking Changes Approval</h3>
+                        <p>Pending booking changes</p>
                     </div>
                 </div>
                 <div class="card-count"><?php echo $bookingEditsCount; ?></div>
-            </a>
-            
-            <a href="admin_bookingMonitoring.php" class="dashboard-card">
-                <div class="card-content">
-                    <div class="card-icon">
-                        <i class="bi bi-wifi-off"></i>
-                    </div>
-                    <div class="card-text">
-                        <h3>Booking Monitoring</h3>
-                        <p>Connection errors</p>
-                    </div>
-                </div>
-                <div class="card-count"><?php echo $connectionErrorCount; ?></div>
             </a>
 
             <a href="admin_packages.php" class="dashboard-card">

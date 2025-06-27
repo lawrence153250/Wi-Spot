@@ -441,7 +441,7 @@ $debug_info['session_data'] = $_SESSION;
                             </div>
                             <div class="feature-item">
                                 <span class="feature-icon"><i class="bi bi-tag-fill"></i></span>
-                                <span>Price: $<?= htmlspecialchars($package['price']) ?></span>
+                                <span>Price: ₱<?= htmlspecialchars($package['price']) ?></span>
                             </div>
                             <div class="feature-item">
                                 <span class="feature-icon"><i class="bi bi-gear-fill"></i></span>
