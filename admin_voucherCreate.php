@@ -513,8 +513,7 @@ if ($result) {
             <li class="active"><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
             <li><a class="nav-link" href="admin_inventory.php">INVENTORY</a></li>
             <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
-            <li><a class="nav-link" href="admin_bookingApproval.php">BOOKING APPROVALS</a></li>
-            <li><a class="nav-link" href="admin_bookingMonitoring.php"><span style="white-space: nowrap;">BOOKING MONITORING</span></a></li>
+            <li><a class="nav-link" href="admin_bookingApproval.php">BOOKING MANAGEMENT</a></li>
             <li><a class="nav-link" href="admin_agreementView.php">AGREEMENTS</a></li>
             <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>

@@ -279,6 +279,25 @@ foreach ($bookings as &$booking) {
 }
 unset($booking); // Break the reference with the last element
 
+// Handle booking deletion
+if (isset($_GET['delete_id'])) {
+    $bookingId = $_GET['delete_id'];
+    $deleteQuery = "DELETE FROM booking WHERE bookingId = ?";
+    $stmt = $conn->prepare($deleteQuery);
+    $stmt->bind_param("i", $bookingId);
+    
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Booking deleted successfully!";
+    } else {
+        $_SESSION['error'] = "Error deleting booking: " . $conn->error;
+    }
+    $stmt->close();
+    
+    // Redirect to prevent form resubmission
+    header("Location: admin_bookingApproval.php");
+    exit();
+}
+
 $conn->close();
 ?>
 
@@ -556,14 +575,13 @@ $conn->close();
             <a class="navbar-brand" href="adminhome.php"><img src="logo.png"></a>
         </div>
         <ul class="sidebar-menu">
-            <li class="active"><a class="nav-link" href="adminhome.php">DASHBOARD</a></li>
+            <li><a class="nav-link" href="adminhome.php">DASHBOARD</a></li>
             <li><a class="nav-link" href="admin_accounts.php">ACCOUNTS</a></li>
             <li><a class="nav-link" href="admin_packages.php">PACKAGES</a></li>
             <li><a class="nav-link" href="admin_vouchers.php">VOUCHERS</a></li>
             <li><a class="nav-link" href="admin_inventory.php">INVENTORY</a></li>
             <li><a class="nav-link" href="admin_reports.php">REPORTS</a></li>
-            <li><a class="nav-link" href="admin_bookingApproval.php">BOOKING APPROVALS</a></li>
-            <li><a class="nav-link" href="admin_bookingMonitoring.php"><span style="white-space: nowrap;">BOOKING MONITORING</span></a></li>
+            <li class="active"><a class="nav-link" href="admin_bookingApproval.php">BOOKING MANAGEMENT</a></li>
             <li><a class="nav-link" href="admin_agreementView.php">AGREEMENTS</a></li>
             <li><a class="nav-link" href="admin_feedbacks.php">FEEDBACKS</a></li>
             <li><a class="nav-link" href="admin_announcements.php">ANNOUNCEMENTS</a></li>
@@ -571,6 +589,7 @@ $conn->close();
             <li><span><a class="nav-link" href="logout.php">LOGOUT</a></span></li>
         </ul>
     </div>
+    
     <!-- Main Content Area -->
     <div class="main-content">
         <div class="page-header">
@@ -634,6 +653,7 @@ $conn->close();
                         <th>Booking Status</th>
                         <th>Payment Status</th>
                         <th>Actions</th>
+                        <th>Delete Booking</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -718,6 +738,13 @@ $conn->close();
                                             <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="admin_bookingApproval.php?delete_id=<?php echo $booking['bookingId']; ?>" 
+                                    class="btn btn-danger btn-sm" 
+                                    onclick="return confirm('Are you sure you want to delete this booking?');">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </a>
                                 </td>
                             </tr>
 
