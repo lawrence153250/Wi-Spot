@@ -326,19 +326,6 @@ $conn->close();
                 </div>
                 <div class="card-count"><?php echo $bookingEditsCount; ?></div>
             </a>
-            
-            <a href="admin_bookingMonitoring.php" class="dashboard-card">
-                <div class="card-content">
-                    <div class="card-icon">
-                        <i class="bi bi-wifi-off"></i>
-                    </div>
-                    <div class="card-text">
-                        <h3>Booking Monitoring</h3>
-                        <p>Connection errors</p>
-                    </div>
-                </div>
-                <div class="card-count"><?php echo $connectionErrorCount; ?></div>
-            </a>
 
             <a href="admin_packages.php" class="dashboard-card">
                 <div class="card-content">
