@@ -180,6 +180,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
+    .alert {
+  position: sticky;
+  top: 0;
+  z-index: 1020; /* Just below navbar */
+  margin-top: 56px; /* Navbar height */
+}
     .rating-options {
       display: flex;
       gap: 15px;
@@ -216,27 +222,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   </style>
 </head>
-<body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
-    <div class="nav-container">
-      <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse d-flex justify-content-between align-items-center" id="navbarNav">
-        <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
-          <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
-          <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
-          <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
-        </ul>
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="profile.php"><?php echo htmlspecialchars($_SESSION['username']); ?> <i class="bi bi-person-circle"></i></a></li>
-        </ul>
-      </div>
+<body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
+    <div class="container">
+        <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="index.php">HOME</a></li>
+                <li class="nav-item"><a class="nav-link" href="booking.php">BOOKING</a></li>
+                <li class="nav-item"><a class="nav-link" href="mapcoverage.php">MAP COVERAGE</a></li>
+                <li class="nav-item"><a class="nav-link" href="customer_voucher.php">VOUCHERS</a></li>
+                <li class="nav-item"><a class="nav-link" href="aboutus.php">ABOUT US</a></li>
+            </ul>
+
+            <?php if (isset($_SESSION['username'])): ?>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.php"><?= htmlspecialchars($_SESSION['username']) ?> <i class="bi bi-person-circle"></i></a>
+                    </li>
+                </ul>
+            <?php else: ?>
+                <div class="auth-buttons d-flex flex-column flex-lg-row ms-lg-auto gap-2 mt-2 mt-lg-0">
+                    <a class="btn btn-primary" href="login.php">LOGIN</a>
+                    <a class="nav-link" href="register.php">SIGN UP</a>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
-  </nav>
+</nav>
 
   <div class="container my-5">
     <div class="row justify-content-center">

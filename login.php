@@ -16,7 +16,6 @@ require 'login_code.php'; // Includes the login logic
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styleslogin.css">
 </head>
-<body>
 <body style="background-color: #f0f3fa;"> <nav class="navbar navbar-expand-lg navbar-dark" id="grad">
     <div class="container">
         <a class="navbar-brand" href="index.php"><img src="logoo.png" class="logo"></a>
