@@ -1,4 +1,9 @@
 <?php
+// Enable error reporting
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Start the session
 session_start();
 
@@ -133,8 +138,118 @@ if ($stmt->execute()) {
     unset($_SESSION['payment_info']);
     $message = "Payment successful! Status updated to: " . $newStatus;
     
-    // Removed the code that updates bookingStatus to 'Confirmed'
-    // The bookingStatus will now remain unchanged regardless of payment status
+    // Get customer email and booking details for confirmation email
+    // MODIFIED QUERY TO MATCH YOUR ACTUAL DATABASE STRUCTURE
+    $emailStmt = $conn->prepare("
+        SELECT c.email, b.price, b.dateOfBooking, b.dateOfReturn, b.eventLocation, 
+            p.packageName, c.firstName 
+        FROM booking b
+        JOIN customer c ON b.customerId = c.customerId
+        JOIN package p ON b.packageId = p.packageId
+        WHERE b.bookingId = ?
+    ");
+    $emailStmt->bind_param("i", $bookingId);
+    $emailStmt->execute();
+    $emailStmt->bind_result($customerEmail, $bookingPrice, $dateOfBooking, $dateOfReturn, $eventLocation, $packageName, $firstName);
+    $emailStmt->fetch();
+    $emailStmt->close();
+    
+    // Include PHPMailer files
+    require 'phpmailer/src/Exception.php';
+    require 'phpmailer/src/PHPMailer.php';
+    require 'phpmailer/src/SMTP.php';
+
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'wispot.servicesph@gmail.com';
+        $mail->Password = 'dzij hshz xbqt hwlb'; // Consider using an App Password
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = 587;
+        
+        // Enable debugging (remove in production)
+        $mail->SMTPDebug = 2; // 0 = off, 1 = client messages, 2 = client and server messages
+        $mail->Debugoutput = function($str, $level) {
+            error_log("SMTP debug level $level: $str");
+        };
+
+        // Recipients
+        $mail->setFrom('wispot.servicesph@gmail.com', 'Wi-Spot');
+        $mail->addAddress($customerEmail, $firstName); // Use $customerEmail instead of $email
+        
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = 'Payment Confirmation - Booking #' . $bookingId;
+        
+        
+        // Email body
+        $emailBody = "
+            <h2>Payment Confirmation</h2>
+            <p>Dear $firstName,</p>
+            <p>Thank you for your payment. Your booking details are as follows:</p>
+            
+            <table border='1' cellpadding='5' cellspacing='0' style='border-collapse: collapse; width: 100%;'>
+                <tr style='background-color: #f2f2f2;'>
+                    <th style='padding: 8px; text-align: left;'>Booking ID</th>
+                    <td style='padding: 8px;'>#$bookingId</td>
+                </tr>
+                <tr>
+                    <th style='padding: 8px; text-align: left;'>Package Name</th>
+                    <td style='padding: 8px;'>$packageName</td>
+                </tr>
+                <tr style='background-color: #f2f2f2;'>
+                    <th style='padding: 8px; text-align: left;'>Booking Date</th>
+                    <td style='padding: 8px;'>$dateOfBooking</td>
+                </tr>
+                <tr>
+                    <th style='padding: 8px; text-align: left;'>Return Date</th>
+                    <td style='padding: 8px;'>$dateOfReturn</td>
+                </tr>
+                <tr style='background-color: #f2f2f2;'>
+                    <th style='padding: 8px; text-align: left;'>Event Location</th>
+                    <td style='padding: 8px;'>$eventLocation</td>
+                </tr>
+                <tr>
+                    <th style='padding: 8px; text-align: left;'>Total Amount</th>
+                    <td style='padding: 8px;'>₱" . number_format($bookingPrice, 2) . "</td>
+                </tr>
+                <tr style='background-color: #f2f2f2;'>
+                    <th style='padding: 8px; text-align: left;'>Amount Paid</th>
+                    <td style='padding: 8px;'>₱" . number_format($amountPaid, 2) . "</td>
+                </tr>
+                <tr>
+                    <th style='padding: 8px; text-align: left;'>Remaining Balance</th>
+                    <td style='padding: 8px;'>₱" . number_format($newBalance, 2) . "</td>
+                </tr>
+                <tr style='background-color: #f2f2f2;'>
+                    <th style='padding: 8px; text-align: left;'>Payment Status</th>
+                    <td style='padding: 8px;'>$newStatus</td>
+                </tr>
+            </table>
+            
+            <p style='margin-top: 20px;'>If you have any questions about your booking, please contact our support team.</p>
+            <p>Thank you for choosing Wi-Spot!</p>
+        ";
+        
+        $mail->Body = $emailBody;
+    $mail->AltBody = strip_tags($emailBody);
+    
+    if ($mail->send()) {
+        $emailSent = true;
+        error_log("Email successfully sent to $customerEmail");
+    } else {
+        $emailSent = false;
+        error_log("Email failed to send to $customerEmail");
+    }
+    } catch (Exception $e) {
+        error_log("Message could not be sent. Mailer Error: {$mail->ErrorInfo}");
+        $emailSent = false;
+    }
+    
 } else {
     $message = "Payment received but database update failed. Please contact support.";
 }
@@ -220,6 +335,9 @@ $conn->close();
                     <p><strong>Booking ID:</strong> <?php echo htmlspecialchars($bookingId); ?></p>
                     <p><strong>Amount Paid:</strong> ₱<?php echo number_format($amountPaid, 2); ?></p>
                     <p><strong>Remaining Balance:</strong> ₱<?php echo number_format($newBalance, 2); ?></p>
+                    <?php if (isset($emailSent) && $emailSent): ?>
+                        <p>A confirmation email has been sent to your registered email address.</p>
+                    <?php endif; ?>
                     
                     <!-- Payment progress bar -->
                     <?php 
