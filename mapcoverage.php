@@ -77,8 +77,9 @@ if (isset($_SESSION['selected_equipment'])) {
     <div class="main-container">
       <div class="controls-container">
         <input id="searchBox" type="text" class="form-control mb-3" placeholder="Search location...">
-        
+        <p>Search your event location and draw a square out of its total area</p>
         <button id="drawRectBtn" class="btn draw-btn">Draw Square</button>
+        <p>Pin at least one Starlink router, then add Access point (EAP110) to fill out the square</p>
         <button id="placePinBtn" class="btn pin-btn">Place Pin</button>
         
         <select id="deviceSelector" class="device-select">

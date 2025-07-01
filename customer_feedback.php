@@ -275,6 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-header bg-primary text-white">
               <h3 class="mb-0">Feedback Form</h3>
               <p class="mb-0">Please rate your experience with Wi-Spot</p>
+              <p class="mb-0">You will get a returning customer voucher after completing the feedback!</p>
             </div>
             <div class="card-body">
               <form method="POST" enctype="multipart/form-data" id="feedbackForm">
